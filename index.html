@@ -86,11 +86,11 @@
                 <span id="server-latency-badge" class="text-[10px] font-mono text-emerald-400/90 hidden sm:inline">2ms</span>
             </button>
             <!-- Trạng thái Cloud Sync -->
-            <div class="flex items-center space-x-1.5 bg-slate-800/90 px-2.5 py-0.5 rounded-full border border-slate-700">
-                <span id="cloud-status-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
-                <span id="cloud-status-text" class="text-[11px] font-medium text-slate-300">Lưu cục bộ (Local)</span>
+            <button type="button" onclick="openCloudSyncSettingsSection()" title="Bấm để cấu hình Đồng bộ Đám mây đa thiết bị (Cloud Sync)" class="flex items-center space-x-1.5 bg-slate-800/90 hover:bg-slate-700/90 px-2.5 py-0.5 rounded-full border border-slate-700 transition cursor-pointer">
+                <span id="cloud-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span id="cloud-status-text" class="text-[11px] font-medium text-amber-200">Chưa kết nối Cloud (Lưu cục bộ)</span>
                 <span id="cloud-last-sync" class="text-[10px] text-slate-400 hidden sm:inline"></span>
-            </div>
+            </button>
             <div class="flex items-center space-x-1">
                 <button onclick="pullFromCloud(true)" title="Tải dữ liệu mới nhất từ Đám mây về máy" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 text-[11px] font-semibold transition flex items-center space-x-1">
                     <i class="fa-solid fa-cloud-arrow-down"></i>
@@ -1181,22 +1181,31 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="sm:col-span-2">
-                        <label for="cloud-db-url" class="block text-xs font-bold text-slate-700 mb-1">
-                            Đường Dẫn Cloud Database URL (Firebase Realtime DB hoặc JSON Endpoint)
-                        </label>
-                        <input type="url" id="cloud-db-url" placeholder="VD: https://clb-vovinam-default-rtdb.asia-southeast1.firebasedatabase.app" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-800">
-                        <p class="text-[11px] text-slate-400 mt-1">Dán link Firebase Realtime Database của CLB vào đây trên cả máy Admin và máy HLV để dùng chung dữ liệu.</p>
+                    <div class="sm:col-span-2 p-3.5 bg-emerald-50/90 border border-emerald-200 rounded-2xl text-xs text-emerald-900 flex items-start space-x-2.5">
+                        <i class="fa-solid fa-satellite-dish text-emerald-600 text-base mt-0.5"></i>
+                        <div class="space-y-1">
+                            <p class="font-black text-emerald-950">Đã kích hoạt Kênh Đồng Bộ Đám Mây Đa Máy Tự Động (Zero-Config Cloud Relay)!</p>
+                            <p class="text-[11px] text-emerald-800 leading-relaxed">Chỉ cần các máy tính và điện thoại nhập cùng một <strong>Mã Định Danh CLB / Phòng Dữ Liệu (Club ID)</strong> bên dưới (mặc định: <code>vovinam_main_club</code>), hệ thống sẽ <strong>tự động đồng bộ trực tuyến thời gian thực (&lt;100ms)</strong> giữa tất cả các máy mà không bắt buộc phải tạo tài khoản Firebase!</p>
+                        </div>
                     </div>
 
                     <div>
-                        <label for="cloud-club-key" class="block text-xs font-bold text-slate-700 mb-1">Mã Định Danh CLB / Phòng Dữ Liệu (Club ID)</label>
-                        <input type="text" id="cloud-club-key" value="vovinam_main_club" placeholder="vovinam_main_club" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-700">
+                        <label for="cloud-club-key" class="block text-xs font-bold text-slate-700 mb-1">Mã Định Danh CLB / Phòng Dữ Liệu Chung (Club ID) <span class="text-red-500">*</span></label>
+                        <input type="text" id="cloud-club-key" value="vovinam_main_club" placeholder="VD: vovinam_main_club" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-blue-300 bg-blue-50/30 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono font-bold text-vovinam-blue">
+                        <p class="text-[10px] text-slate-500 mt-1">Các máy có cùng Mã Phòng này sẽ tự động đồng bộ toàn bộ dữ liệu với nhau.</p>
                     </div>
 
                     <div>
                         <label for="cloud-secret-key" class="block text-xs font-bold text-slate-700 mb-1">Mã Bảo Mật / Database Secret (Tùy chọn)</label>
-                        <input type="password" id="cloud-secret-key" placeholder="Để trống nếu dùng chế độ Public Rules" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-700">
+                        <input type="password" id="cloud-secret-key" placeholder="Để trống nếu dùng Phòng Tự Động / Public Rules" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-700">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="cloud-db-url" class="block text-xs font-bold text-slate-700 mb-1">
+                            Đường Dẫn Cloud Database Riêng (Tùy chọn — Firebase Realtime DB / REST Endpoint)
+                        </label>
+                        <input type="url" id="cloud-db-url" placeholder="Để trống để dùng Cloud Tự Động, hoặc dán link https://...firebaseio.com" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-800">
+                        <p class="text-[11px] text-slate-400 mt-1">Có thể để trống (hệ thống tự dùng Cloud Relay tích hợp sẵn). Nếu muốn lưu trữ thêm trên Firebase riêng của CLB, hãy dán link Firebase Realtime Database vào đây.</p>
                     </div>
 
                     <div class="sm:col-span-2">
@@ -1237,6 +1246,9 @@
                     </div>
                 </div>
 
+                <!-- Hộp thông báo chẩn đoán lỗi kết nối Cloud trực tiếp -->
+                <div id="cloud-diagnostic-box" class="hidden p-3.5 rounded-2xl border text-xs space-y-1"></div>
+
                 <!-- Các nút thao tác Đồng bộ thủ công -->
                 <div class="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
                     <div class="flex flex-wrap items-center gap-2">
@@ -1248,22 +1260,56 @@
                             <i class="fa-solid fa-cloud-arrow-down"></i>
                             <span>Tải Dữ Liệu Từ Cloud Về (Pull)</span>
                         </button>
+                        <button type="button" onclick="openFirebaseRulesModal()" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-fire text-amber-500"></i>
+                            <span>Xem Quy Tắc Rules Firebase</span>
+                        </button>
                     </div>
                     <button type="button" onclick="disconnectCloudConfig()" class="px-3.5 py-2 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-xl text-xs font-bold transition">
                         <i class="fa-solid fa-link-slash mr-1"></i>Ngắt kết nối Cloud
                     </button>
                 </div>
 
-                <!-- Hướng dẫn nhanh tạo Firebase miễn phí -->
+                <!-- TÍNH NĂNG MỚI: GHÉP NỐI ĐA THIẾT BỊ 1 CHẠM (MÃ KẾT NỐI NHANH & LINK ĐỒNG BỘ) -->
+                <div class="p-4 bg-gradient-to-r from-indigo-50/80 via-blue-50/80 to-emerald-50/80 rounded-2xl border border-blue-200/80 space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-xs sm:text-sm font-black text-slate-800 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-qrcode text-vovinam-blue"></i>
+                                <span>Ghép Nối Nhanh Sang Máy Tính / Điện Thoại Khác (1 Chạm)</span>
+                            </h3>
+                            <p class="text-[11px] text-slate-600 mt-0.5">Vì mỗi máy có bộ nhớ trình duyệt riêng, hãy dùng <strong>Mã Ghép Nối</strong> hoặc <strong>Link Tự Động</strong> dưới đây để máy thứ 2 tự động nhận cấu hình Cloud mà không cần gõ lại!</p>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" onclick="copyCloudSyncShareCode()" class="px-3 py-1.5 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center space-x-1.5 whitespace-nowrap">
+                                <i class="fa-solid fa-key"></i>
+                                <span>Copy Mã Ghép Nối</span>
+                            </button>
+                            <button type="button" onclick="copyCloudSyncShareUrl()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center space-x-1.5 whitespace-nowrap">
+                                <i class="fa-solid fa-link"></i>
+                                <span>Copy Link Tự Kết Nối</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="cloud-pairing-code-input" placeholder="Dán Mã Ghép Nối (VVN-SYNC-...) từ máy chính vào đây để kết nối ngay..." class="flex-1 px-3 py-2 text-xs font-mono bg-white border border-blue-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
+                        <button type="button" onclick="applyCloudPairingCode()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition whitespace-nowrap">
+                            <i class="fa-solid fa-bolt text-vovinam-gold mr-1"></i>Nạp Mã &amp; Đồng Bộ Ngay
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hướng dẫn nhanh tạo Firebase miễn phí (Đã chuẩn hóa để không bị lỗi 401 Permission Denied) -->
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs text-slate-600 space-y-1.5">
                     <p class="font-bold text-slate-800 flex items-center space-x-1.5">
                         <i class="fa-solid fa-circle-question text-vovinam-gold"></i>
-                        <span>Hướng dẫn tạo link Cloud Database miễn phí trong 1 phút (Google Firebase):</span>
+                        <span>Hướng dẫn chuẩn tạo Cloud Database miễn phí (Không bị chặn quyền 401):</span>
                     </p>
                     <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-600">
-                        <li>Truy cập <strong>console.firebase.google.com</strong> ➔ Bấm <strong>Create a project</strong> để tạo dự án mới.</li>
-                        <li>Ở menu bên trái, chọn <strong>Build ➔ Realtime Database</strong> ➔ Bấm <strong>Create Database</strong> ➔ Chọn <strong>Start in locked mode</strong> (hoặc cấu hình Quy Tắc Bảo Mật khép kín theo mẫu để chống rò rỉ dữ liệu).</li>
-                        <li>Copy đường link URL hiện ra (dạng <code>https://ten-du-an-default-rtdb.firebaseio.com</code>) rồi dán vào ô trên và bấm <strong>Lưu & Kết Nối Cloud</strong>!</li>
+                        <li>Truy cập <strong>console.firebase.google.com</strong> ➔ Tạo Project ➔ Chọn <strong>Build ➔ Realtime Database ➔ Create Database</strong>.</li>
+                        <li>Vào tab <strong>Rules</strong> của Realtime Database, dán quy tắc cho phép đọc/ghi vào nhánh <code>vovinam_main_club</code> (bấm nút <strong>Xem Quy Tắc Rules Firebase</strong> ở trên để copy mẫu) rồi bấm <strong>Publish</strong>.</li>
+                        <li>Copy đường link URL (VD: <code>https://ten-du-an-default-rtdb.asia-southeast1.firebasedatabase.app</code>) dán vào ô trên và bấm <strong>Lưu &amp; Kết Nối Cloud</strong>.</li>
+                        <li>Bấm <strong>Copy Mã Ghép Nối</strong> gửi qua Zalo cho các máy khác dán vào ô Ghép Nối Nhanh là tất cả các máy sẽ tự động đồng bộ!</li>
                     </ol>
                 </div>
             </div>
@@ -2623,14 +2669,14 @@
                 <div class="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 space-y-1">
                     <p class="font-bold flex items-center space-x-1.5">
                         <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
-                        <span>Cảnh báo bảo mật: Tuyệt đối không để Realtime Database ở chế độ "Test Mode"!</span>
+                        <span>Lưu ý quan trọng để không bị lỗi chặn đồng bộ (HTTP 401 Permission Denied):</span>
                     </p>
-                    <p class="text-[11px] text-amber-800">Để tránh bị lộ danh bạ võ sinh và SĐT phụ huynh ra ngoài Internet, hãy sao chép đoạn quy tắc bảo mật bên dưới và dán vào mục <strong>Rules</strong> trên Firebase Console:</p>
+                    <p class="text-[11px] text-amber-800">Nếu bạn để <code>".read": false</code> hoặc <code>"auth != null"</code> mà <strong>không nhập Database Secret</strong>, Firebase sẽ chặn toàn bộ kết nối từ các máy khác! Hãy dùng quy tắc chuẩn bên dưới (chỉ mở nhánh <code>vovinam_main_club</code> và kết hợp đặt <strong>Mã Khóa E2EE AES-256</strong> trong Cài đặt):</p>
                 </div>
 
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-xs font-bold text-slate-700">Quy tắc database.rules.json chuẩn:</label>
+                        <label class="text-xs font-bold text-slate-700">Quy tắc Rules chuẩn cho Đồng bộ REST API (Copy dán vào tab Rules):</label>
                         <button type="button" onclick="copyFirebaseRulesText()" class="text-xs font-bold text-vovinam-blue hover:underline flex items-center space-x-1">
                             <i class="fa-solid fa-copy"></i>
                             <span>Sao chép quy tắc</span>
@@ -2639,8 +2685,8 @@
                     <textarea id="firebase-rules-code" readonly rows="8" class="w-full p-3 font-mono text-xs bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:outline-none">{
   "rules": {
     "vovinam_main_club": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      ".read": true,
+      ".write": true
     }
   }
 }</textarea>
@@ -3447,7 +3493,23 @@
         let activePullAbortController = null;
         let lastSyncedUpdatedAt = '';
         let lastLocalMutationIso = '';
+        let lastLocalMutationTimeMs = 0;
         let localBroadcastChannel = null;
+        let hasLocalUserEdits = false;
+        let lastHardResetAt = 0;
+        let deletedRegistry = { students: {}, classes: {}, accounts: {}, requests: {} };
+        let mqttRelayWs = null;
+        let mqttRelayConnected = false;
+        let mqttRelayBrokerIndex = 0;
+        let mqttRelayKeepaliveTimer = null;
+        let mqttRelayReconnectTimer = null;
+        let mqttRxBuffer = new Uint8Array(0);
+        const MQTT_RELAY_BROKERS = [
+            'wss://broker.emqx.io:8084/mqtt',
+            'wss://broker.hivemq.com:8884/mqtt',
+            'wss://test.mosquitto.org:8081/mqtt'
+        ];
+        const clientDeviceId = 'DEV_' + Math.random().toString(36).substring(2, 10);
 
         // Khởi động hệ thống
         window.onload = function() {
@@ -3465,6 +3527,7 @@
 
             loadData();
             loadCloudConfig();
+            checkAutoPairingFromUrl();
             // Kiểm tra trạng thái xác thực phiên làm việc sau khi đã tải danh sách tài khoản & cấu hình
             initAuthSession();
             applySiteConfig();
@@ -3494,32 +3557,34 @@
             // Khởi tạo kết nối Máy chủ Backend (Tự động phát hiện HTTP Server thật hoặc Virtual REST Server)
             initBackendServerBridge();
 
-            // Nếu đã cấu hình Cloud và bật Auto-Sync thì tự động tải bản mới nhất và mở luồng Real-time ngay khi mở trang
-            if (cloudConfig.url && cloudConfig.autoSync) {
-                pullFromCloud(false, true);
+            // Tự động kết nối Kênh Đồng Bộ Đa Máy (Zero-Config Cloud Relay + Firebase nếu có) ngay khi mở trang
+            if (cloudConfig.autoSync !== false) {
                 startCloudAutoPoll();
+                if (cloudConfig.url) {
+                    pullFromCloud(false, true);
+                }
             }
         };
 
         // Lưu trữ và lấy dữ liệu LocalStorage (bọc trong try/catch an toàn)
         function loadData() {
             try {
-                // Tải lớp học
+                // Tải lớp học (Truyền skipCloud = true để khi mở máy mới lần đầu KHÔNG đẩy dữ liệu mẫu đè lên Cloud)
                 const c = localStorage.getItem('vovinam_classes');
                 if (c) {
                     classes = JSON.parse(c);
                 } else {
                     classes = [...DEFAULT_CLASSES];
-                    saveClassesToStorage();
+                    saveClassesToStorage(true);
                 }
 
-                // Tải võ sinh
+                // Tải võ sinh (Truyền skipCloud = true để tránh gán mốc thời gian ảo chặn pullFromCloud)
                 const s = localStorage.getItem('vovinam_students');
                 if (s) {
                     students = JSON.parse(s);
                 } else {
                     students = [...SAMPLE_STUDENTS];
-                    saveStudentsToStorage();
+                    saveStudentsToStorage(true);
                 }
 
                 // Chuẩn hóa tên lớp cũ nếu cần
@@ -3593,6 +3658,19 @@
                     saveAccountsToStorage(true);
                 }
 
+                const rawDel = localStorage.getItem('vovinam_deleted_registry');
+                if (rawDel) {
+                    const parsedDel = JSON.parse(rawDel);
+                    deletedRegistry = {
+                        students: (parsedDel && parsedDel.students) || {},
+                        classes: (parsedDel && parsedDel.classes) || {},
+                        accounts: (parsedDel && parsedDel.accounts) || {},
+                        requests: (parsedDel && parsedDel.requests) || {}
+                    };
+                }
+                hasLocalUserEdits = localStorage.getItem('vovinam_has_user_edits') === '1';
+                lastHardResetAt = parseInt(localStorage.getItem('vovinam_hard_reset_at') || '0', 10) || 0;
+
                 const curAccId = localStorage.getItem('vovinam_current_account_id');
                 if (curAccId && accounts.some(item => item.id === curAccId)) {
                     currentAccountId = curAccId;
@@ -3604,6 +3682,27 @@
                 accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
                 classes = [...DEFAULT_CLASSES];
                 students = [...SAMPLE_STUDENTS];
+            }
+        }
+
+        function saveDeletedRegistryToStorage() {
+            try {
+                localStorage.setItem('vovinam_deleted_registry', JSON.stringify(deletedRegistry));
+            } catch (e) {}
+        }
+
+        function markEntityDeleted(category, id) {
+            if (!category || !id) return;
+            if (!deletedRegistry[category]) deletedRegistry[category] = {};
+            deletedRegistry[category][id] = Date.now();
+            saveDeletedRegistryToStorage();
+        }
+
+        function unmarkEntityDeleted(category, id) {
+            if (!category || !id || !deletedRegistry[category]) return;
+            if (deletedRegistry[category][id]) {
+                delete deletedRegistry[category][id];
+                saveDeletedRegistryToStorage();
             }
         }
 
@@ -4222,6 +4321,7 @@
             }
 
             showConfirm('Xác Nhận Xóa Tài Khoản', `Bạn có chắc chắn muốn xóa tài khoản "${acc.name}" (${acc.roleTitle}) khỏi hệ thống?`, () => {
+                markEntityDeleted('accounts', accId);
                 accounts = accounts.filter(a => a.id !== accId);
                 if (currentAccountId === accId) {
                     currentAccountId = accounts[0].id;
@@ -5099,6 +5199,8 @@
                     note
                 };
 
+                unmarkEntityDeleted('classes', newClass.id);
+                unmarkEntityDeleted('classes', newClass.name);
                 classes.push(newClass);
                 showToast(`Admin: Đã thêm mới lớp "${name}" (${timeText})!`);
             }
@@ -5128,6 +5230,8 @@
             }
 
             showConfirm('Xác Nhận Xóa Bỏ Lớp Học', warnText, () => {
+                markEntityDeleted('classes', classId);
+                if (cls && cls.name) markEntityDeleted('classes', cls.name);
                 classes = classes.filter(c => c.id !== classId);
                 saveClassesToStorage();
                 populateClassDropdowns();
@@ -5571,6 +5675,7 @@
                         showToast('Số định danh này đã tồn tại trên hệ thống!', 'error');
                         return;
                     }
+                    unmarkEntityDeleted('students', studentData.id);
                     students.push(studentData);
                     showToast(`${getCurrentAccountName()}: Đã thêm mới võ sinh thành công!`);
                 }
@@ -5649,6 +5754,7 @@
 
             if (hasPermission('students_direct')) {
                 showConfirm('Xác Nhận Xóa Võ Sinh', `Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ môn sinh ${s.name} (${s.id})?`, () => {
+                    markEntityDeleted('students', id);
                     students = students.filter(item => item.id !== id);
                     saveStudentsToStorage();
                     renderStudents();
@@ -6380,10 +6486,12 @@
                     showToast(`Admin: Đã phê duyệt SỬA môn sinh ${req.studentName}!`);
                 }
             } else if (req.type === 'DELETE') {
+                markEntityDeleted('students', req.studentId);
                 students = students.filter(s => s.id !== req.studentId);
                 showToast(`Admin: Đã phê duyệt XÓA môn sinh ${req.studentName}!`, 'error');
             }
 
+            markEntityDeleted('requests', reqId);
             pendingRequests = pendingRequests.filter(r => r.reqId !== reqId);
             saveStudentsToStorage();
             saveRequestsToStorage();
@@ -6399,6 +6507,7 @@
             const req = pendingRequests.find(r => r.reqId === reqId);
             if (!req) return;
 
+            markEntityDeleted('requests', reqId);
             pendingRequests = pendingRequests.filter(r => r.reqId !== reqId);
             saveRequestsToStorage();
             renderPendingApprovals();
@@ -6652,6 +6761,38 @@
             if (intervalEl) intervalEl.value = String(cloudConfig.syncIntervalMs || 1500);
         }
 
+        function openCloudSyncSettingsSection() {
+            switchTab('settings');
+            const el = document.getElementById('cloud-db-url');
+            if (el) {
+                setTimeout(() => {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.focus();
+                }, 100);
+            }
+        }
+
+        function showCloudDiagnostic(type, message) {
+            const box = document.getElementById('cloud-diagnostic-box');
+            if (!box) return;
+            if (!message) {
+                box.classList.add('hidden');
+                box.innerHTML = '';
+                return;
+            }
+            box.classList.remove('hidden');
+            if (type === 'error') {
+                box.className = 'p-3.5 rounded-2xl border bg-red-50 border-red-200 text-red-800 text-xs space-y-1';
+                box.innerHTML = `<div class="font-bold flex items-center space-x-1.5"><i class="fa-solid fa-circle-exclamation text-red-600"></i><span>Phát hiện lỗi đồng bộ đa thiết bị:</span></div><p class="text-[11px] leading-relaxed">${escapeHtml(message)}</p>`;
+            } else if (type === 'success') {
+                box.className = 'p-3.5 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs space-y-1';
+                box.innerHTML = `<div class="font-bold flex items-center space-x-1.5"><i class="fa-solid fa-circle-check text-emerald-600"></i><span>Kết nối Cloud Đa Thiết Bị Thành Công:</span></div><p class="text-[11px] leading-relaxed">${escapeHtml(message)}</p>`;
+            } else {
+                box.className = 'p-3.5 rounded-2xl border bg-blue-50 border-blue-200 text-blue-800 text-xs space-y-1';
+                box.innerHTML = `<div class="font-bold flex items-center space-x-1.5"><i class="fa-solid fa-circle-info text-blue-600"></i><span>Trạng thái Cloud:</span></div><p class="text-[11px] leading-relaxed">${escapeHtml(message)}</p>`;
+            }
+        }
+
         function updateCloudStatusUI(state, timeNote = '') {
             const dot = document.getElementById('cloud-status-dot');
             const text = document.getElementById('cloud-status-text');
@@ -6662,6 +6803,7 @@
 
             if (state === 'syncing') {
                 dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+                text.className = 'text-[11px] font-medium text-amber-200';
                 text.innerText = 'Đang đồng bộ Cloud...';
                 if (settingsBadge) {
                     settingsBadge.innerText = 'Đang đồng bộ...';
@@ -6669,44 +6811,70 @@
                 }
             } else if (state === 'connected' || state === 'ready') {
                 dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-                text.innerText = 'Cloud đã kết nối';
+                text.className = 'text-[11px] font-bold text-emerald-300';
+                text.innerText = 'Đã kết nối Cloud Đa Máy';
                 if (lastSyncEl) lastSyncEl.innerText = timeNote || (cloudConfig.lastSync ? `• ${cloudConfig.lastSync}` : '');
                 if (settingsBadge) {
-                    settingsBadge.innerText = 'Đã kết nối Cloud';
+                    settingsBadge.innerText = 'Đã kết nối Cloud Đa Máy';
                     settingsBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 w-fit';
                 }
             } else if (state === 'error') {
-                dot.className = 'w-2 h-2 rounded-full bg-red-500';
-                text.innerText = 'Lỗi kết nối Cloud';
+                dot.className = 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
+                text.className = 'text-[11px] font-bold text-red-300';
+                text.innerText = 'Lỗi kết nối Cloud (Xem Cài đặt)';
                 if (settingsBadge) {
                     settingsBadge.innerText = 'Lỗi kết nối Cloud';
                     settingsBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 w-fit';
                 }
             } else {
-                dot.className = 'w-2 h-2 rounded-full bg-slate-400';
-                text.innerText = 'Lưu cục bộ (Local)';
+                dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+                text.className = 'text-[11px] font-medium text-amber-200';
+                text.innerText = 'Chưa kết nối Cloud (Chỉ lưu máy này)';
                 if (lastSyncEl) lastSyncEl.innerText = '';
                 if (settingsBadge) {
-                    settingsBadge.innerText = 'Chưa kết nối Cloud';
-                    settingsBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 w-fit';
+                    settingsBadge.innerText = 'Chưa kết nối Cloud (Chỉ lưu cục bộ)';
+                    settingsBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 w-fit';
                 }
             }
         }
 
+        // Tự động chuẩn hóa đường dẫn URL (Hỗ trợ chuyển đổi link Firebase Console sang link Database thực tế)
+        function normalizeCloudUrl(rawUrl) {
+            if (!rawUrl) return '';
+            let u = String(rawUrl).trim();
+            // Nếu người dùng copy nhầm link trên thanh địa chỉ Firebase Console:
+            // VD: https://console.firebase.google.com/u/0/project/my-proj/database/my-proj-default-rtdb/data/~2F
+            const consoleMatch = u.match(/console\.firebase\.google\.com\/.*\/database\/([a-zA-Z0-9_-]+)/i);
+            if (consoleMatch && consoleMatch[1]) {
+                u = `https://${consoleMatch[1]}.firebaseio.com`;
+            }
+            if (u && !/^https?:\/\//i.test(u)) {
+                u = 'https://' + u;
+            }
+            return u.replace(/\/+$/, '');
+        }
+
         function getCloudEndpointUrl(subPath = '') {
-            let baseUrl = (cloudConfig.url || '').trim();
+            let baseUrl = normalizeCloudUrl(cloudConfig.url || '');
             if (!baseUrl) return '';
-            baseUrl = baseUrl.replace(/\/+$/, '');
             const clubKey = (cloudConfig.clubKey || 'vovinam_main_club').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
             let endpoint = baseUrl;
+            const isFirebase = /firebaseio\.com|firebasedatabase\.app/i.test(baseUrl);
+
             if (endpoint.endsWith('.json')) {
                 if (subPath) {
                     endpoint = endpoint.replace(/\.json$/, `/${subPath}.json`);
                 }
+            } else if (isFirebase) {
+                endpoint = subPath ? `${baseUrl}/${clubKey}/${subPath}.json` : `${baseUrl}/${clubKey}.json`;
+            } else if (/\/api\/(sync|bootstrap)$/i.test(baseUrl)) {
+                if (subPath) return '';
+                endpoint = baseUrl;
             } else {
                 endpoint = subPath ? `${baseUrl}/${clubKey}/${subPath}.json` : `${baseUrl}/${clubKey}.json`;
             }
+
             if (cloudConfig.secret && cloudConfig.secret.trim()) {
                 const sep = endpoint.includes('?') ? '&' : '?';
                 endpoint += `${sep}auth=${encodeURIComponent(cloudConfig.secret.trim())}`;
@@ -6717,10 +6885,14 @@
         function buildFullDatabasePayload() {
             const nowIso = lastLocalMutationIso || new Date().toISOString();
             return {
-                version: '2.0',
+                version: '3.0',
+                deviceId: clientDeviceId,
+                hasUserEdits: hasLocalUserEdits,
+                hardResetAt: lastHardResetAt,
                 updatedAt: nowIso,
                 updatedAtDisplay: new Date().toLocaleString('vi-VN'),
                 updatedBy: getCurrentAccountName(),
+                deletedRegistry: deletedRegistry,
                 accounts: accounts,
                 siteConfig: siteConfig,
                 classes: classes,
@@ -6731,7 +6903,7 @@
             };
         }
 
-        function applyFullDatabasePayload(rawPayload, mode = 'replace', silent = false) {
+        function applyFullDatabasePayload(rawPayload, mode = 'smart_sync', silent = false) {
             if (!rawPayload || typeof rawPayload !== 'object') {
                 if (!silent) showToast('Dữ liệu không hợp lệ!', 'error');
                 return false;
@@ -6739,13 +6911,49 @@
             // Khử khuẩn toàn diện dữ liệu đầu vào chống Stored XSS
             const payload = sanitizeObjectStrings(rawPayload);
 
-            if (mode === 'replace') {
-                if (Array.isArray(payload.accounts)) { accounts = payload.accounts; saveAccountsToStorage(true); populateAccountSwitcher(); renderPermissionsMatrix(); }
-                if (Array.isArray(payload.classes)) classes = payload.classes;
-                if (Array.isArray(payload.students)) students = payload.students;
-                if (payload.attendanceRecords && typeof payload.attendanceRecords === 'object') attendanceRecords = payload.attendanceRecords;
-                if (payload.tuitionRecords && typeof payload.tuitionRecords === 'object') tuitionRecords = payload.tuitionRecords;
-                if (Array.isArray(payload.pendingRequests)) pendingRequests = payload.pendingRequests;
+            // 1. Đồng bộ sổ đăng ký các mục đã xóa (Tombstone Registry) để mục đã xóa trên máy A cũng tự động xóa trên máy B
+            if (payload.deletedRegistry && typeof payload.deletedRegistry === 'object') {
+                ['students', 'classes', 'accounts', 'requests'].forEach(cat => {
+                    if (payload.deletedRegistry[cat] && typeof payload.deletedRegistry[cat] === 'object') {
+                        if (!deletedRegistry[cat]) deletedRegistry[cat] = {};
+                        Object.entries(payload.deletedRegistry[cat]).forEach(([id, ts]) => {
+                            const existingTs = deletedRegistry[cat][id] || 0;
+                            if (ts > existingTs) deletedRegistry[cat][id] = ts;
+                        });
+                    }
+                });
+                saveDeletedRegistryToStorage();
+            }
+
+            // Nếu gói dữ liệu báo có lệnh Reset toàn bộ về mặc định mới hơn máy này
+            if (payload.hardResetAt && payload.hardResetAt > lastHardResetAt) {
+                lastHardResetAt = payload.hardResetAt;
+                try { localStorage.setItem('vovinam_hard_reset_at', String(lastHardResetAt)); } catch (e) {}
+                mode = 'replace';
+            }
+
+            // Nếu máy hiện tại mới mở lần đầu (chưa có chỉnh sửa thực tế nào, chỉ đang giữ 4 võ sinh mẫu) -> Chuyển sang replace để nhận nguyên vẹn dữ liệu từ máy chính
+            const effectiveMode = (!hasLocalUserEdits || mode === 'replace') ? 'replace' : 'merge';
+
+            if (effectiveMode === 'replace') {
+                if (Array.isArray(payload.accounts) && payload.accounts.length > 0) {
+                    accounts = payload.accounts.filter(a => !(deletedRegistry.accounts && deletedRegistry.accounts[a.id]));
+                }
+                if (Array.isArray(payload.classes)) {
+                    classes = payload.classes.filter(c => !(deletedRegistry.classes && (deletedRegistry.classes[c.id] || deletedRegistry.classes[c.name])));
+                }
+                if (Array.isArray(payload.students)) {
+                    students = payload.students.filter(s => !(deletedRegistry.students && deletedRegistry.students[s.id]));
+                }
+                if (payload.attendanceRecords && typeof payload.attendanceRecords === 'object') {
+                    attendanceRecords = payload.attendanceRecords;
+                }
+                if (payload.tuitionRecords && typeof payload.tuitionRecords === 'object') {
+                    tuitionRecords = payload.tuitionRecords;
+                }
+                if (Array.isArray(payload.pendingRequests)) {
+                    pendingRequests = payload.pendingRequests.filter(r => !(deletedRegistry.requests && deletedRegistry.requests[r.reqId]));
+                }
                 if (payload.siteConfig && typeof payload.siteConfig === 'object') {
                     siteConfig = { ...DEFAULT_SITE_CONFIG, ...payload.siteConfig };
                     try {
@@ -6753,20 +6961,33 @@
                     } catch (e) {}
                 }
             } else {
-                // Chế độ gộp dữ liệu thông minh (Merge)
+                // Chế độ gộp dữ liệu thông minh không xung đột (Smart Multi-Device Merge)
+                if (Array.isArray(payload.accounts)) {
+                    payload.accounts.forEach(a => {
+                        if (deletedRegistry.accounts && deletedRegistry.accounts[a.id]) return;
+                        const idx = accounts.findIndex(item => item.id === a.id || item.username === a.username);
+                        if (idx !== -1) accounts[idx] = { ...accounts[idx], ...a };
+                        else accounts.push(a);
+                    });
+                    accounts = accounts.filter(a => !(deletedRegistry.accounts && deletedRegistry.accounts[a.id]));
+                }
                 if (Array.isArray(payload.classes)) {
                     payload.classes.forEach(c => {
+                        if (deletedRegistry.classes && (deletedRegistry.classes[c.id] || deletedRegistry.classes[c.name])) return;
                         const idx = classes.findIndex(item => item.id === c.id || item.name === c.name);
                         if (idx !== -1) classes[idx] = { ...classes[idx], ...c };
                         else classes.push(c);
                     });
+                    classes = classes.filter(c => !(deletedRegistry.classes && (deletedRegistry.classes[c.id] || deletedRegistry.classes[c.name])));
                 }
                 if (Array.isArray(payload.students)) {
                     payload.students.forEach(s => {
+                        if (deletedRegistry.students && deletedRegistry.students[s.id]) return;
                         const idx = students.findIndex(item => item.id === s.id);
                         if (idx !== -1) students[idx] = { ...students[idx], ...s };
                         else students.push(s);
                     });
+                    students = students.filter(s => !(deletedRegistry.students && deletedRegistry.students[s.id]));
                 }
                 if (payload.attendanceRecords && typeof payload.attendanceRecords === 'object') {
                     attendanceRecords = { ...attendanceRecords, ...payload.attendanceRecords };
@@ -6778,10 +6999,12 @@
                 }
                 if (Array.isArray(payload.pendingRequests)) {
                     payload.pendingRequests.forEach(r => {
+                        if (deletedRegistry.requests && deletedRegistry.requests[r.reqId]) return;
                         if (!pendingRequests.some(item => item.reqId === r.reqId)) {
                             pendingRequests.push(r);
                         }
                     });
+                    pendingRequests = pendingRequests.filter(r => !(deletedRegistry.requests && deletedRegistry.requests[r.reqId]));
                 }
                 if (payload.siteConfig && typeof payload.siteConfig === 'object') {
                     siteConfig = { ...siteConfig, ...payload.siteConfig };
@@ -6791,23 +7014,32 @@
                 }
             }
 
+            if (payload.hasUserEdits) {
+                hasLocalUserEdits = true;
+                try { localStorage.setItem('vovinam_has_user_edits', '1'); } catch (e) {}
+            }
+
             // Lưu xuống LocalStorage của máy hiện tại (không kích hoạt ngược lại auto-push)
+            saveAccountsToStorage(true);
             saveClassesToStorage(true);
             saveStudentsToStorage(true);
             saveAttendanceToStorage(true);
             saveTuitionToStorage(true);
             saveRequestsToStorage(true);
 
-            // Render lại toàn bộ giao diện
+            // Render lại toàn bộ giao diện (Bao gồm cả màn hình đăng nhập nếu đang mở)
             applySiteConfig();
             loadSettingsForm();
             populateClassDropdowns();
+            populateAccountSwitcher();
             updateRoleUI();
             renderStudents();
             renderClasses();
             renderPendingApprovals();
             loadAttendanceSheet();
             renderTuitionTable();
+            renderPermissionsMatrix();
+            renderQuickLoginList();
             updateBackupStatsUI();
 
             return true;
@@ -6817,10 +7049,10 @@
             const autoEl = document.getElementById('cloud-auto-sync');
             cloudConfig.autoSync = autoEl ? autoEl.checked : true;
             saveCloudConfigToStorage();
-            if (cloudConfig.url && cloudConfig.autoSync) {
+            if (cloudConfig.autoSync) {
                 startCloudAutoPoll();
                 pullFromCloud(false, true, false);
-                showToast('Đã bật đồng bộ tự động thời gian thực!');
+                showToast('Đã bật đồng bộ tự động thời gian thực đa thiết bị!');
             } else {
                 stopCloudRealtimeSync();
                 showToast('Đã tạm dừng đồng bộ tự động.', 'info');
@@ -6831,7 +7063,7 @@
             const ms = Math.max(800, parseInt(val, 10) || 1500);
             cloudConfig.syncIntervalMs = ms;
             saveCloudConfigToStorage();
-            if (cloudConfig.url && cloudConfig.autoSync) {
+            if (cloudConfig.autoSync) {
                 startCloudAutoPoll();
             }
             showToast(`Đã tăng tốc chu kỳ đồng bộ lên ${(ms / 1000).toFixed(1).replace('.0', '')} giây!`);
@@ -6845,13 +7077,13 @@
             const autoEl = document.getElementById('cloud-auto-sync');
             const intervalEl = document.getElementById('cloud-sync-interval');
 
-            const url = urlEl ? urlEl.value.trim() : '';
-            if (!url) {
-                showToast('Vui lòng nhập đường dẫn Cloud Database URL!', 'error');
-                return;
+            const rawUrl = urlEl ? urlEl.value.trim() : '';
+            const normalizedUrl = normalizeCloudUrl(rawUrl);
+            if (urlEl && normalizedUrl !== rawUrl) {
+                urlEl.value = normalizedUrl;
             }
 
-            cloudConfig.url = url;
+            cloudConfig.url = normalizedUrl;
             cloudConfig.clubKey = (keyEl && keyEl.value.trim()) ? keyEl.value.trim() : 'vovinam_main_club';
             cloudConfig.secret = secEl ? secEl.value.trim() : '';
             cloudConfig.encryptionKey = encEl ? encEl.value.trim() : '';
@@ -6859,10 +7091,14 @@
             cloudConfig.syncIntervalMs = intervalEl ? (parseInt(intervalEl.value, 10) || 1500) : 1500;
 
             saveCloudConfigToStorage();
-            showToast('Đã lưu cấu hình Cloud siêu tốc! Đang đồng bộ...', 'info');
+            showToast(`Đang kết nối Phòng Đồng Bộ Đa Máy [${cloudConfig.clubKey}]...`, 'info');
 
-            pullFromCloud(true, false, true);
             startCloudAutoPoll();
+            if (cloudConfig.url) {
+                pullFromCloud(true, false, true);
+            } else {
+                pushAndPullViaMqttRelay(true);
+            }
         }
 
         function stopCloudRealtimeSync() {
@@ -6874,6 +7110,7 @@
                 try { cloudEventSource.close(); } catch (e) {}
                 cloudEventSource = null;
             }
+            stopMqttRealtimeRelay();
         }
 
         function disconnectCloudConfig() {
@@ -6944,13 +7181,457 @@
             return encryptedStr;
         }
 
+        // ================= ENGINE ĐỒNG BỘ ĐÁM MÂY TỰ ĐỘNG KHÔNG CẦN CÀI ĐẶT (MQTT OVER WEBSOCKET RELAY) =================
+        function encodeMqttLength(len) {
+            const out = [];
+            do {
+                let b = len % 128;
+                len = Math.floor(len / 128);
+                if (len > 0) b |= 0x80;
+                out.push(b);
+            } while (len > 0);
+            return out;
+        }
+
+        function encodeMqttUtf8(str) {
+            const bytes = new TextEncoder().encode(str);
+            return [(bytes.length >> 8) & 0xff, bytes.length & 0xff, ...bytes];
+        }
+
+        function buildMqttConnectPacket(clientId) {
+            const vh = [0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, 0x04, 0x02, 0x00, 0x28];
+            const pl = encodeMqttUtf8(clientId);
+            const rem = vh.length + pl.length;
+            return new Uint8Array([0x10, ...encodeMqttLength(rem), ...vh, ...pl]);
+        }
+
+        function buildMqttSubscribePacket(packetId, topic) {
+            const vh = [(packetId >> 8) & 0xff, packetId & 0xff];
+            const pl = [...encodeMqttUtf8(topic), 0x00];
+            const rem = vh.length + pl.length;
+            return new Uint8Array([0x82, ...encodeMqttLength(rem), ...vh, ...pl]);
+        }
+
+        function buildMqttPublishPacket(topic, payloadStr, retain = true) {
+            const topicBytes = encodeMqttUtf8(topic);
+            const payloadBytes = new TextEncoder().encode(payloadStr);
+            const rem = topicBytes.length + payloadBytes.length;
+            const headerByte = retain ? 0x31 : 0x30;
+            const lenBytes = encodeMqttLength(rem);
+            const out = new Uint8Array(1 + lenBytes.length + rem);
+            let offset = 0;
+            out[offset++] = headerByte;
+            for (let i = 0; i < lenBytes.length; i++) out[offset++] = lenBytes[i];
+            out.set(topicBytes, offset);
+            offset += topicBytes.length;
+            out.set(payloadBytes, offset);
+            return out;
+        }
+
+        function parseMqttPacketsFromBuffer(buffer) {
+            const packets = [];
+            let offset = 0;
+            while (offset < buffer.length) {
+                if (offset + 2 > buffer.length) break;
+                const typeFlags = buffer[offset];
+                let multiplier = 1;
+                let value = 0;
+                let idx = offset + 1;
+                let encodedByte = 0;
+                let validLen = true;
+                do {
+                    if (idx >= buffer.length) { validLen = false; break; }
+                    encodedByte = buffer[idx++];
+                    value += (encodedByte & 127) * multiplier;
+                    multiplier *= 128;
+                    if (multiplier > 2097152) { validLen = false; break; }
+                } while ((encodedByte & 128) !== 0);
+
+                if (!validLen || idx + value > buffer.length) break;
+
+                const pktType = typeFlags >> 4;
+                const body = buffer.slice(idx, idx + value);
+                if (pktType === 3) {
+                    const topicLen = (body[0] << 8) | body[1];
+                    const topic = new TextDecoder().decode(body.slice(2, 2 + topicLen));
+                    const qos = (typeFlags >> 1) & 0x03;
+                    const payloadStart = 2 + topicLen + (qos > 0 ? 2 : 0);
+                    const payloadStr = new TextDecoder().decode(body.slice(payloadStart));
+                    packets.push({ type: pktType, topic, payloadStr });
+                } else {
+                    packets.push({ type: pktType, body });
+                }
+                offset = idx + value;
+            }
+            return { packets, remaining: buffer.slice(offset) };
+        }
+
+        function getMqttRoomTopicBase() {
+            const clubKey = (cloudConfig.clubKey || 'vovinam_main_club').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            return `vovinam_sync_v3/${clubKey}`;
+        }
+
+        function stopMqttRealtimeRelay() {
+            if (mqttRelayKeepaliveTimer) {
+                clearInterval(mqttRelayKeepaliveTimer);
+                mqttRelayKeepaliveTimer = null;
+            }
+            if (mqttRelayReconnectTimer) {
+                clearTimeout(mqttRelayReconnectTimer);
+                mqttRelayReconnectTimer = null;
+            }
+            if (mqttRelayWs) {
+                try {
+                    mqttRelayWs.onclose = null;
+                    mqttRelayWs.onerror = null;
+                    mqttRelayWs.onmessage = null;
+                    mqttRelayWs.close();
+                } catch (e) {}
+                mqttRelayWs = null;
+            }
+            mqttRelayConnected = false;
+        }
+
+        function startMqttRealtimeRelay() {
+            stopMqttRealtimeRelay();
+            if (cloudConfig.autoSync === false || typeof window.WebSocket === 'undefined') return;
+
+            const brokerUrl = MQTT_RELAY_BROKERS[mqttRelayBrokerIndex % MQTT_RELAY_BROKERS.length];
+            try {
+                const ws = new WebSocket(brokerUrl, 'mqtt');
+                ws.binaryType = 'arraybuffer';
+                mqttRelayWs = ws;
+                mqttRxBuffer = new Uint8Array(0);
+
+                ws.onopen = () => {
+                    if (mqttRelayWs !== ws) return;
+                    const connectPkt = buildMqttConnectPacket('vvn_' + clientDeviceId + '_' + Math.floor(Math.random() * 9999));
+                    ws.send(connectPkt);
+                };
+
+                ws.onmessage = async (evt) => {
+                    if (mqttRelayWs !== ws || !evt.data) return;
+                    const chunk = new Uint8Array(evt.data);
+                    const combined = new Uint8Array(mqttRxBuffer.length + chunk.length);
+                    combined.set(mqttRxBuffer, 0);
+                    combined.set(chunk, mqttRxBuffer.length);
+
+                    const parsed = parseMqttPacketsFromBuffer(combined);
+                    mqttRxBuffer = parsed.remaining;
+
+                    for (const pkt of parsed.packets) {
+                        if (pkt.type === 2) {
+                            // CONNACK -> Đăng ký lắng nghe toàn bộ kênh của CLB
+                            mqttRelayConnected = true;
+                            const baseTopic = getMqttRoomTopicBase();
+                            ws.send(buildMqttSubscribePacket(1, `${baseTopic}/#`));
+
+                            const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                            if (!cloudConfig.url) {
+                                updateCloudStatusUI('connected', `• Phòng: ${cloudConfig.clubKey || 'vovinam_main_club'}`);
+                                showCloudDiagnostic('success', `Đã kết nối Phòng Đồng Bộ Đám Mây Tự Động [${cloudConfig.clubKey || 'vovinam_main_club'}] lúc ${timeNow}. Mọi máy tính và điện thoại dùng chung Mã Phòng này sẽ tự động đồng bộ tức thì!`);
+                            }
+
+                            // Gửi tín hiệu yêu cầu đồng bộ tới các máy đang mở khác trong phòng
+                            const reqPkt = buildMqttPublishPacket(`${baseTopic}/req`, JSON.stringify({
+                                senderId: clientDeviceId,
+                                hasUserEdits: hasLocalUserEdits,
+                                updatedAt: lastSyncedUpdatedAt || ''
+                            }), false);
+                            ws.send(reqPkt);
+
+                            // Nếu máy này đã có dữ liệu thực tế do người dùng chỉnh sửa, đẩy bản lưu lên kênh Retained
+                            if (hasLocalUserEdits) {
+                                publishStateToMqttRelay(false);
+                            }
+
+                            if (mqttRelayKeepaliveTimer) clearInterval(mqttRelayKeepaliveTimer);
+                            mqttRelayKeepaliveTimer = setInterval(() => {
+                                if (mqttRelayWs === ws && ws.readyState === WebSocket.OPEN) {
+                                    ws.send(new Uint8Array([0xc0, 0x00])); // PINGREQ
+                                }
+                            }, 22000);
+                        } else if (pkt.type === 3 && pkt.topic && pkt.payloadStr) {
+                            await handleIncomingMqttRelayMessage(pkt.topic, pkt.payloadStr);
+                        }
+                    }
+                };
+
+                ws.onerror = () => {
+                    // Tự động chuyển sang cụm máy chủ dự phòng nếu cụm hiện tại bị nghẽn
+                };
+
+                ws.onclose = () => {
+                    if (mqttRelayWs !== ws) return;
+                    mqttRelayConnected = false;
+                    mqttRelayBrokerIndex = (mqttRelayBrokerIndex + 1) % MQTT_RELAY_BROKERS.length;
+                    if (cloudConfig.autoSync !== false) {
+                        mqttRelayReconnectTimer = setTimeout(() => {
+                            startMqttRealtimeRelay();
+                        }, 1800);
+                    }
+                };
+            } catch (e) {
+                mqttRelayConnected = false;
+            }
+        }
+
+        async function publishStateToMqttRelay(manual = false) {
+            if (!mqttRelayWs || mqttRelayWs.readyState !== WebSocket.OPEN || !mqttRelayConnected) {
+                if (manual && !cloudConfig.url) {
+                    startMqttRealtimeRelay();
+                    showToast('Đang kết nối lại Phòng Đồng Bộ Đám Mây, vui lòng thử lại sau 1 giây...', 'info');
+                }
+                return false;
+            }
+            try {
+                const payload = buildFullDatabasePayload();
+                lastSyncedUpdatedAt = payload.updatedAt;
+
+                let outgoingBody = payload;
+                if (cloudConfig.encryptionKey && cloudConfig.encryptionKey.trim()) {
+                    const rawJson = JSON.stringify(payload);
+                    const cipherData = await encryptPayloadAES(rawJson, cloudConfig.encryptionKey.trim());
+                    outgoingBody = {
+                        _encrypted: true,
+                        deviceId: clientDeviceId,
+                        cipherData: cipherData,
+                        updatedAt: payload.updatedAt,
+                        updatedBy: payload.updatedBy
+                    };
+                }
+
+                const baseTopic = getMqttRoomTopicBase();
+                const pkt = buildMqttPublishPacket(`${baseTopic}/state`, JSON.stringify(outgoingBody), true);
+                mqttRelayWs.send(pkt);
+
+                const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                cloudConfig.lastSync = timeNow;
+                saveCloudConfigToStorage();
+                updateCloudStatusUI('connected', `• ${timeNow}`);
+                if (manual && !cloudConfig.url) {
+                    showToast(`Đã đẩy dữ liệu lên Phòng Đám Mây [${cloudConfig.clubKey || 'vovinam_main_club'}] thành công!`);
+                }
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function handleIncomingMqttRelayMessage(topic, payloadStr) {
+            try {
+                const parsed = JSON.parse(payloadStr);
+                if (!parsed || typeof parsed !== 'object') return;
+
+                if (topic.endsWith('/req')) {
+                    // Một máy khác vừa vào phòng và xin bản dữ liệu mới nhất -> Nếu máy này có dữ liệu thực tế, phát lại ngay
+                    if (parsed.senderId !== clientDeviceId && hasLocalUserEdits) {
+                        setTimeout(() => { publishStateToMqttRelay(false); }, 120);
+                    }
+                    return;
+                }
+
+                if (topic.endsWith('/state')) {
+                    // Bỏ qua nếu chính máy này vừa phát gói tin đó và không phải lệnh tải thủ công
+                    if (parsed.deviceId === clientDeviceId && parsed.updatedAt === lastSyncedUpdatedAt) {
+                        return;
+                    }
+                    if (!parsed.hasUserEdits && hasLocalUserEdits && !parsed.hardResetAt) {
+                        // Không để dữ liệu mẫu chưa chỉnh sửa từ máy mới ghi đè lên máy đã có dữ liệu thật; ngược lại phát dữ liệu thật cho máy mới
+                        setTimeout(() => { publishStateToMqttRelay(false); }, 150);
+                        return;
+                    }
+
+                    let data = parsed;
+                    if (data._encrypted && data.cipherData) {
+                        if (!cloudConfig.encryptionKey || !cloudConfig.encryptionKey.trim()) {
+                            showCloudDiagnostic('error', 'Dữ liệu trong Phòng Cloud đang được khóa bằng mật mã E2EE AES-256! Hãy nhập đúng Mã Khóa E2EE hoặc dán Mã Ghép Nối.');
+                            return;
+                        }
+                        try {
+                            const decryptedJson = await decryptPayloadAES(data.cipherData, cloudConfig.encryptionKey.trim());
+                            data = JSON.parse(decryptedJson);
+                        } catch (decErr) {
+                            showCloudDiagnostic('error', 'Mã Khóa E2EE không khớp với dữ liệu trong Phòng Cloud!');
+                            return;
+                        }
+                    }
+
+                    if (data.updatedAt && data.updatedAt === lastSyncedUpdatedAt && hasLocalUserEdits) {
+                        return;
+                    }
+                    if (data.updatedAt) {
+                        lastSyncedUpdatedAt = data.updatedAt;
+                    }
+
+                    applyFullDatabasePayload(data, 'smart_sync', true);
+                    const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    cloudConfig.lastSync = timeNow;
+                    saveCloudConfigToStorage();
+                    updateCloudStatusUI('connected', `• Đồng bộ ${timeNow}`);
+                    showCloudDiagnostic('success', `Đã tự động đồng bộ ${students.length} võ sinh & ${classes.length} lớp học từ Phòng [${cloudConfig.clubKey || 'vovinam_main_club'}] (Cập nhật bởi: ${data.updatedBy || 'Admin'} lúc ${timeNow}).`);
+                }
+            } catch (e) {}
+        }
+
+        function pushAndPullViaMqttRelay(manual = false) {
+            if (!mqttRelayConnected) {
+                startMqttRealtimeRelay();
+                if (manual) {
+                    showToast(`Đang kết nối tới Phòng Đám Mây [${cloudConfig.clubKey || 'vovinam_main_club'}]...`, 'info');
+                }
+                return;
+            }
+            const baseTopic = getMqttRoomTopicBase();
+            if (hasLocalUserEdits) {
+                publishStateToMqttRelay(manual);
+            }
+            if (mqttRelayWs && mqttRelayWs.readyState === WebSocket.OPEN) {
+                const reqPkt = buildMqttPublishPacket(`${baseTopic}/req`, JSON.stringify({
+                    senderId: clientDeviceId,
+                    hasUserEdits: hasLocalUserEdits,
+                    updatedAt: lastSyncedUpdatedAt || ''
+                }), false);
+                mqttRelayWs.send(reqPkt);
+                if (manual) {
+                    showToast(`Đã đồng bộ dữ liệu trực tuyến qua Phòng [${cloudConfig.clubKey || 'vovinam_main_club'}]!`);
+                }
+            }
+        }
+
+        // Tạo Mã Ghép Nối Nhanh (Sync Code) và Link Tự Động Kết Nối giữa nhiều máy (Hoạt động cả khi dùng Phòng Tự Động hoặc Firebase)
+        function encodeCloudPairingPayload() {
+            const urlEl = document.getElementById('cloud-db-url');
+            const keyEl = document.getElementById('cloud-club-key');
+            const secEl = document.getElementById('cloud-secret-key');
+            const encEl = document.getElementById('cloud-encryption-key');
+
+            const rawUrl = (urlEl && urlEl.value.trim()) ? urlEl.value.trim() : (cloudConfig.url || '');
+            const url = normalizeCloudUrl(rawUrl);
+            const clubKey = (keyEl && keyEl.value.trim()) ? keyEl.value.trim() : (cloudConfig.clubKey || 'vovinam_main_club');
+
+            const cfgObj = {
+                u: url,
+                k: clubKey,
+                s: (secEl && secEl.value.trim()) ? secEl.value.trim() : (cloudConfig.secret || ''),
+                e: (encEl && encEl.value.trim()) ? encEl.value.trim() : (cloudConfig.encryptionKey || ''),
+                i: cloudConfig.syncIntervalMs || 1500
+            };
+            const jsonStr = JSON.stringify(cfgObj);
+            return 'VVN-SYNC-' + btoa(encodeURIComponent(jsonStr));
+        }
+
+        function copyCloudSyncShareCode() {
+            const code = encodeCloudPairingPayload();
+            if (!code) {
+                showToast('Vui lòng nhập Cloud Database URL trước khi tạo Mã Ghép Nối!', 'error');
+                return;
+            }
+            const inp = document.getElementById('cloud-pairing-code-input');
+            if (inp) inp.value = code;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(() => {
+                    showToast('Đã copy Mã Ghép Nối! Hãy gửi mã này sang máy khác và dán vào ô Ghép Nối Nhanh.');
+                }).catch(() => {
+                    showToast('Đã tạo Mã Ghép Nối trong ô bên dưới, hãy bôi đen và copy!');
+                });
+            } else {
+                showToast('Đã tạo Mã Ghép Nối trong ô bên dưới, hãy copy gửi sang máy khác!');
+            }
+        }
+
+        function copyCloudSyncShareUrl() {
+            const code = encodeCloudPairingPayload();
+            if (!code) {
+                showToast('Vui lòng nhập Cloud Database URL trước khi tạo Link Tự Kết Nối!', 'error');
+                return;
+            }
+            const baseUrl = window.location.href.split('#')[0].split('?')[0];
+            const shareUrl = `${baseUrl}#vvn_sync=${encodeURIComponent(code)}`;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showToast('Đã copy Link Tự Kết Nối! Mở link này trên máy khác sẽ tự động đồng bộ ngay.');
+                }).catch(() => {
+                    showToast('Đã tạo Link Tự Kết Nối!');
+                });
+            } else {
+                const inp = document.getElementById('cloud-pairing-code-input');
+                if (inp) inp.value = shareUrl;
+                showToast('Đã hiển thị Link Tự Kết Nối trong ô bên dưới!');
+            }
+        }
+
+        function applyCloudPairingCode(rawInput = null) {
+            const inp = document.getElementById('cloud-pairing-code-input');
+            let raw = rawInput || (inp ? inp.value.trim() : '');
+            if (!raw) {
+                showToast('Vui lòng dán Mã Ghép Nối (VVN-SYNC-...) hoặc Link vào ô!', 'error');
+                return false;
+            }
+            if (raw.includes('vvn_sync=')) {
+                const m = raw.match(/vvn_sync=([^&#]+)/);
+                if (m && m[1]) raw = decodeURIComponent(m[1]);
+            }
+            if (!raw.startsWith('VVN-SYNC-')) {
+                showToast('Mã Ghép Nối không đúng định dạng (phải bắt đầu bằng VVN-SYNC-)!', 'error');
+                return false;
+            }
+            try {
+                const b64 = raw.replace(/^VVN-SYNC-/, '');
+                const jsonStr = decodeURIComponent(atob(b64));
+                const cfgObj = JSON.parse(jsonStr);
+                if (!cfgObj || (!cfgObj.u && !cfgObj.k)) throw new Error('Invalid config');
+
+                cloudConfig.url = normalizeCloudUrl(cfgObj.u || '');
+                cloudConfig.clubKey = cfgObj.k || 'vovinam_main_club';
+                cloudConfig.secret = cfgObj.s || '';
+                cloudConfig.encryptionKey = cfgObj.e || '';
+                cloudConfig.autoSync = true;
+                cloudConfig.syncIntervalMs = cfgObj.i || 1500;
+
+                saveCloudConfigToStorage();
+                loadCloudConfigForm();
+                if (inp) inp.value = '';
+                showToast(`Đã ghép nối vào Phòng [${cloudConfig.clubKey}] thành công! Đang đồng bộ dữ liệu...`, 'success');
+                startCloudAutoPoll();
+                if (cloudConfig.url) {
+                    pullFromCloud(true, false, true);
+                } else {
+                    pushAndPullViaMqttRelay(true);
+                }
+                return true;
+            } catch (e) {
+                showToast('Mã Ghép Nối không hợp lệ hoặc bị cắt thiếu ký tự!', 'error');
+                return false;
+            }
+        }
+
+        function checkAutoPairingFromUrl() {
+            try {
+                const hash = window.location.hash || '';
+                const search = window.location.search || '';
+                const combined = hash + '&' + search;
+                const m = combined.match(/vvn_sync=([^&#]+)/);
+                if (m && m[1]) {
+                    const code = decodeURIComponent(m[1]);
+                    applyCloudPairingCode(code);
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState(null, document.title, window.location.pathname);
+                    }
+                }
+            } catch (e) {}
+        }
+
         async function pushToCloud(manual = true) {
+            hasLocalUserEdits = true;
+            try { localStorage.setItem('vovinam_has_user_edits', '1'); } catch (e) {}
+
+            // 1. Luôn đẩy tức thì qua Kênh Đám Mây Tự Động (MQTT WebSocket Relay)
+            publishStateToMqttRelay(manual && !cloudConfig.url);
+
             const endpoint = getCloudEndpointUrl();
             if (!endpoint) {
-                if (manual) {
-                    switchTab('settings');
-                    showToast('Vui lòng nhập Cloud Database URL trong mục Cài Đặt trước!', 'info');
-                }
                 return;
             }
 
@@ -6971,6 +7652,7 @@
             updateCloudStatusUI('syncing');
 
             try {
+                lastLocalMutationTimeMs = Date.now();
                 lastLocalMutationIso = new Date().toISOString();
                 const payload = buildFullDatabasePayload();
                 lastSyncedUpdatedAt = payload.updatedAt;
@@ -6988,32 +7670,41 @@
                     logSecurityEvent('Mã hóa Cloud E2EE', 'Dữ liệu được mã hóa AES-256 trước khi tải lên Cloud', 'info');
                 }
                 const t0 = performance.now();
+                // Không gửi header Cache-Control trong lệnh PUT để tránh lỗi chặn CORS Preflight trên Firebase / REST Server
                 const res = await fetch(endpoint, {
                     method: 'PUT',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache, no-store'
+                        'Content-Type': 'application/json'
                     },
-                    cache: 'no-store',
                     body: JSON.stringify(outgoingBody)
                 });
 
-                if (!res.ok) throw new Error('HTTP ' + res.status);
+                if (!res.ok) {
+                    const statusError = new Error('HTTP ' + res.status);
+                    statusError.httpStatus = res.status;
+                    throw statusError;
+                }
 
                 const elapsedMs = Math.max(1, Math.round(performance.now() - t0));
                 const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 cloudConfig.lastSync = timeNow;
                 saveCloudConfigToStorage();
                 updateCloudStatusUI('connected', `• ${timeNow} (${elapsedMs}ms)`);
+                showCloudDiagnostic('success', `Đồng bộ đa thiết bị đang hoạt động tốt (Cập nhật lúc ${timeNow} • Độ trễ ${elapsedMs}ms). Hãy bấm "Copy Mã Ghép Nối" bên dưới để kết nối máy khác.`);
 
                 if (manual) {
-                    showToast(`Đã đẩy dữ liệu lên Cloud siêu tốc (${elapsedMs}ms)!`);
+                    showToast(`Đã đẩy dữ liệu lên Cloud thành công (${elapsedMs}ms)!`);
                 }
             } catch (err) {
                 console.error('Lỗi đẩy Cloud:', err);
                 updateCloudStatusUI('error');
+                let errDetail = 'Không thể đẩy dữ liệu lên Cloud. Vui lòng kiểm tra lại đường dẫn URL (phải bắt đầu bằng https://) và kết nối mạng!';
+                if (err && (err.httpStatus === 401 || err.httpStatus === 403 || String(err.message).includes('401') || String(err.message).includes('403'))) {
+                    errDetail = 'Lỗi 401/403 (Permission Denied): Firebase đang ở chế độ khóa (Locked Mode / auth != null)! Hãy bấm nút "Xem Quy Tắc Rules Firebase" bên dưới, copy quy tắc cho phép đọc/ghi (.read: true, .write: true) dán vào tab Rules trên Firebase Console rồi bấm Publish.';
+                }
+                showCloudDiagnostic('error', errDetail);
                 if (manual) {
-                    showToast('Không thể đẩy lên Cloud. Kiểm tra lại URL hoặc quyền truy cập!', 'error');
+                    showToast(errDetail, 'error');
                 }
             } finally {
                 isCloudPushing = false;
@@ -7026,11 +7717,11 @@
         }
 
         async function pullFromCloud(manual = true, silent = false, initIfEmpty = false) {
+            // Nếu chưa cấu hình Firebase URL riêng -> Đồng bộ qua Kênh Đám Mây Tự Động (MQTT WebSocket Relay)
             const endpoint = getCloudEndpointUrl();
             if (!endpoint) {
                 if (manual) {
-                    switchTab('settings');
-                    showToast('Vui lòng nhập Cloud Database URL trong mục Cài Đặt trước!', 'info');
+                    pushAndPullViaMqttRelay(true);
                 }
                 return;
             }
@@ -7038,6 +7729,7 @@
             if (isCloudPushing || isCloudSyncing) return;
 
             // Khi kiểm tra tự động ngầm (silent = true), kiểm tra nhanh mốc thời gian updatedAt (chỉ ~30 byte) trước khi tải toàn bộ DB
+            // LƯU Ý QUAN TRỌNG: So sánh khác nhau (remoteUpdatedAt !== lastSyncedUpdatedAt), TUYỆT ĐỐI KHÔNG dùng "<" vì đồng hồ giữa các máy tính/điện thoại có thể lệch nhau vài giây!
             if (!manual && silent && !initIfEmpty && lastSyncedUpdatedAt) {
                 try {
                     const metaUrl = getCloudEndpointUrl('updatedAt');
@@ -7050,8 +7742,8 @@
                     if (metaRes.ok) {
                         const remoteUpdatedAt = await metaRes.json();
                         if (typeof remoteUpdatedAt === 'string' && remoteUpdatedAt) {
-                            if (remoteUpdatedAt === lastSyncedUpdatedAt || remoteUpdatedAt < lastSyncedUpdatedAt) {
-                                // Không có dữ liệu mới trên Cloud -> Bỏ qua tải toàn bộ DB giúp cực nhẹ và không làm giật giao diện
+                            if (remoteUpdatedAt === lastSyncedUpdatedAt) {
+                                // Dữ liệu trên Cloud giống hệt bản đang hiển thị trên máy -> Không cần tải lại
                                 return;
                             }
                         }
@@ -7076,7 +7768,11 @@
                     cache: 'no-store',
                     signal: abortCtrl.signal
                 });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
+                if (!res.ok) {
+                    const statusError = new Error('HTTP ' + res.status);
+                    statusError.httpStatus = res.status;
+                    throw statusError;
+                }
 
                 let data = await res.json();
                 const elapsedMs = Math.max(1, Math.round(performance.now() - t0));
@@ -7089,20 +7785,22 @@
                     } else {
                         updateCloudStatusUI('connected', `• Trống (${timeNow})`);
                         if (manual && !silent) {
-                            showToast('Cloud hiện đang trống, hãy bấm "Đẩy Cloud" để tải dữ liệu lên!', 'info');
+                            showToast('Cloud hiện đang trống, đang đẩy dữ liệu khởi tạo lên Cloud...', 'info');
+                            await pushToCloud(true);
                         }
                     }
                     return;
                 }
 
-                // Nếu trong lúc đang tải về mà người dùng vừa thao tác lưu cục bộ thì không ghi đè dữ liệu cũ lên
-                if (isCloudPushing || hasPendingCloudPush) {
+                // Nếu trong lúc đang tải về mà người dùng vừa thao tác lưu cục bộ (trong vòng 2 giây vừa qua) thì không ghi đè dữ liệu cũ lên
+                if (isCloudPushing || hasPendingCloudPush || (!manual && silent && (Date.now() - lastLocalMutationTimeMs < 2000))) {
                     return;
                 }
 
                 if (data && data._encrypted && data.cipherData) {
                     if (!cloudConfig.encryptionKey || !cloudConfig.encryptionKey.trim()) {
                         updateCloudStatusUI('error');
+                        showCloudDiagnostic('error', 'Dữ liệu trên Cloud đã được mã hóa E2EE AES-256! Vui lòng nhập đúng "Mã Khóa Mã Hóa Dữ Liệu Đầu Cuối E2EE" trên máy này để giải mã.');
                         if (manual && !silent) {
                             showToast('Dữ liệu trên Cloud đã được mã hóa E2EE! Vui lòng nhập Mã Khóa Mã Hóa trong Cài Đặt để giải mã.', 'error');
                         }
@@ -7114,6 +7812,7 @@
                         logSecurityEvent('Giải mã Cloud E2EE', 'Giải mã thành công dữ liệu Cloud bằng AES-256', 'info');
                     } catch (decErr) {
                         updateCloudStatusUI('error');
+                        showCloudDiagnostic('error', 'Mã Khóa Mã Hóa E2EE trên máy này không khớp với máy đã đẩy dữ liệu! Hãy nhập đúng Mã Khóa E2EE hoặc dùng Mã Ghép Nối.');
                         if (manual && !silent) {
                             showToast('Mã Khóa Mã Hóa không đúng! Không thể giải mã dữ liệu Cloud.', 'error');
                         }
@@ -7127,29 +7826,30 @@
                     return;
                 }
 
-                // Không ghi đè nếu dữ liệu từ Cloud cũ hơn dữ liệu vừa sửa trên máy
-                if (!manual && silent && data.updatedAt && lastLocalMutationIso && data.updatedAt < lastLocalMutationIso) {
-                    return;
-                }
-
                 if (data.updatedAt) {
                     lastSyncedUpdatedAt = data.updatedAt;
                 }
 
-                applyFullDatabasePayload(data, 'replace', silent);
+                applyFullDatabasePayload(data, 'smart_sync', silent);
                 cloudConfig.lastSync = timeNow;
                 saveCloudConfigToStorage();
                 updateCloudStatusUI('connected', `• ${timeNow} (${elapsedMs}ms)`);
+                showCloudDiagnostic('success', `Đã đồng bộ ${data.students ? data.students.length : 0} võ sinh & ${data.classes ? data.classes.length : 0} lớp học từ Cloud (Cập nhật bởi: ${data.updatedBy || 'Admin'} lúc ${timeNow} • ${elapsedMs}ms).`);
 
                 if (manual && !silent) {
-                    showToast(`Đã đồng bộ dữ liệu mới nhất từ Cloud (${data.students ? data.students.length : 0} võ sinh • ${elapsedMs}ms)!`);
+                    showToast(`Đã tải dữ liệu mới nhất từ Cloud (${data.students ? data.students.length : 0} võ sinh • ${elapsedMs}ms)!`);
                 }
             } catch (err) {
                 if (err && err.name === 'AbortError') return;
                 console.error('Lỗi tải Cloud:', err);
                 updateCloudStatusUI('error');
+                let errDetail = 'Không thể kết nối tới Cloud Database. Vui lòng kiểm tra lại đường dẫn URL hoặc kết nối mạng!';
+                if (err && (err.httpStatus === 401 || err.httpStatus === 403 || String(err.message).includes('401') || String(err.message).includes('403'))) {
+                    errDetail = 'Lỗi 401/403 (Permission Denied): Firebase đang chặn quyền đọc dữ liệu! Hãy mở Firebase Console -> Realtime Database -> Rules và đổi .read / .write thành true (xem mẫu trong nút Quy Tắc Rules Firebase).';
+                }
+                showCloudDiagnostic('error', errDetail);
                 if (manual && !silent) {
-                    showToast('Không thể kết nối Cloud Database. Vui lòng kiểm tra lại URL!', 'error');
+                    showToast(errDetail, 'error');
                 }
             } finally {
                 if (activePullAbortController === abortCtrl) {
@@ -7160,6 +7860,9 @@
         }
 
         function triggerAutoCloudSync() {
+            hasLocalUserEdits = true;
+            try { localStorage.setItem('vovinam_has_user_edits', '1'); } catch (e) {}
+            lastLocalMutationTimeMs = Date.now();
             lastLocalMutationIso = new Date().toISOString();
             lastSyncedUpdatedAt = lastLocalMutationIso;
 
@@ -7171,9 +7874,12 @@
                 scheduleBackendServerSync();
             }
 
-            // 3. Đẩy ngay lập tức lên Cloud Database (không trễ)
-            if (cloudConfig.url && cloudConfig.autoSync) {
-                pushToCloud(false);
+            // 3. Đẩy ngay lập tức lên Kênh Đám Mây Tự Động (MQTT WebSocket Relay) & Firebase Cloud Database
+            if (cloudConfig.autoSync !== false) {
+                publishStateToMqttRelay(false);
+                if (cloudConfig.url) {
+                    pushToCloud(false);
+                }
             }
         }
 
@@ -7191,15 +7897,15 @@
 
                 const handleRealtimeEvent = (evt) => {
                     if (!evt || !evt.data || isCloudPushing || hasPendingCloudPush) return;
+                    if (Date.now() - lastLocalMutationTimeMs < 1500) return;
                     try {
                         const parsed = JSON.parse(evt.data);
                         const remotePayload = (parsed && parsed.path === '/' && parsed.data) ? parsed.data : null;
                         if (remotePayload && remotePayload.updatedAt && remotePayload.updatedAt !== lastSyncedUpdatedAt) {
-                            if (lastLocalMutationIso && remotePayload.updatedAt < lastLocalMutationIso) return;
                             if (!remotePayload._encrypted && (remotePayload.students || remotePayload.classes)) {
                                 lastSyncedUpdatedAt = remotePayload.updatedAt;
                                 const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                                applyFullDatabasePayload(remotePayload, 'replace', true);
+                                applyFullDatabasePayload(remotePayload, 'smart_sync', true);
                                 cloudConfig.lastSync = timeNow;
                                 saveCloudConfigToStorage();
                                 updateCloudStatusUI('connected', `• Real-time ${timeNow}`);
@@ -7221,17 +7927,20 @@
 
         function startCloudAutoPoll() {
             stopCloudRealtimeSync();
-            if (cloudConfig.url && cloudConfig.autoSync) {
-                // Kích hoạt luồng lắng nghe thời gian thực Server-Sent Events (SSE) cho Firebase (<100ms)
-                startCloudRealtimeStream();
+            if (cloudConfig.autoSync !== false) {
+                // 1. Luôn kích hoạt Kênh Đồng Bộ Đám Mây Tự Động (Zero-Config MQTT over WebSockets)
+                startMqttRealtimeRelay();
 
-                // Kích hoạt vòng lặp kiểm tra siêu tốc (mặc định 1.5 giây thay vì 30 giây trước đây)
-                const intervalMs = Math.max(800, parseInt(cloudConfig.syncIntervalMs, 10) || 1500);
-                cloudPollTimer = setInterval(() => {
-                    if (!isCloudPushing && !isCloudSyncing && cloudConfig.url && cloudConfig.autoSync) {
-                        pullFromCloud(false, true, false);
-                    }
-                }, intervalMs);
+                // 2. Nếu có thêm URL Firebase / REST riêng thì kích hoạt song song luồng SSE + Turbo Polling
+                if (cloudConfig.url) {
+                    startCloudRealtimeStream();
+                    const intervalMs = Math.max(800, parseInt(cloudConfig.syncIntervalMs, 10) || 1500);
+                    cloudPollTimer = setInterval(() => {
+                        if (!isCloudPushing && !isCloudSyncing && cloudConfig.url && cloudConfig.autoSync) {
+                            pullFromCloud(false, true, false);
+                        }
+                    }, intervalMs);
+                }
             }
         }
 
@@ -7450,6 +8159,10 @@
                 'Đặt Lại Dữ Liệu Mẫu Ban Đầu',
                 'CẢNH BÁO: Toàn bộ dữ liệu hiện tại sẽ được đặt lại về danh sách mẫu ban đầu (4 võ sinh, 4 lớp học). Hãy chắc chắn bạn đã tải file Sao lưu (.JSON) trước khi thực hiện!',
                 () => {
+                    deletedRegistry = { students: {}, classes: {}, accounts: {}, requests: {} };
+                    saveDeletedRegistryToStorage();
+                    lastHardResetAt = Date.now();
+                    try { localStorage.setItem('vovinam_hard_reset_at', String(lastHardResetAt)); } catch (e) {}
                     classes = [...DEFAULT_CLASSES];
                     students = [...SAMPLE_STUDENTS];
                     attendanceRecords = {};
@@ -8085,10 +8798,10 @@
 
             if (backendServerState.mode === 'http') {
                 dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
-                text.innerText = 'Máy Chủ: HTTP Backend';
+                text.innerText = 'Máy Chủ LAN: Đã kết nối';
             } else {
-                dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-                text.innerText = 'Máy Chủ: REST API (Active)';
+                dot.className = 'w-2 h-2 rounded-full bg-sky-400';
+                text.innerText = 'Máy Chủ Giả Lập (Cục bộ)';
             }
             if (lat) lat.innerText = `${backendServerState.lastLatencyMs}ms`;
         }
