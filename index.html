@@ -70,89 +70,20 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
-    <!-- Thanh chuyển đổi vai trò & Trạng thái Đám mây (Role & Cloud Bar) -->
-    <div class="bg-slate-900 text-slate-300 py-1.5 px-4 text-xs no-print flex flex-col lg:flex-row justify-between items-center border-b border-slate-800 gap-2">
-        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-            <div class="flex items-center space-x-2">
-                <span class="text-slate-400">Tài khoản hiện tại:</span>
-                <span id="current-user-display" class="font-bold text-vovinam-gold uppercase tracking-wide">Võ Sư Admin</span>
-                <span id="current-role-badge" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500 text-white">FULL QUYỀN</span>
-            </div>
-            <span class="hidden sm:inline text-slate-700">|</span>
-            <!-- Trạng thái Máy Chủ Backend (Server Status) -->
-            <button type="button" onclick="switchTab('server')" title="Mở Bảng Điều Khiển Máy Chủ Backend & REST API" class="flex items-center space-x-1.5 bg-emerald-950/90 hover:bg-emerald-900/90 px-2.5 py-0.5 rounded-full border border-emerald-600/60 transition cursor-pointer">
-                <span id="server-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span id="server-status-text" class="text-[11px] font-bold text-emerald-300">Máy Chủ: Online (REST API)</span>
-                <span id="server-latency-badge" class="text-[10px] font-mono text-emerald-400/90 hidden sm:inline">2ms</span>
-            </button>
-            <!-- Trạng thái Cloud Sync -->
-            <button type="button" onclick="openCloudSyncSettingsSection()" title="Bấm để cấu hình Đồng bộ Đám mây đa thiết bị (Cloud Sync)" class="flex items-center space-x-1.5 bg-slate-800/90 hover:bg-slate-700/90 px-2.5 py-0.5 rounded-full border border-slate-700 transition cursor-pointer">
-                <span id="cloud-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-                <span id="cloud-status-text" class="text-[11px] font-medium text-amber-200">Chưa kết nối Cloud (Lưu cục bộ)</span>
-                <span id="cloud-last-sync" class="text-[10px] text-slate-400 hidden sm:inline"></span>
-            </button>
-            <div class="flex items-center space-x-1">
-                <button onclick="pullFromCloud(true)" title="Tải dữ liệu mới nhất từ Đám mây về máy" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 text-[11px] font-semibold transition flex items-center space-x-1">
-                    <i class="fa-solid fa-cloud-arrow-down"></i>
-                    <span>Tải Cloud</span>
-                </button>
-                <button onclick="pushToCloud(true)" title="Đẩy dữ liệu hiện tại lên Đám mây" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 text-[11px] font-semibold transition flex items-center space-x-1">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span>Đẩy Cloud</span>
-                </button>
-                <button onclick="exportFullDatabaseJSON()" title="Tải nhanh file Sao lưu (.json)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-[11px] font-semibold transition flex items-center space-x-1">
-                    <i class="fa-solid fa-download"></i>
-                    <span class="hidden sm:inline">Sao Lưu (.JSON)</span>
-                </button>
-            </div>
-        </div>
-        <div class="flex flex-wrap items-center justify-center gap-2">
-            <!-- Nút Đổi Mật Khẩu Cá Nhân -->
-            <button onclick="openChangePasswordModal()" title="Đổi mật khẩu tài khoản đang đăng nhập" class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 flex items-center space-x-1">
-                <i class="fa-solid fa-key text-[10px]"></i>
-                <span>Đổi Mật Khẩu</span>
-            </button>
-            <!-- Nút Chuyển Tài Khoản (Yêu cầu mật khẩu) -->
-            <button onclick="openSwitchAccountModal()" title="Chuyển sang tài khoản khác (Xác thực mật khẩu)" class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 flex items-center space-x-1">
-                <i class="fa-solid fa-arrow-right-arrow-left text-[10px]"></i>
-                <span>Đổi Tài Khoản</span>
-            </button>
-            <!-- Nút Phân Quyền & Bảo Mật -->
-            <button onclick="switchTab('permissions')" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-sm flex items-center space-x-1">
-                <i class="fa-solid fa-shield-halved"></i>
-                <span>Phân Quyền & Bảo Mật</span>
-            </button>
-            <!-- Nút Đăng Xuất An Toàn -->
-            <button onclick="handleLogout()" title="Đăng xuất khỏi phiên làm việc an toàn" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition bg-red-600/90 hover:bg-red-700 text-white shadow-sm flex items-center space-x-1">
-                <i class="fa-solid fa-power-off text-[10px]"></i>
-                <span>Đăng Xuất</span>
-            </button>
-            <button onclick="switchRole('admin')" id="role-btn-admin" class="px-2 py-1 rounded-md text-[11px] font-semibold transition bg-blue-600 text-white shadow-sm flex items-center space-x-1">
-                <i class="fa-solid fa-user-shield text-[10px]"></i>
-                <span>Quản Trị Viên (Admin)</span>
-            </button>
-            <button onclick="switchRole('staff')" id="role-btn-staff" class="px-2 py-1 rounded-md text-[11px] font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center space-x-1">
-                <i class="fa-solid fa-user-pen text-[10px]"></i>
-                <span>Huấn Luyện Viên (Staff)</span>
-            </button>
-            <select id="active-account-select" onchange="promptSwitchToAccount(this.value)" class="bg-slate-800 text-vovinam-gold border border-slate-700 rounded-md px-2 py-1 text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-vovinam-gold"></select>
-        </div>
-    </div>
-
-    <!-- Header / Navbar -->
-    <header class="bg-gradient-to-r from-vovinam-navy via-vovinam-blue to-blue-700 text-white shadow-md sticky top-0 z-30 no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20">
-                <!-- Logo & Brand (Liên kết động với Settings) -->
-                <div class="flex items-center space-x-3">
-                    <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-vovinam-blue font-black text-2xl border-2 border-vovinam-gold shadow overflow-hidden flex-shrink-0">
+    <!-- Header / Navbar Tối Ưu Hóa Gọn Đẹp -->
+    <header class="bg-gradient-to-r from-vovinam-navy via-vovinam-blue to-blue-700 text-white shadow-md sticky top-0 z-30 no-print border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-20 gap-2">
+                <!-- Logo & Brand (Gọn gàng, tinh tế) -->
+                <div class="flex items-center space-x-3 min-w-0 flex-shrink-0">
+                    <div onclick="switchTab('students')" class="w-10 h-10 sm:w-11 sm:h-11 bg-white rounded-2xl flex items-center justify-center text-vovinam-blue font-black text-xl sm:text-2xl border-2 border-vovinam-gold shadow-sm overflow-hidden flex-shrink-0 cursor-pointer hover:scale-105 transition">
                         <img id="site-logo-img" src="" alt="Logo" class="w-full h-full object-cover hidden">
-                        <span id="site-logo-text" class="text-vovinam-blue font-black text-2xl">V</span>
+                        <span id="site-logo-text" class="text-vovinam-blue font-black text-xl sm:text-2xl">V</span>
                     </div>
-                    <div>
-                        <h1 id="site-title-display" class="text-lg sm:text-2xl font-black tracking-wide uppercase text-vovinam-gold drop-shadow-sm">VOVINAM VIỆT VÕ ĐẠO</h1>
-                        <p id="site-subtitle-display" class="text-xs text-blue-100 font-medium">Hệ Thống Quản Lý Võ Sinh & Điểm Danh Chuyên Cần</p>
-                        <div id="site-meta-display" class="hidden sm:flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-amber-200/95 font-medium mt-0.5">
+                    <div class="min-w-0">
+                        <h1 id="site-title-display" class="text-sm sm:text-lg lg:text-xl font-black tracking-wide uppercase text-vovinam-gold drop-shadow-sm truncate">VOVINAM VIỆT VÕ ĐẠO</h1>
+                        <p id="site-subtitle-display" class="text-[11px] text-blue-100/90 font-medium truncate max-w-[200px] sm:max-w-xs">Hệ Thống Quản Lý Võ Sinh & Điểm Danh Chuyên Cần</p>
+                        <div id="site-meta-display" class="hidden">
                             <span id="site-branch-display"><i class="fa-solid fa-location-dot mr-1"></i>CLB Vovinam Trung Tâm Thể Thao</span>
                             <span id="site-instructor-display"><i class="fa-solid fa-user-tie mr-1"></i>Võ Sư Admin</span>
                             <span id="site-hotline-display"><i class="fa-solid fa-phone mr-1"></i>0903.123.456</span>
@@ -160,58 +91,191 @@
                     </div>
                 </div>
 
-                <!-- Navigation Tabs Desktop -->
-                <nav class="hidden md:flex space-x-1">
-                    <button onclick="switchTab('students')" id="tab-btn-students" class="px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 bg-white/20 text-white shadow-sm">
+                <!-- Navigation Tabs Desktop (6 Tab Nghiệp Vụ Chính + Menu Hệ Thống) -->
+                <nav class="hidden lg:flex items-center bg-slate-950/25 p-1 rounded-2xl border border-white/10 space-x-0.5">
+                    <button onclick="switchTab('students')" id="tab-btn-students" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 bg-white text-vovinam-navy shadow-sm">
                         <i class="fa-solid fa-users"></i>
                         <span>Võ Sinh</span>
                     </button>
-                    <button onclick="switchTab('classes')" id="tab-btn-classes" class="px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 text-blue-100 hover:bg-white/10">
+                    <button onclick="switchTab('classes')" id="tab-btn-classes" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10">
                         <i class="fa-solid fa-chalkboard-user"></i>
                         <span>Lớp Học</span>
                     </button>
-                    <button onclick="switchTab('attendance')" id="tab-btn-attendance" class="px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 text-blue-100 hover:bg-white/10">
+                    <button onclick="switchTab('attendance')" id="tab-btn-attendance" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10">
                         <i class="fa-solid fa-calendar-check"></i>
                         <span>Điểm Danh</span>
                     </button>
-                    <button onclick="switchTab('tuition')" id="tab-btn-tuition" class="px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 text-blue-100 hover:bg-white/10">
+                    <button onclick="switchTab('tuition')" id="tab-btn-tuition" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10">
                         <i class="fa-solid fa-wallet"></i>
                         <span>Học Phí</span>
                     </button>
-                    <button onclick="switchTab('approvals')" id="tab-btn-approvals" class="relative px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 text-blue-100 hover:bg-white/10">
+                    <button onclick="switchTab('approvals')" id="tab-btn-approvals" class="relative px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10">
                         <i class="fa-solid fa-clock-rotate-left"></i>
                         <span>Phê Duyệt</span>
                         <span id="nav-pending-count" class="hidden absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] bg-red-500 text-white rounded-full font-bold animate-pulse">0</span>
                     </button>
-                    <button onclick="switchTab('reports')" id="tab-btn-reports" class="px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 text-blue-100 hover:bg-white/10">
+                    <button onclick="switchTab('reports')" id="tab-btn-reports" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10">
                         <i class="fa-solid fa-chart-pie"></i>
                         <span>Báo Cáo</span>
                     </button>
-                    <button onclick="switchTab('permissions')" id="tab-btn-permissions" class="px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 text-blue-100 hover:bg-white/10">
-                        <i class="fa-solid fa-user-lock"></i>
-                        <span>Phân Quyền</span>
-                    </button>
-                    <button onclick="switchTab('settings')" id="tab-btn-settings" class="px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 text-blue-100 hover:bg-white/10">
-                        <i class="fa-solid fa-gear"></i>
-                        <span>Cài Đặt</span>
-                    </button>
-                    <button onclick="switchTab('server')" id="tab-btn-server" class="px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 text-emerald-200 hover:bg-white/10 border border-emerald-400/30">
-                        <i class="fa-solid fa-server"></i>
-                        <span>Máy Chủ</span>
-                    </button>
+
+                    <!-- Dropdown Quản Trị Hệ Thống (Gom Phân Quyền, Cài Đặt, Máy Chủ) -->
+                    <div class="relative" id="system-nav-wrapper">
+                        <button type="button" onclick="toggleSystemNavMenu(event)" id="system-nav-btn" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>Hệ Thống</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] opacity-80"></i>
+                        </button>
+                        <div id="system-nav-dropdown" class="hidden absolute right-0 mt-2 w-52 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200/90 py-1.5 z-50">
+                            <div class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Quản Trị & Cấu Hình</div>
+                            <button onclick="switchTab('permissions')" id="tab-btn-permissions" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-vovinam-blue flex items-center space-x-2.5 transition">
+                                <i class="fa-solid fa-user-lock w-4 text-center text-vovinam-blue"></i>
+                                <span>Phân Quyền</span>
+                            </button>
+                            <button onclick="switchTab('settings')" id="tab-btn-settings" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-vovinam-blue flex items-center space-x-2.5 transition">
+                                <i class="fa-solid fa-gear w-4 text-center text-amber-500"></i>
+                                <span>Cài Đặt</span>
+                            </button>
+                            <button onclick="switchTab('server')" id="tab-btn-server" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-vovinam-blue flex items-center space-x-2.5 transition">
+                                <i class="fa-solid fa-server w-4 text-center text-emerald-600"></i>
+                                <span>Máy Chủ</span>
+                            </button>
+                        </div>
+                    </div>
                 </nav>
 
-                <!-- Mobile Menu Button -->
-                <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="p-2 rounded-xl text-white hover:bg-white/10 focus:outline-none">
-                        <i class="fa-solid fa-bars text-xl"></i>
+                <!-- Cụm Tài Khoản & Đồng Bộ Gọn Đẹp Bên Phải -->
+                <div class="flex items-center space-x-2">
+                    <!-- Chấm trạng thái Cloud nhanh (chỉ hiện icon gọn đẹp) -->
+                    <button type="button" onclick="openCloudSyncSettingsSection()" title="Cấu hình Đồng bộ Đám mây (Cloud Sync)" class="hidden sm:flex items-center space-x-1.5 bg-slate-950/30 hover:bg-slate-950/45 px-2.5 py-1.5 rounded-xl border border-white/15 transition cursor-pointer">
+                        <span id="cloud-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                        <i class="fa-solid fa-cloud text-xs text-blue-100"></i>
                     </button>
+
+                    <!-- Nút Hồ Sơ Tài Khoản & Menu Tiện Ích Nhanh (Popover) -->
+                    <div class="relative" id="user-account-menu-wrapper">
+                        <button type="button" onclick="toggleUserAccountMenu(event)" id="user-menu-btn" class="flex items-center space-x-2 bg-slate-950/30 hover:bg-slate-950/45 pl-1.5 pr-2.5 py-1.5 rounded-2xl border border-white/15 transition focus:outline-none">
+                            <div id="header-user-avatar" class="w-7 h-7 rounded-xl bg-vovinam-gold text-slate-950 font-black text-xs flex items-center justify-center shadow-xs">
+                                V
+                            </div>
+                            <div class="text-left hidden sm:block max-w-[130px]">
+                                <div id="current-user-display" class="text-xs font-bold text-white truncate leading-tight">Võ Sư Admin</div>
+                                <div class="flex items-center space-x-1 mt-0.5">
+                                    <span id="current-role-badge" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500 text-white leading-tight">ADMIN</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-blue-200 ml-0.5"></i>
+                        </button>
+
+                        <!-- Popover Hộp Tài Khoản, Quyền Hạn & Đồng Bộ (Ẩn mặc định, chỉ mở khi bấm) -->
+                        <div id="user-account-dropdown" class="hidden absolute right-0 mt-2.5 w-80 sm:w-96 bg-white text-slate-800 rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden z-50">
+                            <!-- Phần 1: Thông tin tài khoản & Quyền hạn (Thay thế hộp thông báo lớn ngoài trang) -->
+                            <div id="role-info-banner" class="p-4 bg-gradient-to-br from-slate-900 via-vovinam-navy to-slate-900 text-white">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-10 h-10 rounded-2xl bg-vovinam-gold/20 border border-vovinam-gold/40 text-vovinam-gold flex items-center justify-center font-black text-base flex-shrink-0">
+                                            <i class="fa-solid fa-user-shield"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-[10px] uppercase tracking-wider text-blue-200 font-semibold">Tài khoản đang sử dụng</div>
+                                            <p id="role-banner-text" class="text-xs text-slate-100 mt-0.5 leading-snug">Đang đăng nhập quyền <strong>Quản Trị Viên (Admin)</strong></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Nút thu gọn / mở rộng 7 quyền hạn -->
+                                <div class="mt-3 pt-2.5 border-t border-white/10">
+                                    <button type="button" onclick="togglePermissionDetails(event)" class="w-full flex items-center justify-between text-[11px] font-semibold text-amber-300 hover:text-amber-200 transition">
+                                        <span><i class="fa-solid fa-key mr-1.5"></i>Xem chi tiết quyền hạn của tài khoản</span>
+                                        <i id="perm-collapse-icon" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                                    </button>
+                                    <div id="active-permission-pills" class="hidden flex-wrap items-center gap-1.5 mt-2.5 pt-1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Phần 2: Chuyển đổi nhanh Tài khoản / Vai trò -->
+                            <div class="p-3.5 bg-slate-50 border-b border-slate-100 space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <label for="active-account-select" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Chuyển tài khoản nhanh</label>
+                                    <div class="flex items-center space-x-1">
+                                        <button onclick="switchRole('admin')" id="role-btn-admin" class="px-2 py-0.5 rounded-lg text-[10px] font-semibold transition bg-blue-600 text-white shadow-xs">
+                                            <span>Quản Trị Viên (Admin)</span>
+                                        </button>
+                                        <button onclick="switchRole('staff')" id="role-btn-staff" class="px-2 py-0.5 rounded-lg text-[10px] font-semibold transition bg-slate-200 text-slate-700 hover:bg-slate-300">
+                                            <span>Huấn Luyện Viên (Staff)</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <select id="active-account-select" onchange="promptSwitchToAccount(this.value)" class="w-full bg-white text-slate-800 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-vovinam-blue"></select>
+                            </div>
+
+                            <!-- Phần 3: Trạng thái Đám mây & Máy chủ + Nút thao tác nhanh -->
+                            <div class="p-3.5 border-b border-slate-100 space-y-2.5 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Đồng Bộ & Dữ Liệu</span>
+                                    <button type="button" onclick="switchTab('server')" class="flex items-center space-x-1 text-[11px] font-semibold text-emerald-700 hover:underline">
+                                        <span id="server-status-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        <span id="server-status-text">Máy Chủ: Online (REST API)</span>
+                                        <span id="server-latency-badge" class="text-[10px] font-mono text-slate-400">2ms</span>
+                                    </button>
+                                </div>
+                                <button type="button" onclick="openCloudSyncSettingsSection()" class="w-full p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200/80 flex items-center justify-between cursor-pointer transition text-left">
+                                    <span class="flex items-center space-x-2 min-w-0">
+                                        <i class="fa-solid fa-cloud text-vovinam-blue text-xs"></i>
+                                        <span id="cloud-status-text" class="text-[11px] font-semibold text-slate-700 truncate">Chưa kết nối Cloud (Lưu cục bộ)</span>
+                                    </span>
+                                    <span id="cloud-last-sync" class="text-[10px] text-slate-400 font-mono flex-shrink-0 ml-1"></span>
+                                </button>
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <button onclick="pullFromCloud(true)" class="py-1.5 px-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-vovinam-blue border border-blue-200/60 text-[11px] font-bold transition flex items-center justify-center space-x-1">
+                                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                                        <span>Tải Cloud</span>
+                                    </button>
+                                    <button onclick="pushToCloud(true)" class="py-1.5 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/60 text-[11px] font-bold transition flex items-center justify-center space-x-1">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        <span>Đẩy Cloud</span>
+                                    </button>
+                                    <button onclick="exportFullDatabaseJSON()" class="py-1.5 px-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/60 text-[11px] font-bold transition flex items-center justify-center space-x-1">
+                                        <i class="fa-solid fa-download"></i>
+                                        <span>Sao Lưu (.JSON)</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Phần 4: Tác vụ bảo mật tài khoản -->
+                            <div class="p-2 bg-white grid grid-cols-2 gap-1 text-xs">
+                                <button onclick="closeHeaderDropdowns(); openChangePasswordModal()" class="px-3 py-2 rounded-xl text-left font-semibold text-slate-700 hover:bg-slate-100 flex items-center space-x-2 transition">
+                                    <i class="fa-solid fa-key text-amber-500 w-4 text-center"></i>
+                                    <span>Đổi Mật Khẩu</span>
+                                </button>
+                                <button onclick="closeHeaderDropdowns(); openSwitchAccountModal()" class="px-3 py-2 rounded-xl text-left font-semibold text-slate-700 hover:bg-slate-100 flex items-center space-x-2 transition">
+                                    <i class="fa-solid fa-arrow-right-arrow-left text-blue-600 w-4 text-center"></i>
+                                    <span>Đổi Tài Khoản</span>
+                                </button>
+                                <button onclick="switchTab('permissions')" class="px-3 py-2 rounded-xl text-left font-semibold text-slate-700 hover:bg-slate-100 flex items-center space-x-2 transition">
+                                    <i class="fa-solid fa-shield-halved text-vovinam-blue w-4 text-center"></i>
+                                    <span>Phân Quyền & Bảo Mật</span>
+                                </button>
+                                <button onclick="closeHeaderDropdowns(); handleLogout()" class="px-3 py-2 rounded-xl text-left font-bold text-red-600 hover:bg-red-50 flex items-center space-x-2 transition">
+                                    <i class="fa-solid fa-power-off text-red-500 w-4 text-center"></i>
+                                    <span>Đăng Xuất</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <div class="lg:hidden flex items-center">
+                        <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="p-2 rounded-xl text-white hover:bg-white/10 focus:outline-none">
+                            <i class="fa-solid fa-bars text-lg"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Mobile Navigation Menu -->
-        <div id="mobile-menu" class="hidden md:hidden bg-vovinam-navy px-4 pt-2 pb-4 space-y-2 border-t border-blue-500/30">
+        <div id="mobile-menu" class="hidden lg:hidden bg-vovinam-navy px-4 pt-2 pb-4 space-y-1.5 border-t border-blue-500/30">
             <button onclick="switchTab('students')" id="mobile-tab-students" class="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-white bg-white/20 flex items-center space-x-2">
                 <i class="fa-solid fa-users w-6"></i><span>Danh Sách Võ Sinh</span>
             </button>
@@ -250,16 +314,6 @@
         <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 ease-in-out bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 border-l-4 border-vovinam-gold pointer-events-none">
             <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
             <span id="toast-msg" class="text-xs sm:text-sm font-medium">Thông báo</span>
-        </div>
-
-        <!-- Role Alert Notification Banner -->
-        <div id="role-info-banner" class="mb-5 p-3.5 bg-blue-50 border border-blue-200/80 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs text-blue-900 shadow-sm">
-            <div class="flex items-start sm:items-center space-x-2.5">
-                <i class="fa-solid fa-user-Check text-vovinam-blue text-sm mt-0.5 sm:mt-0"></i>
-                <span id="role-banner-text">Bạn đang đăng nhập với quyền <strong>Quản Trị Viên (Admin)</strong>. Có toàn quyền quản lý, cập nhật võ sinh và duyệt yêu cầu.</span>
-            </div>
-            <div id="active-permission-pills" class="flex flex-wrap items-center gap-1.5">
-            </div>
         </div>
 
         <!-- ================= TAB 1: DANH SÁCH VÕ SINH ================= -->
@@ -1185,13 +1239,13 @@
                         <i class="fa-solid fa-satellite-dish text-emerald-600 text-base mt-0.5"></i>
                         <div class="space-y-1">
                             <p class="font-black text-emerald-950">Đã kích hoạt Kênh Đồng Bộ Đám Mây Đa Máy Tự Động (Zero-Config Cloud Relay)!</p>
-                            <p class="text-[11px] text-emerald-800 leading-relaxed">Chỉ cần các máy tính và điện thoại nhập cùng một <strong>Mã Định Danh CLB / Phòng Dữ Liệu (Club ID)</strong> bên dưới (mặc định: <code>vovinam_main_club</code>), hệ thống sẽ <strong>tự động đồng bộ trực tuyến thời gian thực (&lt;100ms)</strong> giữa tất cả các máy mà không bắt buộc phải tạo tài khoản Firebase!</p>
+                            <p class="text-[11px] text-emerald-800 leading-relaxed">Chỉ cần các máy tính và điện thoại nhập cùng một <strong>Mã Định Danh CLB / Phòng Dữ Liệu (Club ID)</strong> bên dưới (mặc định: <code>clb-vovinam-antruong</code>), hệ thống sẽ <strong>tự động đồng bộ trực tuyến thời gian thực (&lt;100ms)</strong> giữa tất cả các máy mà không bắt buộc phải tạo tài khoản Firebase!</p>
                         </div>
                     </div>
 
                     <div>
                         <label for="cloud-club-key" class="block text-xs font-bold text-slate-700 mb-1">Mã Định Danh CLB / Phòng Dữ Liệu Chung (Club ID) <span class="text-red-500">*</span></label>
-                        <input type="text" id="cloud-club-key" value="vovinam_main_club" placeholder="VD: vovinam_main_club" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-blue-300 bg-blue-50/30 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono font-bold text-vovinam-blue">
+                        <input type="text" id="cloud-club-key" value="clb-vovinam-antruong" placeholder="VD: clb-vovinam-antruong" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-blue-300 bg-blue-50/30 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono font-bold text-vovinam-blue">
                         <p class="text-[10px] text-slate-500 mt-1">Các máy có cùng Mã Phòng này sẽ tự động đồng bộ toàn bộ dữ liệu với nhau.</p>
                     </div>
 
@@ -1204,7 +1258,7 @@
                         <label for="cloud-db-url" class="block text-xs font-bold text-slate-700 mb-1">
                             Đường Dẫn Cloud Database Riêng (Tùy chọn — Firebase Realtime DB / REST Endpoint)
                         </label>
-                        <input type="url" id="cloud-db-url" placeholder="Để trống để dùng Cloud Tự Động, hoặc dán link https://...firebaseio.com" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-800">
+                        <input type="url" id="cloud-db-url" value="https://clb-vovinam-antruong-default-rtdb.asia-southeast1.firebasedatabase.app/" placeholder="Để trống để dùng Cloud Tự Động, hoặc dán link https://...firebaseio.com" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-800">
                         <p class="text-[11px] text-slate-400 mt-1">Có thể để trống (hệ thống tự dùng Cloud Relay tích hợp sẵn). Nếu muốn lưu trữ thêm trên Firebase riêng của CLB, hãy dán link Firebase Realtime Database vào đây.</p>
                     </div>
 
@@ -1307,7 +1361,7 @@
                     </p>
                     <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-600">
                         <li>Truy cập <strong>console.firebase.google.com</strong> ➔ Tạo Project ➔ Chọn <strong>Build ➔ Realtime Database ➔ Create Database</strong>.</li>
-                        <li>Vào tab <strong>Rules</strong> của Realtime Database, dán quy tắc cho phép đọc/ghi vào nhánh <code>vovinam_main_club</code> (bấm nút <strong>Xem Quy Tắc Rules Firebase</strong> ở trên để copy mẫu) rồi bấm <strong>Publish</strong>.</li>
+                        <li>Vào tab <strong>Rules</strong> của Realtime Database, dán quy tắc cho phép đọc/ghi vào nhánh <code>clb-vovinam-antruong</code> (bấm nút <strong>Xem Quy Tắc Rules Firebase</strong> ở trên để copy mẫu) rồi bấm <strong>Publish</strong>.</li>
                         <li>Copy đường link URL (VD: <code>https://ten-du-an-default-rtdb.asia-southeast1.firebasedatabase.app</code>) dán vào ô trên và bấm <strong>Lưu &amp; Kết Nối Cloud</strong>.</li>
                         <li>Bấm <strong>Copy Mã Ghép Nối</strong> gửi qua Zalo cho các máy khác dán vào ô Ghép Nối Nhanh là tất cả các máy sẽ tự động đồng bộ!</li>
                     </ol>
@@ -2671,7 +2725,7 @@
                         <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
                         <span>Lưu ý quan trọng để không bị lỗi chặn đồng bộ (HTTP 401 Permission Denied):</span>
                     </p>
-                    <p class="text-[11px] text-amber-800">Nếu bạn để <code>".read": false</code> hoặc <code>"auth != null"</code> mà <strong>không nhập Database Secret</strong>, Firebase sẽ chặn toàn bộ kết nối từ các máy khác! Hãy dùng quy tắc chuẩn bên dưới (chỉ mở nhánh <code>vovinam_main_club</code> và kết hợp đặt <strong>Mã Khóa E2EE AES-256</strong> trong Cài đặt):</p>
+                    <p class="text-[11px] text-amber-800">Nếu bạn để <code>".read": false</code> hoặc <code>"auth != null"</code> mà <strong>không nhập Database Secret</strong>, Firebase sẽ chặn toàn bộ kết nối từ các máy khác! Hãy dùng quy tắc chuẩn bên dưới (chỉ mở nhánh <code>clb-vovinam-antruong</code> và kết hợp đặt <strong>Mã Khóa E2EE AES-256</strong> trong Cài đặt):</p>
                 </div>
 
                 <div>
@@ -2684,7 +2738,7 @@
                     </div>
                     <textarea id="firebase-rules-code" readonly rows="8" class="w-full p-3 font-mono text-xs bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:outline-none">{
   "rules": {
-    "vovinam_main_club": {
+    "clb-vovinam-antruong": {
       ".read": true,
       ".write": true
     }
@@ -3476,8 +3530,8 @@
 
         // Cấu hình Đồng bộ đám mây (Cloud Sync Siêu Tốc)
         const DEFAULT_CLOUD_CONFIG = {
-            url: '',
-            clubKey: 'vovinam_main_club',
+            url: 'https://clb-vovinam-antruong-default-rtdb.asia-southeast1.firebasedatabase.app/',
+            clubKey: 'clb-vovinam-antruong',
             secret: '',
             encryptionKey: '',
             autoSync: true,
@@ -3873,31 +3927,35 @@
             const logoUrlInput = document.getElementById('settings-logo-url');
 
             if (userDisplay) userDisplay.innerText = acc.name;
+            const headerAvatar = document.getElementById('header-user-avatar');
+            if (headerAvatar) {
+                headerAvatar.innerText = (acc.name || 'V').trim().charAt(0).toUpperCase();
+            }
 
             const enabledPermsCount = Object.keys(PERMISSION_LABELS).filter(k => hasPermission(k)).length;
             if (acc.isSuperAdmin) {
-                roleBadge.innerText = 'SUPER ADMIN (7/7 QUYỀN)';
-                roleBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500 text-white';
-                btnAdmin.className = 'px-2 py-1 rounded-md text-[11px] font-semibold transition bg-blue-600 text-white shadow-sm';
-                btnStaff.className = 'px-2 py-1 rounded-md text-[11px] font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+                roleBadge.innerText = 'SUPER ADMIN';
+                roleBadge.className = 'px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500 text-white leading-tight';
+                btnAdmin.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition bg-vovinam-blue text-white shadow-xs';
+                btnStaff.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-semibold transition bg-slate-200 text-slate-600 hover:bg-slate-300';
             } else {
-                roleBadge.innerText = `${acc.roleTitle.toUpperCase()} (${enabledPermsCount}/7 QUYỀN)`;
-                roleBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500 text-white';
-                btnStaff.className = 'px-2 py-1 rounded-md text-[11px] font-semibold transition bg-blue-600 text-white shadow-sm';
-                btnAdmin.className = 'px-2 py-1 rounded-md text-[11px] font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+                roleBadge.innerText = `${enabledPermsCount}/7 QUYỀN`;
+                roleBadge.className = 'px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500 text-white leading-tight';
+                btnStaff.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition bg-vovinam-blue text-white shadow-xs';
+                btnAdmin.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-semibold transition bg-slate-200 text-slate-600 hover:bg-slate-300';
             }
 
             if (bannerText) {
-                bannerText.innerHTML = `Đang dùng tài khoản: <strong>${acc.name}</strong> — Nhiệm vụ: <strong>${acc.roleTitle}</strong> (${acc.assignedClasses || 'Tất cả các lớp'}).`;
+                bannerText.innerHTML = `<strong class="text-vovinam-gold">${escapeHtml(acc.name)}</strong><br><span class="text-[11px] text-blue-100/90">${escapeHtml(acc.roleTitle)} (${escapeHtml(acc.assignedClasses || 'Tất cả các lớp')})</span>`;
             }
 
-            // Hiển thị các huy hiệu quyền hạn trên thanh Banner
+            // Hiển thị các huy hiệu quyền hạn trong menu thu gọn
             if (pillsContainer) {
                 pillsContainer.innerHTML = Object.keys(PERMISSION_LABELS).map(key => {
                     const p = PERMISSION_LABELS[key];
                     const allowed = hasPermission(key);
-                    return `<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center space-x-1 border ${allowed ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200 line-through'}">
-                        <i class="fa-solid ${allowed ? 'fa-check text-emerald-600' : 'fa-lock text-slate-400'}"></i>
+                    return `<span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold flex items-center space-x-1 border ${allowed ? 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30' : 'bg-white/5 text-slate-400 border-white/10 line-through'}">
+                        <i class="fa-solid ${allowed ? 'fa-check text-emerald-400' : 'fa-lock text-slate-500'}"></i>
                         <span>${p.name}</span>
                     </span>`;
                 }).join('');
@@ -4335,15 +4393,76 @@
         }
 
         // ================= ĐIỀU HƯỚNG TABS =================
+        function toggleUserAccountMenu(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('user-account-dropdown');
+            const sysMenu = document.getElementById('system-nav-dropdown');
+            if (sysMenu) sysMenu.classList.add('hidden');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        function toggleSystemNavMenu(e) {
+            if (e) e.stopPropagation();
+            const sysMenu = document.getElementById('system-nav-dropdown');
+            const userMenu = document.getElementById('user-account-dropdown');
+            if (userMenu) userMenu.classList.add('hidden');
+            if (sysMenu) sysMenu.classList.toggle('hidden');
+        }
+
+        function togglePermissionDetails(e) {
+            if (e) e.stopPropagation();
+            const pills = document.getElementById('active-permission-pills');
+            const icon = document.getElementById('perm-collapse-icon');
+            if (!pills) return;
+            if (pills.classList.contains('hidden')) {
+                pills.classList.remove('hidden');
+                pills.classList.add('flex');
+                if (icon) icon.classList.add('rotate-180');
+            } else {
+                pills.classList.add('hidden');
+                pills.classList.remove('flex');
+                if (icon) icon.classList.remove('rotate-180');
+            }
+        }
+
+        function closeHeaderDropdowns() {
+            const userMenu = document.getElementById('user-account-dropdown');
+            const sysMenu = document.getElementById('system-nav-dropdown');
+            if (userMenu) userMenu.classList.add('hidden');
+            if (sysMenu) sysMenu.classList.add('hidden');
+        }
+
+        document.addEventListener('click', function(e) {
+            const userWrapper = document.getElementById('user-account-menu-wrapper');
+            const sysWrapper = document.getElementById('system-nav-wrapper');
+            if (userWrapper && !userWrapper.contains(e.target)) {
+                const userMenu = document.getElementById('user-account-dropdown');
+                if (userMenu) userMenu.classList.add('hidden');
+            }
+            if (sysWrapper && !sysWrapper.contains(e.target)) {
+                const sysMenu = document.getElementById('system-nav-dropdown');
+                if (sysMenu) sysMenu.classList.add('hidden');
+            }
+        });
+
         function switchTab(tabName) {
+            const systemTabs = ['permissions', 'settings', 'server'];
             ['students', 'classes', 'attendance', 'tuition', 'approvals', 'reports', 'permissions', 'settings', 'server'].forEach(tab => {
                 const el = document.getElementById(`tab-${tab}`);
                 if (el) el.classList.add('hidden');
 
                 const btn = document.getElementById(`tab-btn-${tab}`);
                 const mBtn = document.getElementById(`mobile-tab-${tab}`);
-                if (btn) btn.className = 'px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 text-blue-100 hover:bg-white/10';
-                if (mBtn) mBtn.className = 'w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-blue-100 hover:bg-white/10 flex items-center space-x-2';
+                if (btn) {
+                    if (systemTabs.includes(tab)) {
+                        btn.className = 'w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-vovinam-blue flex items-center space-x-2.5 transition';
+                    } else {
+                        btn.className = 'relative px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10';
+                    }
+                }
+                if (mBtn) {
+                    mBtn.className = 'w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-blue-100 hover:bg-white/10 flex items-center space-x-2';
+                }
             });
 
             const current = document.getElementById(`tab-${tabName}`);
@@ -4351,9 +4470,19 @@
 
             const activeBtn = document.getElementById(`tab-btn-${tabName}`);
             const activeMBtn = document.getElementById(`mobile-tab-${tabName}`);
-            if (activeBtn) activeBtn.className = 'px-3.5 py-2 rounded-xl font-semibold text-xs lg:text-sm transition-all flex items-center space-x-2 bg-white/20 text-white shadow-sm';
-            if (activeMBtn) activeMBtn.className = 'w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-white bg-white/20 flex items-center space-x-2';
+            const sysNavBtn = document.getElementById('system-nav-btn');
 
+            if (systemTabs.includes(tabName)) {
+                if (activeBtn) activeBtn.className = 'w-full text-left px-3.5 py-2 text-xs font-bold text-vovinam-blue bg-blue-50/80 flex items-center space-x-2.5 transition';
+                if (sysNavBtn) sysNavBtn.className = 'px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 bg-white text-vovinam-navy shadow-sm';
+                if (activeMBtn) activeMBtn.className = 'w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-white bg-white/20 flex items-center space-x-2';
+            } else {
+                if (activeBtn) activeBtn.className = 'relative px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 bg-white text-vovinam-navy shadow-sm';
+                if (sysNavBtn) sysNavBtn.className = 'px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10';
+                if (activeMBtn) activeMBtn.className = 'w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-white bg-white/20 flex items-center space-x-2';
+            }
+
+            closeHeaderDropdowns();
             document.getElementById('mobile-menu').classList.add('hidden');
 
             if (tabName === 'classes') renderClasses();
@@ -6732,6 +6861,16 @@
                 const raw = localStorage.getItem('vovinam_cloud_config');
                 if (raw) {
                     cloudConfig = { ...DEFAULT_CLOUD_CONFIG, ...JSON.parse(raw) };
+                    let changed = false;
+                    if (!cloudConfig.clubKey || cloudConfig.clubKey === 'vovinam' + '_main_club') {
+                        cloudConfig.clubKey = 'clb-vovinam-antruong';
+                        changed = true;
+                    }
+                    if (!cloudConfig.url) {
+                        cloudConfig.url = 'https://clb-vovinam-antruong-default-rtdb.asia-southeast1.firebasedatabase.app/';
+                        changed = true;
+                    }
+                    if (changed) saveCloudConfigToStorage();
                 }
             } catch (e) {
                 cloudConfig = { ...DEFAULT_CLOUD_CONFIG };
@@ -6753,8 +6892,8 @@
             const autoEl = document.getElementById('cloud-auto-sync');
             const intervalEl = document.getElementById('cloud-sync-interval');
 
-            if (urlEl) urlEl.value = cloudConfig.url || '';
-            if (keyEl) keyEl.value = cloudConfig.clubKey || 'vovinam_main_club';
+            if (urlEl) urlEl.value = cloudConfig.url || 'https://clb-vovinam-antruong-default-rtdb.asia-southeast1.firebasedatabase.app/';
+            if (keyEl) keyEl.value = cloudConfig.clubKey || 'clb-vovinam-antruong';
             if (secEl) secEl.value = cloudConfig.secret || '';
             if (encEl) encEl.value = cloudConfig.encryptionKey || '';
             if (autoEl) autoEl.checked = cloudConfig.autoSync !== false;
@@ -6803,7 +6942,7 @@
 
             if (state === 'syncing') {
                 dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
-                text.className = 'text-[11px] font-medium text-amber-200';
+                text.className = 'text-[11px] font-semibold text-amber-700 truncate';
                 text.innerText = 'Đang đồng bộ Cloud...';
                 if (settingsBadge) {
                     settingsBadge.innerText = 'Đang đồng bộ...';
@@ -6811,7 +6950,7 @@
                 }
             } else if (state === 'connected' || state === 'ready') {
                 dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-                text.className = 'text-[11px] font-bold text-emerald-300';
+                text.className = 'text-[11px] font-bold text-emerald-700 truncate';
                 text.innerText = 'Đã kết nối Cloud Đa Máy';
                 if (lastSyncEl) lastSyncEl.innerText = timeNote || (cloudConfig.lastSync ? `• ${cloudConfig.lastSync}` : '');
                 if (settingsBadge) {
@@ -6820,7 +6959,7 @@
                 }
             } else if (state === 'error') {
                 dot.className = 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
-                text.className = 'text-[11px] font-bold text-red-300';
+                text.className = 'text-[11px] font-bold text-red-600 truncate';
                 text.innerText = 'Lỗi kết nối Cloud (Xem Cài đặt)';
                 if (settingsBadge) {
                     settingsBadge.innerText = 'Lỗi kết nối Cloud';
@@ -6828,7 +6967,7 @@
                 }
             } else {
                 dot.className = 'w-2 h-2 rounded-full bg-amber-400';
-                text.className = 'text-[11px] font-medium text-amber-200';
+                text.className = 'text-[11px] font-semibold text-slate-600 truncate';
                 text.innerText = 'Chưa kết nối Cloud (Chỉ lưu máy này)';
                 if (lastSyncEl) lastSyncEl.innerText = '';
                 if (settingsBadge) {
@@ -6857,7 +6996,7 @@
         function getCloudEndpointUrl(subPath = '') {
             let baseUrl = normalizeCloudUrl(cloudConfig.url || '');
             if (!baseUrl) return '';
-            const clubKey = (cloudConfig.clubKey || 'vovinam_main_club').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            const clubKey = (cloudConfig.clubKey || 'clb-vovinam-antruong').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
             let endpoint = baseUrl;
             const isFirebase = /firebaseio\.com|firebasedatabase\.app/i.test(baseUrl);
@@ -7084,7 +7223,7 @@
             }
 
             cloudConfig.url = normalizedUrl;
-            cloudConfig.clubKey = (keyEl && keyEl.value.trim()) ? keyEl.value.trim() : 'vovinam_main_club';
+            cloudConfig.clubKey = (keyEl && keyEl.value.trim()) ? keyEl.value.trim() : 'clb-vovinam-antruong';
             cloudConfig.secret = secEl ? secEl.value.trim() : '';
             cloudConfig.encryptionKey = encEl ? encEl.value.trim() : '';
             cloudConfig.autoSync = autoEl ? autoEl.checked : true;
@@ -7267,7 +7406,7 @@
         }
 
         function getMqttRoomTopicBase() {
-            const clubKey = (cloudConfig.clubKey || 'vovinam_main_club').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            const clubKey = (cloudConfig.clubKey || 'clb-vovinam-antruong').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
             return `vovinam_sync_v3/${clubKey}`;
         }
 
@@ -7328,8 +7467,8 @@
 
                             const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                             if (!cloudConfig.url) {
-                                updateCloudStatusUI('connected', `• Phòng: ${cloudConfig.clubKey || 'vovinam_main_club'}`);
-                                showCloudDiagnostic('success', `Đã kết nối Phòng Đồng Bộ Đám Mây Tự Động [${cloudConfig.clubKey || 'vovinam_main_club'}] lúc ${timeNow}. Mọi máy tính và điện thoại dùng chung Mã Phòng này sẽ tự động đồng bộ tức thì!`);
+                                updateCloudStatusUI('connected', `• Phòng: ${cloudConfig.clubKey || 'clb-vovinam-antruong'}`);
+                                showCloudDiagnostic('success', `Đã kết nối Phòng Đồng Bộ Đám Mây Tự Động [${cloudConfig.clubKey || 'clb-vovinam-antruong'}] lúc ${timeNow}. Mọi máy tính và điện thoại dùng chung Mã Phòng này sẽ tự động đồng bộ tức thì!`);
                             }
 
                             // Gửi tín hiệu yêu cầu đồng bộ tới các máy đang mở khác trong phòng
@@ -7410,7 +7549,7 @@
                 saveCloudConfigToStorage();
                 updateCloudStatusUI('connected', `• ${timeNow}`);
                 if (manual && !cloudConfig.url) {
-                    showToast(`Đã đẩy dữ liệu lên Phòng Đám Mây [${cloudConfig.clubKey || 'vovinam_main_club'}] thành công!`);
+                    showToast(`Đã đẩy dữ liệu lên Phòng Đám Mây [${cloudConfig.clubKey || 'clb-vovinam-antruong'}] thành công!`);
                 }
                 return true;
             } catch (e) {
@@ -7469,7 +7608,7 @@
                     cloudConfig.lastSync = timeNow;
                     saveCloudConfigToStorage();
                     updateCloudStatusUI('connected', `• Đồng bộ ${timeNow}`);
-                    showCloudDiagnostic('success', `Đã tự động đồng bộ ${students.length} võ sinh & ${classes.length} lớp học từ Phòng [${cloudConfig.clubKey || 'vovinam_main_club'}] (Cập nhật bởi: ${data.updatedBy || 'Admin'} lúc ${timeNow}).`);
+                    showCloudDiagnostic('success', `Đã tự động đồng bộ ${students.length} võ sinh & ${classes.length} lớp học từ Phòng [${cloudConfig.clubKey || 'clb-vovinam-antruong'}] (Cập nhật bởi: ${data.updatedBy || 'Admin'} lúc ${timeNow}).`);
                 }
             } catch (e) {}
         }
@@ -7478,7 +7617,7 @@
             if (!mqttRelayConnected) {
                 startMqttRealtimeRelay();
                 if (manual) {
-                    showToast(`Đang kết nối tới Phòng Đám Mây [${cloudConfig.clubKey || 'vovinam_main_club'}]...`, 'info');
+                    showToast(`Đang kết nối tới Phòng Đám Mây [${cloudConfig.clubKey || 'clb-vovinam-antruong'}]...`, 'info');
                 }
                 return;
             }
@@ -7494,7 +7633,7 @@
                 }), false);
                 mqttRelayWs.send(reqPkt);
                 if (manual) {
-                    showToast(`Đã đồng bộ dữ liệu trực tuyến qua Phòng [${cloudConfig.clubKey || 'vovinam_main_club'}]!`);
+                    showToast(`Đã đồng bộ dữ liệu trực tuyến qua Phòng [${cloudConfig.clubKey || 'clb-vovinam-antruong'}]!`);
                 }
             }
         }
@@ -7508,7 +7647,7 @@
 
             const rawUrl = (urlEl && urlEl.value.trim()) ? urlEl.value.trim() : (cloudConfig.url || '');
             const url = normalizeCloudUrl(rawUrl);
-            const clubKey = (keyEl && keyEl.value.trim()) ? keyEl.value.trim() : (cloudConfig.clubKey || 'vovinam_main_club');
+            const clubKey = (keyEl && keyEl.value.trim()) ? keyEl.value.trim() : (cloudConfig.clubKey || 'clb-vovinam-antruong');
 
             const cfgObj = {
                 u: url,
@@ -7584,7 +7723,7 @@
                 if (!cfgObj || (!cfgObj.u && !cfgObj.k)) throw new Error('Invalid config');
 
                 cloudConfig.url = normalizeCloudUrl(cfgObj.u || '');
-                cloudConfig.clubKey = cfgObj.k || 'vovinam_main_club';
+                cloudConfig.clubKey = cfgObj.k || 'clb-vovinam-antruong';
                 cloudConfig.secret = cfgObj.s || '';
                 cloudConfig.encryptionKey = cfgObj.e || '';
                 cloudConfig.autoSync = true;
