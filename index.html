@@ -2825,6 +2825,33 @@
                 .replace(/'/g, '&#039;');
         }
 
+        // Khử khuẩn tham số chuỗi đặt trong thuộc tính sự kiện inline (onclick="fn('...')")
+        function escapeJsAttr(str) {
+            if (str === null || str === undefined) return '';
+            return escapeHtml(String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r|\n/g, ' '));
+        }
+
+        // Kiểm tra và lọc URL ảnh/logo an toàn (Chặn tuyệt đối javascript:, vbscript:, data:text/html...)
+        function sanitizeImageUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            const trimmed = url.trim();
+            if (/^https?:\/\//i.test(trimmed)) {
+                return trimmed.replace(/["'<>]/g, '');
+            }
+            if (/^data:image\/(png|jpeg|jpg|webp|gif|bmp|svg\+xml)(;[a-z0-9=+-]+)*,/i.test(trimmed)) {
+                if (/^data:image\/svg\+xml/i.test(trimmed)) {
+                    const decoded = (() => {
+                        try { return decodeURIComponent(trimmed); } catch (e) { return trimmed; }
+                    })();
+                    if (/<script|onload\s*=|onerror\s*=|javascript:/i.test(decoded)) {
+                        return '';
+                    }
+                }
+                return trimmed;
+            }
+            return '';
+        }
+
         // Lá chắn chống CSV/Excel Formula Injection (=, +, -, @, Tab, CR)
         function sanitizeCsvCell(val) {
             if (val === null || val === undefined) return '""';
@@ -2835,17 +2862,29 @@
             return `"${str}"`;
         }
 
-        // Khử khuẩn sâu mọi chuỗi trong Object khi nạp dữ liệu từ file JSON bên ngoài
-        function sanitizeObjectStrings(obj) {
-            if (!obj || typeof obj !== 'object') return obj;
-            if (Array.isArray(obj)) return obj.map(sanitizeObjectStrings);
+        // Khử khuẩn sâu mọi chuỗi trong Object & Chống Prototype Pollution khi nạp dữ liệu từ JSON/Cloud
+        const DANGEROUS_OBJECT_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+        function sanitizeObjectStrings(obj, depth = 0) {
+            if (depth > 15 || !obj || typeof obj !== 'object') return obj;
+            if (Array.isArray(obj)) return obj.map(item => sanitizeObjectStrings(item, depth + 1));
             const res = {};
-            for (const [k, v] of Object.entries(obj)) {
+            for (const k of Object.keys(obj)) {
+                if (DANGEROUS_OBJECT_KEYS.has(k) || !Object.prototype.hasOwnProperty.call(obj, k)) {
+                    continue;
+                }
+                const v = obj[k];
                 if (typeof v === 'string') {
-                    // Loại bỏ thẻ script hoặc liên kết javascript:
-                    res[k] = v.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').trim();
+                    let cleaned = v
+                        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                        .replace(/<\/?(script|iframe|object|embed|applet|meta|link|style|base|form)\b[^>]*>/gi, '')
+                        .replace(/\bon[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+                        .replace(/(?:javascript|vbscript|data\s*:\s*text\/html)\s*:/gi, '');
+                    if (k === 'avatar' || k === 'logo') {
+                        cleaned = sanitizeImageUrl(cleaned);
+                    }
+                    res[k] = cleaned.trim();
                 } else if (typeof v === 'object' && v !== null) {
-                    res[k] = sanitizeObjectStrings(v);
+                    res[k] = sanitizeObjectStrings(v, depth + 1);
                 } else {
                     res[k] = v;
                 }
@@ -2865,13 +2904,14 @@
             return String(username).trim().toLowerCase().replace(/^@+/, '').replace(/\s+/g, '_').replace(/[^a-z0-9._-]/g, '');
         }
 
-        // Tạo chuỗi Salt ngẫu nhiên bằng CSPRNG (Mật mã an toàn tiêu chuẩn)
+        // Tạo chuỗi Salt ngẫu nhiên bằng CSPRNG (Mật mã an toàn tiêu chuẩn WebCrypto)
         function generateCryptoSalt(len = 16) {
             const arr = new Uint8Array(len);
             if (window.crypto && window.crypto.getRandomValues) {
                 window.crypto.getRandomValues(arr);
             } else {
-                for (let i = 0; i < len; i++) arr[i] = Math.floor(Math.random() * 256);
+                const now = Date.now();
+                for (let i = 0; i < len; i++) arr[i] = ((now >>> (i % 8)) ^ Math.floor(Math.random() * 256)) & 0xff;
             }
             return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
         }
@@ -2961,8 +3001,9 @@
             return sha256Bytes(opad.concat(inner));
         }
 
-        // Băm PBKDF2-HMAC-SHA256 chuẩn RFC 8018
-        function pbkdf2HmacSha256(passwordStr, saltBytes, iterations = 1000) {
+        // Băm PBKDF2-HMAC-SHA256 chuẩn RFC 8018 (Nâng cấp 10.000 vòng chống vét cạn)
+        const DEFAULT_PBKDF2_ITERATIONS = 10000;
+        function pbkdf2HmacSha256(passwordStr, saltBytes, iterations = DEFAULT_PBKDF2_ITERATIONS) {
             const pwdBytes = [];
             for (let i = 0; i < passwordStr.length; i++) {
                 const code = passwordStr.charCodeAt(i);
@@ -2989,21 +3030,45 @@
         function timingSafeEqual(a, b) {
             if (typeof a !== 'string' || typeof b !== 'string') return false;
             let mismatch = a.length === b.length ? 0 : 1;
-            if (mismatch) return false;
-            for (let i = 0; i < a.length; i++) {
-                mismatch |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+            const maxLen = Math.max(a.length, b.length);
+            for (let i = 0; i < maxLen; i++) {
+                const ca = i < a.length ? a.charCodeAt(i) : 0;
+                const cb = i < b.length ? b.charCodeAt(i) : 0;
+                mismatch |= (ca ^ cb);
             }
             return mismatch === 0;
         }
 
-        // Băm mật khẩu chuẩn công nghiệp PBKDF2-SHA256 (Có muối ngẫu nhiên độc lập)
-        function hashPasswordSync(password, saltHex = null, iterations = 1000) {
+        // Băm mật khẩu chuẩn công nghiệp PBKDF2-SHA256 (10.000 vòng + Muối CSPRNG độc lập)
+        function hashPasswordSync(password, saltHex = null, iterations = DEFAULT_PBKDF2_ITERATIONS) {
             if (!password) return '';
             if (typeof password === 'string' && password.startsWith('vvn_pbkdf2$')) return password;
             if (!saltHex) saltHex = generateCryptoSalt(16);
             const saltBytes = saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16));
             const hash = pbkdf2HmacSha256(String(password), saltBytes, iterations);
             return `vvn_pbkdf2$${iterations}$${saltHex}$${hash}`;
+        }
+
+        // Tạo chữ ký toàn vẹn phiên đăng nhập (HMAC-SHA256) chống giả mạo accountId trong LocalStorage
+        function getDeviceSessionSecret() {
+            try {
+                let sec = localStorage.getItem('vovinam_device_hmac_secret');
+                if (!sec || sec.length < 32) {
+                    sec = generateCryptoSalt(32);
+                    localStorage.setItem('vovinam_device_hmac_secret', sec);
+                }
+                return sec;
+            } catch (e) {
+                return 'vovinam_fallback_hmac_secret_2026';
+            }
+        }
+
+        function computeSessionIntegrityToken(acc, expiresAt) {
+            if (!acc) return '';
+            const secretBytes = Array.from(new TextEncoder().encode(getDeviceSessionSecret()));
+            const msgStr = `${acc.id}|${(acc.username || '').replace(/^@+/, '')}|${acc.passwordHash || ''}|${expiresAt || 0}`;
+            const msgBytes = Array.from(new TextEncoder().encode(msgStr));
+            return hmacSha256(secretBytes, msgBytes).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
         // Hàm băm cũ để tương thích ngược nâng cấp dữ liệu
@@ -3038,7 +3103,12 @@
                         const expectedHash = parts[3];
                         const saltBytes = saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16));
                         const computedHash = pbkdf2HmacSha256(pwd, saltBytes, iters);
-                        return timingSafeEqual(computedHash, expectedHash);
+                        const matched = timingSafeEqual(computedHash, expectedHash);
+                        if (matched && iters < DEFAULT_PBKDF2_ITERATIONS) {
+                            acc.passwordHash = hashPasswordSync(pwd, null, DEFAULT_PBKDF2_ITERATIONS);
+                            saveAccountsToStorage(true);
+                        }
+                        return matched;
                     }
                 }
                 // Định dạng legacy vvn_h$ cũ: kiểm tra và tự động nâng cấp sang PBKDF2
@@ -3165,6 +3235,10 @@
         }
 
         function clearSecurityLogs() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được xóa nhật ký an ninh!', 'error');
+                return;
+            }
             showConfirm('Xóa Nhật Ký An Ninh', 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử nhật ký bảo mật?', () => {
                 try { localStorage.removeItem('vovinam_security_logs'); } catch (e) {}
                 renderSecurityAuditLog();
@@ -3173,6 +3247,10 @@
         }
 
         function exportSecurityLogsCSV() {
+            if (!hasPermission('reports_export') && !hasPermission('settings_manage')) {
+                showToast('Tài khoản của bạn chưa được cấp quyền Xuất nhật ký an ninh!', 'error');
+                return;
+            }
             let logs = [];
             try {
                 const raw = localStorage.getItem('vovinam_security_logs');
@@ -3182,8 +3260,8 @@
                 showToast('Chưa có nhật ký an ninh để xuất!', 'info');
                 return;
             }
-            let csv = `\uFEFFNHẬT KÝ SỰ KIỆN AN NINH & BẢO MẬT HỆ THỐNG - ${siteConfig.title || 'VOVINAM'}\n`;
-            csv += `Thời gian xuất:,"${new Date().toLocaleString('vi-VN')}"\n\n`;
+            let csv = `\uFEFF${sanitizeCsvCell('NHẬT KÝ SỰ KIỆN AN NINH & BẢO MẬT HỆ THỐNG - ' + (siteConfig.title || 'VOVINAM'))}\n`;
+            csv += `Thời gian xuất:,${sanitizeCsvCell(new Date().toLocaleString('vi-VN'))}\n\n`;
             csv += `STT,Thời Gian,Hành Động,Tài Khoản Thực Hiện,Mức Độ,Chi Tiết Sự Kiện\n`;
             logs.forEach((l, idx) => {
                 csv += [
@@ -3205,6 +3283,9 @@
 
         function resetInactivityTimer() {
             if (inactivityTimer) clearTimeout(inactivityTimer);
+            try {
+                if (localStorage.getItem('vovinam_session_locked') === '1') return;
+            } catch (e) {}
             const loginModal = document.getElementById('login-modal');
             if (loginModal && loginModal.classList.contains('hidden')) {
                 inactivityTimer = setTimeout(triggerInactivityLock, INACTIVITY_TIMEOUT_MS);
@@ -3217,29 +3298,39 @@
             const lockModal = document.getElementById('session-lock-modal');
             if (!lockModal) return;
 
+            try { localStorage.setItem('vovinam_session_locked', '1'); } catch (e) {}
             document.getElementById('lock-screen-user').innerText = acc.name;
             document.getElementById('lock-screen-role').innerText = acc.roleTitle;
             document.getElementById('lock-screen-avatar').innerText = acc.name.charAt(0).toUpperCase();
             document.getElementById('lock-screen-password').value = '';
             document.getElementById('lock-screen-error').classList.add('hidden');
             lockModal.classList.remove('hidden');
-            logSecurityEvent('Phiên làm việc tự động khóa', `Tài khoản ${acc.name} không có thao tác trong 20 phút`, 'warning');
+            logSecurityEvent('Phiên làm việc tự động khóa', `Tài khoản ${acc.name} đã khóa màn hình bảo vệ`, 'warning');
         }
 
         function handleSessionUnlock(e) {
             e.preventDefault();
+            const remainingLockout = getLockoutRemainingSeconds();
+            const errBox = document.getElementById('lock-screen-error');
+            if (remainingLockout > 0) {
+                errBox.classList.remove('hidden');
+                errBox.innerText = `Tạm khóa do nhập sai nhiều lần! Thử lại sau ${remainingLockout}s.`;
+                return;
+            }
             const acc = getCurrentAccount();
             const pass = document.getElementById('lock-screen-password').value;
-            const errBox = document.getElementById('lock-screen-error');
             if (verifyAccountPassword(pass, acc)) {
+                try { localStorage.removeItem('vovinam_session_locked'); } catch (err) {}
+                recordSuccessfulLogin(acc.username);
                 document.getElementById('session-lock-modal').classList.add('hidden');
                 resetInactivityTimer();
                 showToast(`Đã mở khóa màn hình cho ${acc.name}!`);
                 logSecurityEvent('Mở khóa màn hình', `Tài khoản ${acc.name} mở khóa phiên thành công`, 'info');
             } else {
+                recordFailedLogin(acc ? acc.username : 'lock_screen');
                 errBox.classList.remove('hidden');
                 errBox.innerText = 'Mật khẩu mở khóa không chính xác!';
-                logSecurityEvent('Mở khóa thất bại', `Tài khoản ${acc.name} nhập sai mật khẩu mở khóa`, 'warning');
+                logSecurityEvent('Mở khóa thất bại', `Tài khoản ${acc ? acc.name : ''} nhập sai mật khẩu mở khóa`, 'warning');
             }
         }
 
@@ -3563,7 +3654,7 @@
             'wss://broker.hivemq.com:8884/mqtt',
             'wss://test.mosquitto.org:8081/mqtt'
         ];
-        const clientDeviceId = 'DEV_' + Math.random().toString(36).substring(2, 10);
+        const clientDeviceId = 'DEV_' + generateCryptoSalt(6);
 
         // Khởi động hệ thống
         window.onload = function() {
@@ -3854,22 +3945,7 @@
         }
 
         function switchAccount(accId) {
-            const acc = accounts.find(a => a.id === accId);
-            if (!acc) return;
-
-            currentAccountId = acc.id;
-            currentUserRole = (acc.isSuperAdmin || (acc.permissions && acc.permissions.settings_manage)) ? 'admin' : 'staff';
-            saveAccountsToStorage(true);
-
-            populateAccountSwitcher();
-            updateRoleUI();
-            renderStudents();
-            renderClasses();
-            renderPendingApprovals();
-            renderTuitionTable();
-            renderPermissionsMatrix();
-
-            showToast(`Đã chuyển sang tài khoản: ${acc.name} (${acc.roleTitle})`, 'info');
+            promptSwitchToAccount(accId);
         }
 
         function switchRole(role) {
@@ -4005,23 +4081,27 @@
             }
 
             if (settingsSaveBtn) {
-                settingsSaveBtn.disabled = false;
-                settingsSaveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                settingsSaveBtn.disabled = !canManageSettings;
+                if (canManageSettings) {
+                    settingsSaveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    settingsSaveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
             }
             [titleInput, subTitleInput, instructorInput, branchInput, hotlineInput, emailInput, logoFileInput, logoUrlInput].forEach(el => {
-                if (el) el.disabled = false;
+                if (el) el.disabled = !canManageSettings;
             });
             if (canManageSettings) {
                 if (settingsNote) settingsNote.innerText = 'Mọi thay đổi sẽ áp dụng ngay lên giao diện Header, Báo cáo, Footer và lưu vào bộ nhớ trình duyệt.';
                 if (settingsAdminBadge) {
-                    settingsAdminBadge.innerText = 'Được phép chỉnh sửa';
+                    settingsAdminBadge.innerText = 'Quyền Quản Trị Hệ Thống';
                     settingsAdminBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200';
                 }
             } else {
-                if (settingsNote) settingsNote.innerText = 'Bạn có thể chỉnh sửa và lưu thông tin thương hiệu, logo trực tiếp tại đây.';
+                if (settingsNote) settingsNote.innerText = 'Chế độ chỉ xem: Tài khoản hiện tại chưa được cấp quyền Quản trị Hệ thống & Cài đặt.';
                 if (settingsAdminBadge) {
-                    settingsAdminBadge.innerText = 'Cho phép chỉnh sửa';
-                    settingsAdminBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-vovinam-blue border border-blue-200';
+                    settingsAdminBadge.innerText = 'Chế độ chỉ xem (Khóa)';
+                    settingsAdminBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200';
                 }
             }
 
@@ -4092,35 +4172,36 @@
                         ${permKeys.map(pKey => {
                             const checked = acc.isSuperAdmin || (acc.permissions && acc.permissions[pKey]);
                             const disabled = acc.isSuperAdmin || !canEditPerms;
+                            const safeAccId = escapeJsAttr(acc.id);
                             return `
                                 <td class="py-3 px-2 text-center">
                                     <input type="checkbox"
                                         ${checked ? 'checked' : ''}
                                         ${disabled ? 'disabled' : ''}
-                                        onchange="toggleAccountPermission('${acc.id}', '${pKey}', this.checked)"
+                                        onchange="toggleAccountPermission('${safeAccId}', '${pKey}', this.checked)"
                                         class="w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}">
                                 </td>
                             `;
                         }).join('')}
                         <td class="py-3 px-3 text-center">
                             <div class="flex items-center justify-center space-x-1">
-                                <button onclick="promptSwitchToAccount('${acc.id}')" title="Đăng nhập tài khoản này (Cần mật khẩu)" class="px-2 py-1 rounded-lg text-[11px] font-bold transition ${isCurrent ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 hover:bg-vovinam-blue hover:text-white text-slate-700'}">
+                                <button onclick="promptSwitchToAccount('${escapeJsAttr(acc.id)}')" title="Đăng nhập tài khoản này (Cần mật khẩu)" class="px-2 py-1 rounded-lg text-[11px] font-bold transition ${isCurrent ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 hover:bg-vovinam-blue hover:text-white text-slate-700'}">
                                     ${isCurrent ? 'Đang dùng' : 'Đăng nhập'}
                                 </button>
                                 ${canEditPerms ? `
-                                    <button onclick="openAdminResetPasswordModal('${acc.id}')" title="Admin đặt lại mật khẩu" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition">
+                                    <button onclick="openAdminResetPasswordModal('${escapeJsAttr(acc.id)}')" title="Admin đặt lại mật khẩu" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition">
                                         <i class="fa-solid fa-key"></i>
                                     </button>
                                     ${!acc.isSuperAdmin ? `
-                                        <button onclick="toggleAccountLock('${acc.id}')" title="${isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}" class="p-1.5 ${isLocked ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-500 hover:text-red-600 hover:bg-red-50'} rounded-lg transition">
+                                        <button onclick="toggleAccountLock('${escapeJsAttr(acc.id)}')" title="${isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}" class="p-1.5 ${isLocked ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-500 hover:text-red-600 hover:bg-red-50'} rounded-lg transition">
                                             <i class="fa-solid ${isLocked ? 'fa-lock-open' : 'fa-user-lock'}"></i>
                                         </button>
                                     ` : ''}
-                                    <button onclick="editAccount('${acc.id}')" title="Sửa tài khoản & quyền" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                    <button onclick="editAccount('${escapeJsAttr(acc.id)}')" title="Sửa tài khoản & quyền" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
                                     ${!acc.isSuperAdmin ? `
-                                        <button onclick="deleteAccount('${acc.id}')" title="Xóa tài khoản" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition">
+                                        <button onclick="deleteAccount('${escapeJsAttr(acc.id)}')" title="Xóa tài khoản" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition">
                                             <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     ` : ''}
@@ -4510,7 +4591,7 @@
         }
 
         function setLogoPreviewState(logoDataUrl) {
-            currentDraftLogo = logoDataUrl ? String(logoDataUrl).trim() : '';
+            currentDraftLogo = sanitizeImageUrl(logoDataUrl ? String(logoDataUrl).trim() : '');
             const previewImg = document.getElementById('settings-logo-preview');
             const previewText = document.getElementById('settings-logo-placeholder');
             const titleInput = document.getElementById('settings-site-title');
@@ -4553,6 +4634,8 @@
             const hotline = siteConfig.hotline || DEFAULT_SITE_CONFIG.hotline;
             const email = siteConfig.email || DEFAULT_SITE_CONFIG.email;
             const initialChar = (title.trim().charAt(0) || 'V').toUpperCase();
+            const safeLogo = sanitizeImageUrl(siteConfig.logo || '');
+            siteConfig.logo = safeLogo;
 
             // Cập nhật thẻ title trang
             document.title = `${title} - ${subtitle}`;
@@ -4575,8 +4658,8 @@
             const logoText = document.getElementById('site-logo-text');
 
             if (logoImg && logoText) {
-                if (siteConfig.logo) {
-                    logoImg.src = siteConfig.logo;
+                if (safeLogo) {
+                    logoImg.src = safeLogo;
                     logoImg.classList.remove('hidden');
                     logoText.classList.add('hidden');
                 } else {
@@ -4647,9 +4730,10 @@
                 previewText.innerText = initialChar;
             }
 
-            if (currentDraftLogo) {
+            const safeDraft = sanitizeImageUrl(currentDraftLogo);
+            if (safeDraft) {
                 if (liveLogoImg) {
-                    liveLogoImg.src = currentDraftLogo;
+                    liveLogoImg.src = safeDraft;
                     liveLogoImg.classList.remove('hidden');
                 }
                 if (liveLogoText) liveLogoText.classList.add('hidden');
@@ -4688,6 +4772,10 @@
         }
 
         function triggerLogoFileUpload() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được thay đổi logo!', 'error');
+                return;
+            }
             const fileInput = document.getElementById('settings-logo-file');
             if (fileInput) {
                 fileInput.disabled = false;
@@ -4733,14 +4821,23 @@
         }
 
         function previewSiteLogo(event) {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được tải lên logo!', 'error');
+                return;
+            }
             const input = event.target;
             if (input && input.files && input.files[0]) {
                 const file = input.files[0];
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     compressImageDataUrl(e.target.result, 256, function(optimizedDataUrl) {
-                        setLogoPreviewState(optimizedDataUrl);
-                        siteConfig.logo = optimizedDataUrl;
+                        const safeLogo = sanitizeImageUrl(optimizedDataUrl);
+                        if (!safeLogo) {
+                            showToast('Định dạng ảnh không hợp lệ hoặc không an toàn!', 'error');
+                            return;
+                        }
+                        setLogoPreviewState(safeLogo);
+                        siteConfig.logo = safeLogo;
                         persistSiteConfigToStorage();
                         applySiteConfig();
                         triggerAutoCloudSync();
@@ -4756,17 +4853,22 @@
         }
 
         function applyLogoUrl() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được thay đổi logo!', 'error');
+                return;
+            }
             const urlInput = document.getElementById('settings-logo-url');
-            const url = urlInput ? urlInput.value.trim() : '';
-            if (!url) {
-                showToast('Vui lòng nhập đường dẫn URL ảnh hợp lệ!', 'error');
+            const rawUrl = urlInput ? urlInput.value.trim() : '';
+            const safeUrl = sanitizeImageUrl(rawUrl);
+            if (!safeUrl) {
+                showToast('Vui lòng nhập đường dẫn URL ảnh hợp lệ (https://... hoặc data:image/... an toàn)!', 'error');
                 return;
             }
 
             const img = new Image();
             img.onload = function() {
-                setLogoPreviewState(url);
-                siteConfig.logo = url;
+                setLogoPreviewState(safeUrl);
+                siteConfig.logo = safeUrl;
                 persistSiteConfigToStorage();
                 applySiteConfig();
                 triggerAutoCloudSync();
@@ -4775,10 +4877,14 @@
             img.onerror = function() {
                 showToast('Không thể tải ảnh từ link này. Vui lòng kiểm tra lại URL!', 'error');
             };
-            img.src = url;
+            img.src = safeUrl;
         }
 
         function selectPresetLogo(presetKey) {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được chọn logo mẫu!', 'error');
+                return;
+            }
             const presetSvg = PRESET_LOGOS[presetKey];
             if (!presetSvg) return;
 
@@ -4797,6 +4903,10 @@
         }
 
         function resetDefaultLogo() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được đặt lại logo!', 'error');
+                return;
+            }
             const fileInput = document.getElementById('settings-logo-file');
             const urlInput = document.getElementById('settings-logo-url');
 
@@ -4814,6 +4924,10 @@
         function saveSiteSettings(e) {
             if (e && typeof e.preventDefault === 'function') {
                 e.preventDefault();
+            }
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được lưu cài đặt trang!', 'error');
+                return;
             }
 
             const titleEl = document.getElementById('settings-site-title');
@@ -4886,6 +5000,10 @@
         }
 
         function restoreDefaultSettings() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được khôi phục cài đặt gốc!', 'error');
+                return;
+            }
             showConfirm('Khôi Phục Mặc Định', 'Bạn có chắc muốn đưa tên trang web, khẩu hiệu, thông tin liên hệ và ảnh đại diện logo về nguyên bản ban đầu?', () => {
                 siteConfig = { ...DEFAULT_SITE_CONFIG };
                 setLogoPreviewState('');
@@ -4920,7 +5038,7 @@
                 const curVal = filterClass.value;
                 filterClass.innerHTML = `
                     <option value="">-- Tất cả Lớp/Phân loại --</option>
-                    ${classes.map(c => `<option value="${c.name}">${c.name} (${c.time})</option>`).join('')}
+                    ${classes.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.time)})</option>`).join('')}
                     <option value="guest">Học sinh học thêm (Tăng cường)</option>
                 `;
                 filterClass.value = curVal;
@@ -4931,7 +5049,7 @@
             if (studentClass) {
                 const curVal = studentClass.value;
                 studentClass.innerHTML = classes.map(c => `
-                    <option value="${c.name}">${c.name} (${c.time})</option>
+                    <option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.time)})</option>
                 `).join('');
                 if (curVal && classes.some(c => c.name === curVal)) {
                     studentClass.value = curVal;
@@ -4943,7 +5061,7 @@
             if (attendanceClass) {
                 const curVal = attendanceClass.value;
                 attendanceClass.innerHTML = classes.map(c => `
-                    <option value="${c.name}">${c.name} (${c.time})</option>
+                    <option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.time)})</option>
                 `).join('');
                 if (curVal && classes.some(c => c.name === curVal)) {
                     attendanceClass.value = curVal;
@@ -4956,7 +5074,7 @@
                 const curVal = reportClass.value;
                 reportClass.innerHTML = `
                     <option value="all">Tất cả các lớp</option>
-                    ${classes.map(c => `<option value="${c.name}">${c.name}</option>`).join('')}
+                    ${classes.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('')}
                 `;
                 if (curVal) reportClass.value = curVal;
             }
@@ -5070,9 +5188,9 @@
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-2 text-slate-700">
                                         <i class="fa-solid fa-clock text-amber-500 text-sm w-4"></i>
-                                        <span class="font-bold text-slate-800 text-sm">${cls.time}</span>
+                                        <span class="font-bold text-slate-800 text-sm">${safeClsTime}</span>
                                     </div>
-                                    <span class="text-[11px] text-slate-400">(${cls.days})</span>
+                                    <span class="text-[11px] text-slate-400">(${safeClsDays})</span>
                                 </div>
 
                                 <!-- Pill days -->
@@ -5086,15 +5204,15 @@
 
                                 <div class="flex items-center space-x-2 pt-1">
                                     <i class="fa-solid fa-user-tie text-vovinam-blue text-xs w-4"></i>
-                                    <span>HLV: <strong class="text-slate-800">${cls.coach || 'Võ Sư Phụ Trách'}</strong></span>
+                                    <span>HLV: <strong class="text-slate-800">${safeClsCoach}</strong></span>
                                 </div>
 
                                 <div class="flex items-center space-x-2">
                                     <i class="fa-solid fa-location-dot text-red-500 text-xs w-4"></i>
-                                    <span>Địa điểm: <span class="text-slate-700">${cls.room || 'Sân tập chính'}</span></span>
+                                    <span>Địa điểm: <span class="text-slate-700">${safeClsRoom}</span></span>
                                 </div>
 
-                                ${cls.note ? `<p class="text-[11px] text-slate-500 italic bg-slate-50 p-2 rounded-xl border border-slate-100">${cls.note}</p>` : ''}
+                                ${safeClsNote ? `<p class="text-[11px] text-slate-500 italic bg-slate-50 p-2 rounded-xl border border-slate-100">${safeClsNote}</p>` : ''}
                             </div>
 
                             <!-- Thanh tiến độ sĩ số lớp -->
@@ -5111,20 +5229,20 @@
 
                         <!-- Footer Buttons -->
                         <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                            <button onclick="viewClassStudents('${cls.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-vovinam-blue text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+                            <button onclick="viewClassStudents('${escapeJsAttr(cls.id)}')" class="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-vovinam-blue text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
                                 <i class="fa-solid fa-users"></i>
                                 <span>Xem (${currentCount}) võ sinh</span>
                             </button>
 
                             <div class="flex items-center space-x-1">
                                 ${hasPermission('classes_manage') ? `
-                                    <button onclick="toggleClassStatus('${cls.id}')" title="${isActive ? 'Tạm dừng lớp' : 'Kích hoạt lại'}" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition">
+                                    <button onclick="toggleClassStatus('${escapeJsAttr(cls.id)}')" title="${isActive ? 'Tạm dừng lớp' : 'Kích hoạt lại'}" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition">
                                         <i class="fa-solid ${isActive ? 'fa-pause' : 'fa-play'}"></i>
                                     </button>
-                                    <button onclick="editClass('${cls.id}')" title="Sửa thông tin & giờ học" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition">
+                                    <button onclick="editClass('${escapeJsAttr(cls.id)}')" title="Sửa thông tin & giờ học" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
-                                    <button onclick="deleteClass('${cls.id}')" title="Xóa bỏ lớp học" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition">
+                                    <button onclick="deleteClass('${escapeJsAttr(cls.id)}')" title="Xóa bỏ lớp học" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                 ` : `
@@ -5383,7 +5501,7 @@
 
             const classStudents = students.filter(s => s.className === cls.name);
 
-            title.innerHTML = `<i class="fa-solid fa-users mr-1.5"></i><span>Danh Sách Võ Sinh: ${cls.name}</span>`;
+            title.innerHTML = `<i class="fa-solid fa-users mr-1.5"></i><span>Danh Sách Võ Sinh: ${escapeHtml(cls.name)}</span>`;
             subtitle.innerText = `Lịch học: ${cls.days} (${cls.time}) • Sĩ số: ${classStudents.length} võ sinh`;
 
             if (classStudents.length === 0) {
@@ -5395,15 +5513,15 @@
                     return `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-100">
                             <td class="py-2.5 px-3 text-center font-bold text-slate-400">${idx + 1}</td>
-                            <td class="py-2.5 px-3 font-mono font-bold text-slate-700">${s.id}</td>
-                            <td class="py-2.5 px-3 font-bold text-slate-800">${s.name}</td>
+                            <td class="py-2.5 px-3 font-mono font-bold text-slate-700">${escapeHtml(s.id)}</td>
+                            <td class="py-2.5 px-3 font-bold text-slate-800">${escapeHtml(s.name)}</td>
                             <td class="py-2.5 px-3">${getBeltBadge(s.belt)}</td>
                             <td class="py-2.5 px-3">
-                                <div>${s.parent || 'Chưa cập nhật'}</div>
-                                <div class="text-[11px] font-bold text-vovinam-blue">${s.phone || 'N/A'}</div>
+                                <div>${escapeHtml(s.parent || 'Chưa cập nhật')}</div>
+                                <div class="text-[11px] font-bold text-vovinam-blue">${escapeHtml(s.phone || 'N/A')}</div>
                             </td>
                             <td class="py-2.5 px-3 text-center">
-                                <button onclick="closeClassStudentsModal(); viewStudentDetail('${s.id}')" class="px-2.5 py-1 bg-blue-50 text-vovinam-blue hover:bg-blue-100 rounded-lg text-xs font-semibold transition">
+                                <button onclick="closeClassStudentsModal(); viewStudentDetail('${escapeJsAttr(s.id)}')" class="px-2.5 py-1 bg-blue-50 text-vovinam-blue hover:bg-blue-100 rounded-lg text-xs font-semibold transition">
                                     Chi tiết
                                 </button>
                             </td>
@@ -5479,22 +5597,23 @@
         }
 
         function getBeltBadge(belt) {
+            const beltStr = String(belt || '');
             let bg = 'bg-slate-100 text-slate-700 border-slate-300';
             let icon = 'text-slate-500';
 
-            if (belt.includes('Lam đai')) {
+            if (beltStr.includes('Lam đai')) {
                 bg = 'bg-blue-100 text-vovinam-blue border-blue-300 font-bold';
                 icon = 'text-vovinam-blue';
-            } else if (belt.includes('Hoàng đai')) {
+            } else if (beltStr.includes('Hoàng đai')) {
                 bg = 'bg-amber-100 text-amber-800 border-amber-300 font-bold';
                 icon = 'text-amber-600';
-            } else if (belt.includes('Hồng đai')) {
+            } else if (beltStr.includes('Hồng đai')) {
                 bg = 'bg-red-100 text-red-700 border-red-300 font-bold';
                 icon = 'text-red-600';
             }
 
             return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs border ${bg}">
-                        <i class="fa-solid fa-ribbon mr-1.5 ${icon}"></i>${belt}
+                        <i class="fa-solid fa-ribbon mr-1.5 ${icon}"></i>${escapeHtml(beltStr)}
                     </span>`;
         }
 
@@ -5528,7 +5647,7 @@
             tbody.innerHTML = filtered.map(s => {
                 const age = calculateAge(s.dob);
                 const isGuest = s.type === 'guest';
-                const avatarSrc = s.avatar || generateAvatarDataUri(s.name, 100);
+                const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 100);
 
                 const pendingEdit = pendingRequests.find(r => r.type === 'EDIT' && r.studentId === s.id);
                 const pendingDelete = pendingRequests.find(r => r.type === 'DELETE' && r.studentId === s.id);
@@ -5541,10 +5660,12 @@
                 }
 
                 const safeId = escapeHtml(s.id);
+                const safeJsId = escapeJsAttr(s.id);
                 const safeName = escapeHtml(s.name);
                 const safeClass = escapeHtml(s.className);
                 const safeParent = escapeHtml(s.parent || 'Chưa cập nhật');
                 const safePhone = escapeHtml(s.phone || 'N/A');
+                const safeTelHref = String(s.phone || '').replace(/[^0-9+]/g, '');
 
                 return `
                     <tr class="hover:bg-blue-50/50 transition border-b border-slate-100">
@@ -5553,9 +5674,9 @@
                         </td>
                         <td class="py-3 px-4">
                             <div class="flex items-center space-x-3">
-                                <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeId}')" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
+                                <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsId}')" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
                                 <div>
-                                    <button onclick="viewStudentDetail('${safeId}')" class="text-left font-bold text-slate-800 hover:text-vovinam-blue transition group flex items-center space-x-1.5">
+                                    <button onclick="viewStudentDetail('${safeJsId}')" class="text-left font-bold text-slate-800 hover:text-vovinam-blue transition group flex items-center space-x-1.5">
                                         <span class="group-hover:underline">${safeName}</span>
                                         <i class="fa-solid fa-arrow-up-right-from-square text-[11px] text-slate-400 group-hover:text-vovinam-blue transition"></i>
                                     </button>
@@ -5580,7 +5701,7 @@
                         <td class="py-3 px-4">
                             <div class="text-slate-800 font-medium">${safeParent}</div>
                             <div class="text-xs text-vovinam-blue font-bold">
-                                <a href="tel:${safePhone}"><i class="fa-solid fa-phone mr-1"></i>${safePhone}</a>
+                                <a href="tel:${safeTelHref}"><i class="fa-solid fa-phone mr-1"></i>${safePhone}</a>
                             </div>
                         </td>
                         <td class="py-3 px-4 text-center">
@@ -5588,13 +5709,13 @@
                         </td>
                         <td class="py-3 px-4 text-center">
                             <div class="flex items-center justify-center space-x-1.5">
-                                <button onclick="viewStudentDetail('${s.id}')" title="Xem hồ sơ" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition">
+                                <button onclick="viewStudentDetail('${safeJsId}')" title="Xem hồ sơ" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition">
                                     <i class="fa-solid fa-eye"></i>
                                 </button>
-                                <button onclick="editStudent('${s.id}')" title="Sửa" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                <button onclick="editStudent('${safeJsId}')" title="Sửa" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button onclick="deleteStudent('${s.id}')" title="Xóa" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition">
+                                <button onclick="deleteStudent('${safeJsId}')" title="Xóa" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -5610,7 +5731,7 @@
             if (!s) return;
 
             const modal = document.getElementById('detail-modal');
-            const avatarSrc = s.avatar || generateAvatarDataUri(s.name, 200);
+            const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 200);
 
             // Gán dữ liệu cơ bản
             document.getElementById('detail-avatar').src = avatarSrc;
@@ -5627,8 +5748,8 @@
 
             const phoneLink = document.getElementById('detail-phone-link');
             if (s.phone) {
-                phoneLink.href = `tel:${s.phone}`;
-                phoneLink.innerHTML = `<i class="fa-solid fa-phone mr-1"></i>${s.phone}`;
+                phoneLink.href = `tel:${String(s.phone).replace(/[^0-9+]/g, '')}`;
+                phoneLink.innerHTML = `<i class="fa-solid fa-phone mr-1"></i>${escapeHtml(s.phone)}`;
             } else {
                 phoneLink.removeAttribute('href');
                 phoneLink.innerText = 'Chưa có SĐT';
@@ -5706,8 +5827,8 @@
                         <div class="px-4 py-2.5 flex items-center justify-between hover:bg-slate-50 transition">
                             <div>
                                 <span class="font-bold text-slate-800">${new Date(item.date).toLocaleDateString('vi-VN')}</span>
-                                <span class="text-slate-400 ml-2">(${item.className})</span>
-                                ${item.note ? `<p class="text-[11px] text-slate-500 italic mt-0.5">${item.note}</p>` : ''}
+                                <span class="text-slate-400 ml-2">(${escapeHtml(item.className)})</span>
+                                ${item.note ? `<p class="text-[11px] text-slate-500 italic mt-0.5">${escapeHtml(item.note)}</p>` : ''}
                             </div>
                             <div>${sttHtml}</div>
                         </div>
@@ -5981,17 +6102,18 @@
 
             tbody.innerHTML = list.map((item, idx) => {
                 const s = item.studentObj;
-                const avatarSrc = s.avatar || generateAvatarDataUri(s.name, 100);
+                const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 100);
                 const isExtraStudent = item.isGuestInSession || s.type === 'guest' || s.className !== currentClass;
+                const safeJsId = escapeJsAttr(s.id);
 
                 return `
                     <tr class="hover:bg-slate-50 transition border-b border-slate-100" data-id="${escapeHtml(s.id)}" data-extra="${isExtraStudent ? 'true' : 'false'}">
                         <td class="py-3 px-4 font-bold text-slate-400 text-xs text-center">${idx + 1}</td>
                         <td class="py-3 px-4">
                             <div class="flex items-center space-x-3">
-                                <img src="${avatarSrc}" onclick="viewStudentDetail('${escapeHtml(s.id)}')" class="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
+                                <img src="${avatarSrc}" onclick="viewStudentDetail('${safeJsId}')" class="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
                                 <div>
-                                    <button onclick="viewStudentDetail('${escapeHtml(s.id)}')" class="font-bold text-slate-800 text-xs sm:text-sm hover:text-vovinam-blue hover:underline text-left">
+                                    <button onclick="viewStudentDetail('${safeJsId}')" class="font-bold text-slate-800 text-xs sm:text-sm hover:text-vovinam-blue hover:underline text-left">
                                         ${escapeHtml(s.name)}
                                     </button>
                                     <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(s.id)}</div>
@@ -6262,7 +6384,7 @@
                 }
 
                 const typeBadge = item.isExtra
-                    ? `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-purple-100 text-purple-700 border border-purple-200">${item.categoryText}</span>`
+                    ? `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-purple-100 text-purple-700 border border-purple-200">${escapeHtml(item.categoryText)}</span>`
                     : `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-blue-50 text-vovinam-blue border border-blue-200">Lớp chính</span>`;
 
                 return `
@@ -6352,8 +6474,14 @@
         }
 
         function exportCurrentSessionCSV() {
-            // Lưu dữ liệu điểm danh hiện tại trước khi xuất
-            saveAttendance(false);
+            if (!hasPermission('reports_export')) {
+                showToast('Tài khoản của bạn chưa được cấp quyền Xuất báo cáo!', 'error');
+                return;
+            }
+            // Lưu dữ liệu điểm danh hiện tại trước khi xuất (nếu có quyền điểm danh)
+            if (hasPermission('attendance_manage')) {
+                saveAttendance(false);
+            }
 
             const report = collectCurrentSessionReportData();
             if (report.total === 0) {
@@ -6363,10 +6491,10 @@
 
             const recorderName = getCurrentAccountName();
 
-            let csv = `\uFEFFBÁO CÁO KẾT QUẢ ĐIỂM DANH BUỔI HỌC - ${siteConfig.title || 'VOVINAM VIỆT VÕ ĐẠO'}\n`;
-            csv += `Ngày điểm danh:,"${report.dateFormatted}"\n`;
-            csv += `Lớp học:,"${report.className} ${report.timeStr ? '(' + report.timeStr + ')' : ''}"\n`;
-            csv += `Người điểm danh:,"${recorderName}"\n\n`;
+            let csv = `\uFEFF${sanitizeCsvCell('BÁO CÁO KẾT QUẢ ĐIỂM DANH BUỔI HỌC - ' + (siteConfig.title || 'VOVINAM VIỆT VÕ ĐẠO'))}\n`;
+            csv += `Ngày điểm danh:,${sanitizeCsvCell(report.dateFormatted)}\n`;
+            csv += `Lớp học:,${sanitizeCsvCell(report.className + (report.timeStr ? ' (' + report.timeStr + ')' : ''))}\n`;
+            csv += `Người điểm danh:,${sanitizeCsvCell(recorderName)}\n\n`;
 
             csv += `TỔNG KẾT SĨ SỐ BUỔI HỌC\n`;
             csv += `Tổng số võ sinh:,"${report.total} võ sinh (Lớp chính: ${report.mainClassCount} | Học thêm: ${report.extraClassCount})"\n`;
@@ -6408,7 +6536,7 @@
             }
 
             select.innerHTML = otherStudents.map(s => `
-                <option value="${s.id}">${s.name} (${s.className} - ${s.belt})</option>
+                <option value="${escapeHtml(s.id)}">${escapeHtml(s.name)} (${escapeHtml(s.className)} - ${escapeHtml(s.belt)})</option>
             `).join('');
 
             document.getElementById('guest-modal').classList.remove('hidden');
@@ -6581,10 +6709,10 @@
                         <td class="py-3 px-4 text-center">
                             ${hasPermission('approvals_manage') ? `
                                 <div class="flex items-center justify-center space-x-2">
-                                    <button onclick="approveRequest('${req.reqId}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition">
+                                    <button onclick="approveRequest('${escapeJsAttr(req.reqId)}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition">
                                         <i class="fa-solid fa-check mr-1"></i> Duyệt
                                     </button>
-                                    <button onclick="rejectRequest('${req.reqId}')" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-sm transition">
+                                    <button onclick="rejectRequest('${escapeJsAttr(req.reqId)}')" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-sm transition">
                                         <i class="fa-solid fa-xmark mr-1"></i> Từ chối
                                     </button>
                                 </div>
@@ -6741,6 +6869,10 @@
 
         // Xuất file CSV hỗ trợ chuẩn Unicode BOM tiếng Việt cho Excel
         function exportStudentsCSV() {
+            if (!hasPermission('reports_export')) {
+                showToast('Tài khoản của bạn chưa được cấp quyền Xuất báo cáo!', 'error');
+                return;
+            }
             if (students.length === 0) {
                 showToast('Chưa có dữ liệu võ sinh để xuất!', 'error');
                 return;
@@ -6770,10 +6902,14 @@
         }
 
         function exportAttendanceCSV() {
+            if (!hasPermission('reports_export')) {
+                showToast('Tài khoản của bạn chưa được cấp quyền Xuất báo cáo!', 'error');
+                return;
+            }
             const startDate = document.getElementById('report-start').value;
             const endDate = document.getElementById('report-end').value;
 
-            let csvContent = `\uFEFFBÁO CÁO ĐIỂM DANH VOVINAM (${startDate} ĐẾN ${endDate})\n\n`;
+            let csvContent = `\uFEFF${sanitizeCsvCell('BÁO CÁO ĐIỂM DANH VOVINAM (' + startDate + ' ĐẾN ' + endDate + ')')}\n\n`;
             csvContent += "Mã Số,Họ và Tên,Lớp Học,Tổng Buổi,Có Mặt,Vắng K.Phép,Có Phép / Trễ,Tỷ Lệ Chuyên Cần (%)\n";
 
             const allKeys = Object.keys(attendanceRecords).filter(key => {
@@ -6813,10 +6949,14 @@
         }
 
         function exportTuitionCSV() {
+            if (!hasPermission('reports_export')) {
+                showToast('Tài khoản của bạn chưa được cấp quyền Xuất báo cáo!', 'error');
+                return;
+            }
             const month = document.getElementById('tuition-month').value;
             const monthData = tuitionRecords[month] || {};
 
-            let csvContent = `\uFEFFBÁO CÁO HỌC PHÍ VOVINAM THÁNG ${month}\n\n`;
+            let csvContent = `\uFEFF${sanitizeCsvCell('BÁO CÁO HỌC PHÍ VOVINAM THÁNG ' + month)}\n\n`;
             csvContent += "Mã Số,Họ và Tên,Lớp Luyện Tập,Trạng Thái,Số Tiền (VNĐ),Số Biên Lai / Ghi Chú\n";
 
             students.forEach(s => {
@@ -7209,6 +7349,10 @@
         }
 
         function saveAndTestCloudConfig() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được thay đổi cấu hình Cloud!', 'error');
+                return;
+            }
             const urlEl = document.getElementById('cloud-db-url');
             const keyEl = document.getElementById('cloud-club-key');
             const secEl = document.getElementById('cloud-secret-key');
@@ -7253,6 +7397,10 @@
         }
 
         function disconnectCloudConfig() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được ngắt kết nối Cloud!', 'error');
+                return;
+            }
             stopCloudRealtimeSync();
             cloudConfig = { ...DEFAULT_CLOUD_CONFIG };
             try {
@@ -7405,8 +7553,24 @@
             return { packets, remaining: buffer.slice(offset) };
         }
 
+        function getMqttEffectivePassphrase() {
+            const customKey = (cloudConfig.encryptionKey || '').trim();
+            if (customKey) return customKey;
+            const clubKey = (cloudConfig.clubKey || 'clb-vovinam-antruong').trim();
+            const secret = (cloudConfig.secret || '').trim();
+            return `vvn_auto_e2ee::${clubKey}::${secret}`;
+        }
+
         function getMqttRoomTopicBase() {
             const clubKey = (cloudConfig.clubKey || 'clb-vovinam-antruong').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            const secretMaterial = ((cloudConfig.encryptionKey || '') + '|' + (cloudConfig.secret || '')).trim();
+            if (secretMaterial) {
+                const topicHash = sha256Bytes(Array.from(new TextEncoder().encode(`${clubKey}::${secretMaterial}`)))
+                    .slice(0, 8)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+                return `vovinam_sync_v3/${clubKey}_${topicHash}`;
+            }
             return `vovinam_sync_v3/${clubKey}`;
         }
 
@@ -7527,18 +7691,19 @@
                 const payload = buildFullDatabasePayload();
                 lastSyncedUpdatedAt = payload.updatedAt;
 
-                let outgoingBody = payload;
-                if (cloudConfig.encryptionKey && cloudConfig.encryptionKey.trim()) {
-                    const rawJson = JSON.stringify(payload);
-                    const cipherData = await encryptPayloadAES(rawJson, cloudConfig.encryptionKey.trim());
-                    outgoingBody = {
-                        _encrypted: true,
-                        deviceId: clientDeviceId,
-                        cipherData: cipherData,
-                        updatedAt: payload.updatedAt,
-                        updatedBy: payload.updatedBy
-                    };
-                }
+                const rawJson = JSON.stringify(payload);
+                const mqttPassphrase = getMqttEffectivePassphrase();
+                const cipherData = await encryptPayloadAES(rawJson, mqttPassphrase);
+                let outgoingBody = {
+                    _encrypted: true,
+                    _autoE2EE: !(cloudConfig.encryptionKey && cloudConfig.encryptionKey.trim()),
+                    deviceId: clientDeviceId,
+                    hasUserEdits: payload.hasUserEdits,
+                    hardResetAt: payload.hardResetAt,
+                    cipherData: cipherData,
+                    updatedAt: payload.updatedAt,
+                    updatedBy: payload.updatedBy
+                };
 
                 const baseTopic = getMqttRoomTopicBase();
                 const pkt = buildMqttPublishPacket(`${baseTopic}/state`, JSON.stringify(outgoingBody), true);
@@ -7583,15 +7748,12 @@
 
                     let data = parsed;
                     if (data._encrypted && data.cipherData) {
-                        if (!cloudConfig.encryptionKey || !cloudConfig.encryptionKey.trim()) {
-                            showCloudDiagnostic('error', 'Dữ liệu trong Phòng Cloud đang được khóa bằng mật mã E2EE AES-256! Hãy nhập đúng Mã Khóa E2EE hoặc dán Mã Ghép Nối.');
-                            return;
-                        }
+                        const mqttPassphrase = getMqttEffectivePassphrase();
                         try {
-                            const decryptedJson = await decryptPayloadAES(data.cipherData, cloudConfig.encryptionKey.trim());
+                            const decryptedJson = await decryptPayloadAES(data.cipherData, mqttPassphrase);
                             data = JSON.parse(decryptedJson);
                         } catch (decErr) {
-                            showCloudDiagnostic('error', 'Mã Khóa E2EE không khớp với dữ liệu trong Phòng Cloud!');
+                            showCloudDiagnostic('error', 'Dữ liệu trong Phòng Cloud được mã hóa bằng Mã Khóa E2EE khác! Hãy nhập đúng Mã Khóa E2EE hoặc dán Mã Ghép Nối.');
                             return;
                         }
                     }
@@ -7661,6 +7823,10 @@
         }
 
         function copyCloudSyncShareCode() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được trích xuất Mã Ghép Nối Cloud!', 'error');
+                return;
+            }
             const code = encodeCloudPairingPayload();
             if (!code) {
                 showToast('Vui lòng nhập Cloud Database URL trước khi tạo Mã Ghép Nối!', 'error');
@@ -7681,6 +7847,10 @@
         }
 
         function copyCloudSyncShareUrl() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được tạo Link Tự Kết Nối Cloud!', 'error');
+                return;
+            }
             const code = encodeCloudPairingPayload();
             if (!code) {
                 showToast('Vui lòng nhập Cloud Database URL trước khi tạo Link Tự Kết Nối!', 'error');
@@ -7702,6 +7872,10 @@
         }
 
         function applyCloudPairingCode(rawInput = null) {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được nạp Mã Ghép Nối Cloud!', 'error');
+                return false;
+            }
             const inp = document.getElementById('cloud-pairing-code-input');
             let raw = rawInput || (inp ? inp.value.trim() : '');
             if (!raw) {
@@ -7754,10 +7928,24 @@
                 const m = combined.match(/vvn_sync=([^&#]+)/);
                 if (m && m[1]) {
                     const code = decodeURIComponent(m[1]);
-                    applyCloudPairingCode(code);
                     if (window.history && window.history.replaceState) {
                         window.history.replaceState(null, document.title, window.location.pathname);
                     }
+                    // Yêu cầu quản trị viên xác nhận tường minh trước khi thay đổi cấu hình Cloud (Chống tấn công #vvn_sync Hijacking)
+                    setTimeout(() => {
+                        if (!hasPermission('settings_manage')) {
+                            showToast('Đã chặn liên kết ghép nối Cloud tự động vì tài khoản không có quyền Hệ thống!', 'error');
+                            logSecurityEvent('Chặn URL Hijacking', 'Ngăn chặn nạp cấu hình Cloud từ URL trên tài khoản không có quyền Admin', 'warning');
+                            return;
+                        }
+                        showConfirm(
+                            'Xác Nhận Ghép Nối Đám Mây Từ Liên Kết',
+                            'Phát hiện cấu hình Ghép Nối Đám Mây (vvn_sync) từ đường dẫn URL. Bạn có chắc chắn muốn áp dụng cấu hình đồng bộ này không?',
+                            () => {
+                                applyCloudPairingCode(code);
+                            }
+                        );
+                    }, 300);
                 }
             } catch (e) {}
         }
@@ -8177,6 +8365,10 @@
         }
 
         function exportFullDatabaseJSON() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được xuất toàn bộ cơ sở dữ liệu (.JSON)!', 'error');
+                return;
+            }
             const payload = buildFullDatabasePayload();
             const jsonStr = JSON.stringify(payload, null, 2);
             const dateStr = new Date().toISOString().split('T')[0];
@@ -8185,6 +8377,10 @@
         }
 
         function copyFullDatabaseJSONText() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được sao chép mã cơ sở dữ liệu (.JSON)!', 'error');
+                return;
+            }
             const payload = buildFullDatabasePayload();
             const jsonStr = JSON.stringify(payload);
             const pasteBox = document.getElementById('paste-json-textarea');
@@ -8211,6 +8407,11 @@
         }
 
         function importFullDatabaseJSON(event) {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được khôi phục cơ sở dữ liệu (.JSON)!', 'error');
+                if (event && event.target) event.target.value = '';
+                return;
+            }
             const input = event.target;
             if (!input.files || !input.files[0]) return;
 
@@ -8253,6 +8454,10 @@
         }
 
         function applyPastedDatabaseJSON() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được nạp cơ sở dữ liệu (.JSON)!', 'error');
+                return;
+            }
             const pasteBox = document.getElementById('paste-json-textarea');
             const raw = pasteBox ? pasteBox.value.trim() : '';
             if (!raw) {
@@ -8344,8 +8549,11 @@
 
             if (session && session.accountId) {
                 // Kiểm tra thời hạn phiên làm việc bảo mật (4 tiếng)
-                if (session.expiresAt && Date.now() > session.expiresAt) {
-                    try { localStorage.removeItem('vovinam_auth_session'); } catch (err) {}
+                if (!session.expiresAt || Date.now() > session.expiresAt) {
+                    try {
+                        localStorage.removeItem('vovinam_auth_session');
+                        localStorage.removeItem('vovinam_session_locked');
+                    } catch (err) {}
                     if (loginModal) loginModal.classList.remove('hidden');
                     updateLoginBranding();
                     showToast('Phiên làm việc bảo mật đã hết hạn, vui lòng đăng nhập lại!', 'info');
@@ -8354,9 +8562,33 @@
 
                 const acc = accounts.find(a => a.id === session.accountId);
                 if (acc && acc.status !== 'locked') {
+                    // Kiểm tra chữ ký toàn vẹn HMAC-SHA256 chống chỉnh sửa accountId trong LocalStorage
+                    const expectedToken = computeSessionIntegrityToken(acc, session.expiresAt);
+                    if (!session.integrityToken) {
+                        session.integrityToken = expectedToken;
+                        try { localStorage.setItem('vovinam_auth_session', JSON.stringify(session)); } catch (e) {}
+                    } else if (!timingSafeEqual(session.integrityToken, expectedToken)) {
+                        try {
+                            localStorage.removeItem('vovinam_auth_session');
+                            localStorage.removeItem('vovinam_session_locked');
+                        } catch (err) {}
+                        logSecurityEvent('Phát hiện giả mạo phiên', `Chữ ký phiên làm việc của ${session.accountId} không hợp lệ! Đã buộc đăng xuất.`, 'error');
+                        if (loginModal) loginModal.classList.remove('hidden');
+                        updateLoginBranding();
+                        showToast('Phát hiện dấu hiệu thay đổi phiên trái phép! Vui lòng đăng nhập lại.', 'error');
+                        return;
+                    }
+
                     currentAccountId = acc.id;
                     currentUserRole = (acc.isSuperAdmin || (acc.permissions && acc.permissions.settings_manage)) ? 'admin' : 'staff';
                     if (loginModal) loginModal.classList.add('hidden');
+
+                    // Nếu phiên trước đang ở trạng thái Khóa màn hình, kích hoạt lại màn hình khóa ngay cả khi bấm F5
+                    try {
+                        if (localStorage.getItem('vovinam_session_locked') === '1') {
+                            setTimeout(() => triggerInactivityLock(), 50);
+                        }
+                    } catch (e) {}
                     return;
                 }
             }
@@ -8377,9 +8609,10 @@
             if (titleEl) titleEl.innerText = siteConfig.title || 'VOVINAM VIỆT VÕ ĐẠO';
             if (subTitleEl) subTitleEl.innerText = siteConfig.subtitle || 'Hệ Thống Quản Lý Võ Sinh & Điểm Danh Chuyên Cần';
 
-            if (siteConfig.logo) {
+            const safeLogo = sanitizeImageUrl(siteConfig.logo || '');
+            if (safeLogo) {
                 if (logoImg) {
-                    logoImg.src = siteConfig.logo;
+                    logoImg.src = safeLogo;
                     logoImg.classList.remove('hidden');
                 }
                 if (logoText) logoText.classList.add('hidden');
@@ -8502,15 +8735,18 @@
 
             saveAccountsToStorage(true);
 
-            // Lưu phiên làm việc có thời hạn bảo mật (4 tiếng)
+            // Lưu phiên làm việc có thời hạn bảo mật (4 tiếng) kèm chữ ký HMAC-SHA256
             try {
+                const expiresAt = Date.now() + (4 * 60 * 60 * 1000);
                 const sessionData = {
                     accountId: acc.id,
                     username: acc.username.replace(/^@+/, ''),
                     loginTime: new Date().toISOString(),
-                    expiresAt: Date.now() + (4 * 60 * 60 * 1000)
+                    expiresAt: expiresAt,
+                    integrityToken: computeSessionIntegrityToken(acc, expiresAt)
                 };
                 localStorage.setItem('vovinam_auth_session', JSON.stringify(sessionData));
+                localStorage.removeItem('vovinam_session_locked');
             } catch (err) {}
 
             if (typeof notifyBackendServerLogin === 'function') {
@@ -8540,7 +8776,10 @@
             showConfirm('Xác Nhận Đăng Xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi phiên làm việc an toàn hiện tại?', () => {
                 try {
                     localStorage.removeItem('vovinam_auth_session');
+                    localStorage.removeItem('vovinam_session_locked');
                 } catch (e) {}
+                const lockModal = document.getElementById('session-lock-modal');
+                if (lockModal) lockModal.classList.add('hidden');
 
                 const loginModal = document.getElementById('login-modal');
                 const userInp = document.getElementById('login-username');
@@ -8746,12 +8985,15 @@
             saveAccountsToStorage(true);
 
             try {
+                const expiresAt = Date.now() + (4 * 60 * 60 * 1000);
                 localStorage.setItem('vovinam_auth_session', JSON.stringify({
                     accountId: targetAcc.id,
                     username: targetAcc.username.replace(/^@+/, ''),
                     loginTime: new Date().toISOString(),
-                    expiresAt: Date.now() + (4 * 60 * 60 * 1000)
+                    expiresAt: expiresAt,
+                    integrityToken: computeSessionIntegrityToken(targetAcc, expiresAt)
                 }));
+                localStorage.removeItem('vovinam_session_locked');
             } catch (err) {}
 
             closeSwitchAccountModal();
@@ -8863,9 +9105,15 @@
 
         function generateRandomPassword(targetInputId) {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+            const randBytes = new Uint8Array(8);
+            if (window.crypto && window.crypto.getRandomValues) {
+                window.crypto.getRandomValues(randBytes);
+            } else {
+                for (let i = 0; i < 8; i++) randBytes[i] = Math.floor(Math.random() * 256);
+            }
             let pwd = 'Vvn@';
-            for (let i = 0; i < 6; i++) {
-                pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+            for (let i = 0; i < 8; i++) {
+                pwd += chars.charAt(randBytes[i] % chars.length);
             }
             const input = document.getElementById(targetInputId);
             if (input) {
@@ -8873,14 +9121,16 @@
                 if (input.type === 'password') {
                     input.type = 'text';
                 }
-                showToast(`Đã tạo mật khẩu ngẫu nhiên an toàn: ${pwd}`, 'info');
+                showToast('Đã tạo mật khẩu ngẫu nhiên an toàn và điền vào ô mật khẩu!', 'info');
             }
         }
 
         // ================= AVATAR SVG NỘI BỘ (KHÔNG PHỤ THUỘC PLACEHOLD.CO) =================
         function generateAvatarDataUri(name, size = 100) {
-            const initial = (name ? String(name).trim().charAt(0) : 'V').toUpperCase();
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#0056b3"/><text x="50" y="54" font-family="Inter, sans-serif" font-weight="800" font-size="44" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${initial}</text></svg>`;
+            const rawChar = (name ? String(name).trim().charAt(0) : 'V').toUpperCase();
+            const safeInitial = escapeHtml(rawChar.replace(/[^a-zA-Z0-9À-ỹ]/g, '') || 'V');
+            const safeSize = Number(size) || 100;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${safeSize}" height="${safeSize}" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#0056b3"/><text x="50" y="54" font-family="Inter, sans-serif" font-weight="800" font-size="44" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${safeInitial}</text></svg>`;
             return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
         }
 
@@ -9213,8 +9463,16 @@
         }
 
         function saveBackendServerUrl() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được cấu hình địa chỉ Máy chủ Backend!', 'error');
+                return;
+            }
             const input = document.getElementById('srv-base-url-input');
             const val = input ? input.value.trim() : '';
+            if (val && !/^https?:\/\//i.test(val)) {
+                showToast('Địa chỉ Máy chủ phải bắt đầu bằng http:// hoặc https://!', 'error');
+                return;
+            }
             backendServerState.baseUrl = val;
             try {
                 if (val) localStorage.setItem('vovinam_backend_server_url', val);
@@ -9225,6 +9483,10 @@
         }
 
         function resetServerUrlToAuto() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được đặt lại địa chỉ Máy chủ!', 'error');
+                return;
+            }
             const input = document.getElementById('srv-base-url-input');
             if (input) input.value = '';
             saveBackendServerUrl();
