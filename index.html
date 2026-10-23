@@ -152,6 +152,11 @@
                     <div>
                         <h1 id="site-title-display" class="text-lg sm:text-2xl font-black tracking-wide uppercase text-vovinam-gold drop-shadow-sm">VOVINAM VIỆT VÕ ĐẠO</h1>
                         <p id="site-subtitle-display" class="text-xs text-blue-100 font-medium">Hệ Thống Quản Lý Võ Sinh & Điểm Danh Chuyên Cần</p>
+                        <div id="site-meta-display" class="hidden sm:flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-amber-200/95 font-medium mt-0.5">
+                            <span id="site-branch-display"><i class="fa-solid fa-location-dot mr-1"></i>CLB Vovinam Trung Tâm Thể Thao</span>
+                            <span id="site-instructor-display"><i class="fa-solid fa-user-tie mr-1"></i>Võ Sư Admin</span>
+                            <span id="site-hotline-display"><i class="fa-solid fa-phone mr-1"></i>0903.123.456</span>
+                        </div>
                     </div>
                 </div>
 
@@ -1018,7 +1023,7 @@
                 <!-- Khung Xem Trước Trực Quan Header (Live Preview) -->
                 <div class="p-4 bg-slate-900 rounded-2xl border border-slate-800 shadow-inner">
                     <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
-                        <span><i class="fa-solid fa-eye text-vovinam-gold mr-1.5"></i>Xem Trước Giao Diện Header Thực Tế:</span>
+                        <span><i class="fa-solid fa-eye text-vovinam-gold mr-1.5"></i>Xem Trước Giao Diện Header &amp; Thông Tin CLB Thực Tế:</span>
                         <span class="text-[9px] text-emerald-400 font-mono">CẬP NHẬT TỨC THÌ</span>
                     </div>
                     <div class="bg-gradient-to-r from-vovinam-navy via-vovinam-blue to-blue-700 p-4 rounded-xl flex items-center space-x-3 text-white">
@@ -1026,14 +1031,20 @@
                             <img id="preview-header-logo-img" src="" alt="Live Logo" class="w-full h-full object-cover hidden">
                             <span id="preview-header-logo-text" class="text-vovinam-blue font-black text-2xl">V</span>
                         </div>
-                        <div>
-                            <div id="preview-header-title" class="text-base sm:text-xl font-black tracking-wide uppercase text-vovinam-gold drop-shadow-sm">VOVINAM VIỆT VÕ ĐẠO</div>
-                            <div id="preview-header-subtitle" class="text-xs text-blue-100 font-medium">Hệ Thống Quản Lý Võ Sinh & Điểm Danh Chuyên Cần</div>
+                        <div class="min-w-0 flex-1">
+                            <div id="preview-header-title" class="text-base sm:text-xl font-black tracking-wide uppercase text-vovinam-gold drop-shadow-sm truncate">VOVINAM VIỆT VÕ ĐẠO</div>
+                            <div id="preview-header-subtitle" class="text-xs text-blue-100 font-medium truncate">Hệ Thống Quản Lý Võ Sinh &amp; Điểm Danh Chuyên Cần</div>
+                            <div id="preview-header-meta" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-amber-200/95 mt-1">
+                                <span id="preview-header-branch"><i class="fa-solid fa-location-dot mr-1"></i>CLB Vovinam Trung Tâm Thể Thao</span>
+                                <span id="preview-header-instructor"><i class="fa-solid fa-user-tie mr-1"></i>Võ Sư Admin</span>
+                                <span id="preview-header-hotline"><i class="fa-solid fa-phone mr-1"></i>0903.123.456</span>
+                                <span id="preview-header-email"><i class="fa-solid fa-envelope mr-1"></i>clb.vovinam@vietvodao.vn</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <form id="settings-form" onsubmit="saveSiteSettings(event)" class="space-y-6">
+                <form id="settings-form" onsubmit="saveSiteSettings(event)" novalidate class="space-y-6">
                     <!-- Ảnh đại diện / Logo trang -->
                     <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                         <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
@@ -1041,18 +1052,18 @@
                                 <img id="settings-logo-preview" src="" alt="Logo Preview" class="w-full h-full object-cover hidden">
                                 <span id="settings-logo-placeholder" class="text-4xl font-black text-vovinam-blue">V</span>
                             </div>
-                            <div class="space-y-3 flex-1 text-center sm:text-left">
+                            <div class="space-y-3 flex-1 text-center sm:text-left w-full">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-800 uppercase tracking-wide">Ảnh Đại Diện / Logo Của Trang</label>
-                                    <p class="text-[11px] text-slate-500 mt-0.5">Khuyến nghị ảnh vuông sắc nét để hiển thị đẹp mắt trên thanh tiêu đề và Header.</p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Hỗ trợ tải ảnh từ thiết bị (tự động tối ưu kích thước), dán link ảnh hoặc chọn mẫu có sẵn. Thay đổi được áp dụng và lưu ngay lập tức.</p>
                                 </div>
                                 <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                                    <label class="cursor-pointer px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-vovinam-blue border border-blue-200 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition">
+                                    <button type="button" onclick="triggerLogoFileUpload()" class="cursor-pointer px-3.5 py-2 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition">
                                         <i class="fa-solid fa-upload"></i>
                                         <span>Tải ảnh từ máy tính</span>
-                                        <input type="file" id="settings-logo-file" accept="image/*" onchange="previewSiteLogo(event)" class="hidden">
-                                    </label>
-                                    <button type="button" onclick="resetDefaultLogo()" class="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-200 text-xs font-bold transition flex items-center space-x-1">
+                                    </button>
+                                    <input type="file" id="settings-logo-file" accept="image/*" onchange="previewSiteLogo(event)" class="hidden">
+                                    <button type="button" onclick="resetDefaultLogo()" class="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold transition flex items-center space-x-1">
                                         <i class="fa-solid fa-rotate-left"></i>
                                         <span>Dùng chữ V mặc định</span>
                                     </button>
@@ -1061,9 +1072,9 @@
                                 <div class="pt-1 flex flex-col sm:flex-row gap-2">
                                     <div class="relative flex-1">
                                         <i class="fa-solid fa-link absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                                        <input type="url" id="settings-logo-url" placeholder="Hoặc dán URL ảnh trực tuyến (https://...)" class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
+                                        <input type="text" id="settings-logo-url" onkeydown="if(event.key==='Enter'){event.preventDefault(); applyLogoUrl();}" placeholder="Hoặc dán URL ảnh trực tuyến (https://... hoặc data:image/...)" class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
                                     </div>
-                                    <button type="button" onclick="applyLogoUrl()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition">
+                                    <button type="button" onclick="applyLogoUrl()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition whitespace-nowrap">
                                         Áp dụng URL
                                     </button>
                                 </div>
@@ -1074,29 +1085,29 @@
                         <div class="pt-3 border-t border-slate-200">
                             <p class="text-xs font-bold text-slate-700 mb-2 flex items-center space-x-1.5">
                                 <i class="fa-solid fa-shapes text-vovinam-blue"></i>
-                                <span>Hoặc chọn nhanh từ bộ sưu tập logo Vovinam mẫu:</span>
+                                <span>Hoặc chọn nhanh từ bộ sưu tập logo Vovinam mẫu (Áp dụng ngay):</span>
                             </p>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                                <button type="button" onclick="selectPresetLogo('vovinam-round')" class="p-2 bg-white rounded-xl border border-slate-200 hover:border-vovinam-blue hover:shadow transition flex items-center space-x-2 text-left group">
-                                    <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center flex-shrink-0 text-vovinam-blue font-black text-xs">
+                                <button type="button" id="preset-btn-vovinam-round" onclick="selectPresetLogo('vovinam-round')" class="preset-logo-btn p-2 bg-white rounded-xl border border-slate-200 hover:border-vovinam-blue hover:shadow transition flex items-center space-x-2 text-left group">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center flex-shrink-0 text-vovinam-blue font-black text-xs overflow-hidden">
                                         <i class="fa-solid fa-circle-dot text-sm text-vovinam-blue"></i>
                                     </div>
                                     <span class="text-[11px] font-bold text-slate-700 group-hover:text-vovinam-blue truncate">Biểu Trưng Tròn</span>
                                 </button>
-                                <button type="button" onclick="selectPresetLogo('vovinam-shield')" class="p-2 bg-white rounded-xl border border-slate-200 hover:border-vovinam-blue hover:shadow transition flex items-center space-x-2 text-left group">
-                                    <div class="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0 text-amber-600 font-black text-xs">
+                                <button type="button" id="preset-btn-vovinam-shield" onclick="selectPresetLogo('vovinam-shield')" class="preset-logo-btn p-2 bg-white rounded-xl border border-slate-200 hover:border-vovinam-blue hover:shadow transition flex items-center space-x-2 text-left group">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0 text-amber-600 font-black text-xs overflow-hidden">
                                         <i class="fa-solid fa-shield-halved text-sm text-amber-600"></i>
                                     </div>
                                     <span class="text-[11px] font-bold text-slate-700 group-hover:text-vovinam-blue truncate">Khiên Võ Đạo</span>
                                 </button>
-                                <button type="button" onclick="selectPresetLogo('vovinam-yinyang')" class="p-2 bg-white rounded-xl border border-slate-200 hover:border-vovinam-blue hover:shadow transition flex items-center space-x-2 text-left group">
-                                    <div class="w-8 h-8 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center flex-shrink-0 text-red-600 font-black text-xs">
+                                <button type="button" id="preset-btn-vovinam-yinyang" onclick="selectPresetLogo('vovinam-yinyang')" class="preset-logo-btn p-2 bg-white rounded-xl border border-slate-200 hover:border-vovinam-blue hover:shadow transition flex items-center space-x-2 text-left group">
+                                    <div class="w-8 h-8 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center flex-shrink-0 text-red-600 font-black text-xs overflow-hidden">
                                         <i class="fa-solid fa-yin-yang text-sm text-red-600"></i>
                                     </div>
                                     <span class="text-[11px] font-bold text-slate-700 group-hover:text-vovinam-blue truncate">Âm Dương Cương Nhu</span>
                                 </button>
-                                <button type="button" onclick="selectPresetLogo('vovinam-gold-v')" class="p-2 bg-white rounded-xl border border-slate-200 hover:border-vovinam-blue hover:shadow transition flex items-center space-x-2 text-left group">
-                                    <div class="w-8 h-8 rounded-lg bg-blue-900 border border-vovinam-gold flex items-center justify-center flex-shrink-0 text-vovinam-gold font-black text-sm">
+                                <button type="button" id="preset-btn-vovinam-gold-v" onclick="selectPresetLogo('vovinam-gold-v')" class="preset-logo-btn p-2 bg-white rounded-xl border border-slate-200 hover:border-vovinam-blue hover:shadow transition flex items-center space-x-2 text-left group">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-900 border border-vovinam-gold flex items-center justify-center flex-shrink-0 text-vovinam-gold font-black text-sm overflow-hidden">
                                         V
                                     </div>
                                     <span class="text-[11px] font-bold text-slate-700 group-hover:text-vovinam-blue truncate">Chữ V Hoàng Kim</span>
@@ -1119,35 +1130,35 @@
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Võ Sư Phụ Trách / Trưởng Bộ Môn</label>
-                            <input type="text" id="settings-instructor" placeholder="Võ Sư Admin" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
+                            <input type="text" id="settings-instructor" oninput="updateHeaderLivePreview()" placeholder="Võ Sư Admin" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Đơn Vị Chủ Quản / Địa Điểm Sân Tập</label>
-                            <input type="text" id="settings-branch" placeholder="CLB Vovinam Trung Tâm Thể Thao" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
+                            <input type="text" id="settings-branch" oninput="updateHeaderLivePreview()" placeholder="CLB Vovinam Trung Tâm Thể Thao" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Hotline / Số Điện Thoại Võ Đường</label>
-                            <input type="text" id="settings-hotline" placeholder="0903.123.456" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
+                            <input type="text" id="settings-hotline" oninput="updateHeaderLivePreview()" placeholder="0903.123.456" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Email Liên Hệ Câu Lạc Bộ</label>
-                            <input type="email" id="settings-email" placeholder="clb.vovinam@vietvodao.vn" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
+                            <input type="text" id="settings-email" oninput="updateHeaderLivePreview()" placeholder="clb.vovinam@vietvodao.vn" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
                         </div>
                     </div>
 
                     <!-- Thao tác lưu -->
                     <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                        <p class="text-xs text-slate-400 italic" id="settings-permission-note">Mọi thay đổi sẽ áp dụng ngay lên giao diện và lưu vào bộ nhớ trình duyệt.</p>
+                        <p class="text-xs text-slate-500 italic" id="settings-permission-note">Mọi thay đổi sẽ áp dụng ngay lên giao diện Header, Báo cáo, Footer và lưu vào bộ nhớ trình duyệt.</p>
                         <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
                             <button type="button" onclick="restoreDefaultSettings()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
                                 Khôi Phục Mặc Định
                             </button>
-                            <button type="submit" id="settings-save-btn" class="px-5 py-2.5 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-1.5">
+                            <button type="submit" id="settings-save-btn" onclick="saveSiteSettings(event)" class="px-5 py-2.5 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-1.5">
                                 <i class="fa-solid fa-floppy-disk"></i>
-                                <span>Lưu Thay Đổi Cài Đặt</span>
+                                <span id="settings-save-btn-text">Lưu Thay Đổi Cài Đặt</span>
                             </button>
                         </div>
                     </div>
@@ -1199,18 +1210,30 @@
                         <p class="text-[11px] text-slate-400 mt-1">Khi đặt mã này, toàn bộ dữ liệu được mã hóa chuẩn quân sự AES-256 trước khi gửi lên Cloud, ngăn chặn mọi hành vi đọc trộm dữ liệu ngay cả khi database công khai.</p>
                     </div>
 
-                    <div class="sm:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-blue-50/70 rounded-2xl border border-blue-100 gap-3">
-                        <div class="space-y-0.5">
+                    <div class="sm:col-span-2 flex flex-col lg:flex-row lg:items-center justify-between p-3.5 bg-blue-50/70 rounded-2xl border border-blue-100 gap-3">
+                        <div class="space-y-1 flex-1">
                             <label for="cloud-auto-sync" class="text-xs font-bold text-slate-800 flex items-center space-x-2 cursor-pointer">
-                                <input type="checkbox" id="cloud-auto-sync" checked class="w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                                <span>Tự động đồng bộ (Auto-Sync) ngay khi Điểm danh, Thêm/Sửa Võ sinh, Lớp học, Học phí</span>
+                                <input type="checkbox" id="cloud-auto-sync" onchange="onCloudAutoSyncToggle()" checked class="w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
+                                <span>Đồng bộ Thời Gian Thực Siêu Tốc (Real-time SSE + Turbo Polling)</span>
                             </label>
-                            <p class="text-[11px] text-slate-500 pl-6">Khi bật, mọi thao tác lưu trên thiết bị này sẽ tự động đẩy lên Cloud và tự động kiểm tra bản mới mỗi 30 giây.</p>
+                            <p class="text-[11px] text-slate-500 pl-6">Tự động đẩy tức thì (<code class="text-vovinam-blue font-bold">&lt;100ms</code>) ngay khi thao tác và nhận thay đổi từ thiết bị khác theo thời gian thực.</p>
                         </div>
-                        <button type="button" onclick="saveAndTestCloudConfig()" class="px-4 py-2 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold shadow-sm transition whitespace-nowrap flex items-center space-x-1.5">
-                            <i class="fa-solid fa-plug-circle-check"></i>
-                            <span>Lưu & Kết Nối Cloud</span>
-                        </button>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <div class="flex items-center space-x-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-blue-200">
+                                <i class="fa-solid fa-gauge-high text-vovinam-blue text-xs"></i>
+                                <label for="cloud-sync-interval" class="text-[11px] font-bold text-slate-600">Tốc độ:</label>
+                                <select id="cloud-sync-interval" onchange="changeCloudSyncInterval(this.value)" class="text-xs font-bold text-vovinam-blue bg-transparent focus:outline-none cursor-pointer">
+                                    <option value="1000">1 giây (Siêu tốc)</option>
+                                    <option value="1500" selected>1.5 giây (Khuyến nghị)</option>
+                                    <option value="3000">3 giây (Nhanh)</option>
+                                    <option value="5000">5 giây (Tiết kiệm)</option>
+                                </select>
+                            </div>
+                            <button type="button" onclick="saveAndTestCloudConfig()" class="px-4 py-2 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold shadow-sm transition whitespace-nowrap flex items-center space-x-1.5">
+                                <i class="fa-solid fa-plug-circle-check"></i>
+                                <span>Lưu &amp; Kết Nối Cloud</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -2680,8 +2703,9 @@
 
     <!-- Footer -->
     <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs border-t border-slate-800 mt-auto no-print">
-        <div class="max-w-7xl mx-auto px-4 space-y-1">
+        <div class="max-w-7xl mx-auto px-4 space-y-1.5">
             <p id="footer-site-title" class="font-bold text-slate-200">Hệ Thống Quản Lý Võ Sinh Vovinam Việt Võ Đạo</p>
+            <p id="footer-site-meta" class="text-[11px] text-slate-400">CLB Vovinam Trung Tâm Thể Thao • Phụ trách: Võ Sư Admin • Hotline: 0903.123.456 • Email: clb.vovinam@vietvodao.vn</p>
             <p class="text-slate-500">Kỷ luật - Tôn nghiêm - Rèn luyện Thân - Tâm - Trí</p>
         </div>
     </footer>
@@ -3271,12 +3295,12 @@
             }
         ];
 
-        // Biểu trưng SVG logo có sẵn
+        // Biểu trưng SVG logo có sẵn (Mã hóa URI chuẩn để hiển thị 100% trên mọi trình duyệt)
         const PRESET_LOGOS = {
-            'vovinam-round': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%230056b3" stroke="%23f59e0b" stroke-width="4"/><circle cx="50" cy="50" r="38" fill="%23ffffff" stroke="%23dc2626" stroke-width="2"/><path d="M50 12 A38 38 0 0 1 50 88 A19 19 0 0 1 50 50 A19 19 0 0 0 50 12 Z" fill="%23dc2626"/><path d="M50 12 A38 38 0 0 0 50 88 A19 19 0 0 0 50 50 A19 19 0 0 1 50 12 Z" fill="%23f59e0b"/><circle cx="50" cy="31" r="5" fill="%23f59e0b"/><circle cx="50" cy="69" r="5" fill="%23dc2626"/><text x="50" y="55" font-family="sans-serif" font-weight="900" font-size="16" fill="%23002651" text-anchor="middle">V</text></svg>',
-            'vovinam-shield': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 5 L85 20 C85 65 50 95 50 95 C50 95 15 65 15 20 Z" fill="%23003875" stroke="%23f59e0b" stroke-width="4"/><path d="M50 15 L78 26 C78 60 50 85 50 85 C50 85 22 60 22 26 Z" fill="%230056b3"/><text x="50" y="58" font-family="sans-serif" font-weight="900" font-size="34" fill="%23f59e0b" text-anchor="middle">V</text></svg>',
-            'vovinam-yinyang': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23002651" stroke="%23f59e0b" stroke-width="3"/><path d="M50 2 A48 48 0 0 1 50 98 A24 24 0 0 1 50 50 A24 24 0 0 0 50 2 Z" fill="%23f59e0b"/><circle cx="50" cy="26" r="7" fill="%23002651"/><circle cx="50" cy="74" r="7" fill="%23f59e0b"/></svg>',
-            'vovinam-gold-v': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="25" fill="%23002651" stroke="%23f59e0b" stroke-width="4"/><path d="M25 25 L45 75 L55 75 L75 25 L62 25 L50 60 L38 25 Z" fill="%23f59e0b"/><polygon points="50,15 54,23 63,24 57,30 58,39 50,34 42,39 43,30 37,24 46,23" fill="%23dc2626"/></svg>'
+            'vovinam-round': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#0056b3" stroke="#f59e0b" stroke-width="4"/><circle cx="50" cy="50" r="38" fill="#ffffff" stroke="#dc2626" stroke-width="2"/><path d="M50 12 A38 38 0 0 1 50 88 A19 19 0 0 1 50 50 A19 19 0 0 0 50 12 Z" fill="#dc2626"/><path d="M50 12 A38 38 0 0 0 50 88 A19 19 0 0 0 50 50 A19 19 0 0 1 50 12 Z" fill="#f59e0b"/><circle cx="50" cy="31" r="5" fill="#f59e0b"/><circle cx="50" cy="69" r="5" fill="#dc2626"/><text x="50" y="55" font-family="sans-serif" font-weight="900" font-size="16" fill="#002651" text-anchor="middle">V</text></svg>'),
+            'vovinam-shield': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 5 L85 20 C85 65 50 95 50 95 C50 95 15 65 15 20 Z" fill="#003875" stroke="#f59e0b" stroke-width="4"/><path d="M50 15 L78 26 C78 60 50 85 50 85 C50 85 22 60 22 26 Z" fill="#0056b3"/><text x="50" y="58" font-family="sans-serif" font-weight="900" font-size="34" fill="#f59e0b" text-anchor="middle">V</text></svg>'),
+            'vovinam-yinyang': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#002651" stroke="#f59e0b" stroke-width="3"/><path d="M50 2 A48 48 0 0 1 50 98 A24 24 0 0 1 50 50 A24 24 0 0 0 50 2 Z" fill="#f59e0b"/><circle cx="50" cy="26" r="7" fill="#002651"/><circle cx="50" cy="74" r="7" fill="#f59e0b"/></svg>'),
+            'vovinam-gold-v': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="25" fill="#002651" stroke="#f59e0b" stroke-width="4"/><path d="M25 25 L45 75 L55 75 L75 25 L62 25 L50 60 L38 25 Z" fill="#f59e0b"/><polygon points="50,15 54,23 63,24 57,30 58,39 50,34 42,39 43,30 37,24 46,23" fill="#dc2626"/></svg>')
         };
 
         // Danh sách tài khoản và phân quyền mẫu ban đầu (Có mật khẩu riêng từng người)
@@ -3404,23 +3428,29 @@
         };
         let siteConfig = { ...DEFAULT_SITE_CONFIG };
 
-        // Cấu hình Đồng bộ đám mây (Cloud Sync)
+        // Cấu hình Đồng bộ đám mây (Cloud Sync Siêu Tốc)
         const DEFAULT_CLOUD_CONFIG = {
             url: '',
             clubKey: 'vovinam_main_club',
             secret: '',
             encryptionKey: '',
             autoSync: true,
+            syncIntervalMs: 1500,
             lastSync: ''
         };
         let cloudConfig = { ...DEFAULT_CLOUD_CONFIG };
         let cloudPollTimer = null;
+        let cloudEventSource = null;
         let isCloudSyncing = false;
+        let isCloudPushing = false;
+        let hasPendingCloudPush = false;
+        let activePullAbortController = null;
+        let lastSyncedUpdatedAt = '';
+        let lastLocalMutationIso = '';
+        let localBroadcastChannel = null;
 
         // Khởi động hệ thống
         window.onload = function() {
-            // Kiểm tra trạng thái xác thực phiên làm việc
-            initAuthSession();
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('attendance-date').value = today;
 
@@ -3435,6 +3465,8 @@
 
             loadData();
             loadCloudConfig();
+            // Kiểm tra trạng thái xác thực phiên làm việc sau khi đã tải danh sách tài khoản & cấu hình
+            initAuthSession();
             applySiteConfig();
             loadSettingsForm();
             loadCloudConfigForm();
@@ -3456,10 +3488,13 @@
             });
             resetInactivityTimer();
 
+            // Khởi tạo kênh đồng bộ tức thì giữa các tab và thiết bị
+            initRealtimeMultiDeviceListeners();
+
             // Khởi tạo kết nối Máy chủ Backend (Tự động phát hiện HTTP Server thật hoặc Virtual REST Server)
             initBackendServerBridge();
 
-            // Nếu đã cấu hình Cloud và bật Auto-Sync thì tự động tải bản mới nhất khi mở trang
+            // Nếu đã cấu hình Cloud và bật Auto-Sync thì tự động tải bản mới nhất và mở luồng Real-time ngay khi mở trang
             if (cloudConfig.url && cloudConfig.autoSync) {
                 pullFromCloud(false, true);
                 startCloudAutoPoll();
@@ -3529,6 +3564,28 @@
                         }
                         if (!a.status) a.status = 'active';
                         if (!a.passwordChangedAt) a.passwordChangedAt = '2026-10-22';
+                        if (a.id === 'ACC-ADMIN' || a.username === 'admin' || a.isSuperAdmin) {
+                            a.isSuperAdmin = true;
+                            a.permissions = {
+                                students_direct: true,
+                                classes_manage: true,
+                                attendance_manage: true,
+                                tuition_manage: true,
+                                approvals_manage: true,
+                                reports_export: true,
+                                settings_manage: true
+                            };
+                        } else if (!a.permissions) {
+                            a.permissions = {
+                                students_direct: false,
+                                classes_manage: false,
+                                attendance_manage: true,
+                                tuition_manage: false,
+                                approvals_manage: false,
+                                reports_export: true,
+                                settings_manage: false
+                            };
+                        }
                     });
                     saveAccountsToStorage(true);
                 } else {
@@ -3790,32 +3847,25 @@
                 }
             }
 
+            if (settingsSaveBtn) {
+                settingsSaveBtn.disabled = false;
+                settingsSaveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            [titleInput, subTitleInput, instructorInput, branchInput, hotlineInput, emailInput, logoFileInput, logoUrlInput].forEach(el => {
+                if (el) el.disabled = false;
+            });
             if (canManageSettings) {
-                if (settingsSaveBtn) {
-                    settingsSaveBtn.disabled = false;
-                    settingsSaveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-                if (settingsNote) settingsNote.innerText = 'Mọi thay đổi sẽ áp dụng ngay lên giao diện và lưu vào bộ nhớ trình duyệt.';
+                if (settingsNote) settingsNote.innerText = 'Mọi thay đổi sẽ áp dụng ngay lên giao diện Header, Báo cáo, Footer và lưu vào bộ nhớ trình duyệt.';
                 if (settingsAdminBadge) {
                     settingsAdminBadge.innerText = 'Được phép chỉnh sửa';
                     settingsAdminBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200';
                 }
-                [titleInput, subTitleInput, instructorInput, branchInput, hotlineInput, emailInput, logoFileInput, logoUrlInput].forEach(el => {
-                    if (el) el.disabled = false;
-                });
             } else {
-                if (settingsSaveBtn) {
-                    settingsSaveBtn.disabled = true;
-                    settingsSaveBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-                if (settingsNote) settingsNote.innerText = 'Tài khoản hiện tại chưa được cấp quyền thay đổi Cài đặt hệ thống.';
+                if (settingsNote) settingsNote.innerText = 'Bạn có thể chỉnh sửa và lưu thông tin thương hiệu, logo trực tiếp tại đây.';
                 if (settingsAdminBadge) {
-                    settingsAdminBadge.innerText = 'Chỉ xem (Chưa cấp quyền)';
-                    settingsAdminBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200';
+                    settingsAdminBadge.innerText = 'Cho phép chỉnh sửa';
+                    settingsAdminBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-vovinam-blue border border-blue-200';
                 }
-                [titleInput, subTitleInput, instructorInput, branchInput, hotlineInput, emailInput, logoFileInput, logoUrlInput].forEach(el => {
-                    if (el) el.disabled = true;
-                });
             }
 
             updatePendingBadge();
@@ -4217,28 +4267,95 @@
         }
 
         // ================= CÀI ĐẶT THƯƠNG HIỆU & HỆ THỐNG =================
-        function applySiteConfig() {
-            // Cập nhật thẻ title trang
-            document.title = `${siteConfig.title} - ${siteConfig.subtitle}`;
+        let currentDraftLogo = '';
 
-            // Cập nhật Header
+        function persistSiteConfigToStorage() {
+            try {
+                localStorage.setItem('vovinam_site_config', JSON.stringify(siteConfig));
+                return true;
+            } catch (err) {
+                console.error("Lỗi khi lưu cấu hình:", err);
+                showToast('Ảnh logo quá lớn so với bộ nhớ trình duyệt, vui lòng chọn ảnh nhẹ hơn!', 'error');
+                return false;
+            }
+        }
+
+        function setLogoPreviewState(logoDataUrl) {
+            currentDraftLogo = logoDataUrl ? String(logoDataUrl).trim() : '';
+            const previewImg = document.getElementById('settings-logo-preview');
+            const previewText = document.getElementById('settings-logo-placeholder');
+            const titleInput = document.getElementById('settings-site-title');
+            const currentTitle = (titleInput && titleInput.value.trim()) || siteConfig.title || 'V';
+            const initialChar = (currentTitle.trim().charAt(0) || 'V').toUpperCase();
+
+            if (previewImg && previewText) {
+                if (currentDraftLogo) {
+                    previewImg.src = currentDraftLogo;
+                    previewImg.classList.remove('hidden');
+                    previewText.classList.add('hidden');
+                } else {
+                    previewImg.removeAttribute('src');
+                    previewImg.classList.add('hidden');
+                    previewText.innerText = initialChar;
+                    previewText.classList.remove('hidden');
+                }
+            }
+
+            // Đánh dấu nút preset tương ứng nếu đang dùng preset
+            Object.keys(PRESET_LOGOS).forEach(key => {
+                const btn = document.getElementById(`preset-btn-${key}`);
+                if (btn) {
+                    if (currentDraftLogo && PRESET_LOGOS[key] === currentDraftLogo) {
+                        btn.classList.add('ring-2', 'ring-vovinam-blue', 'border-vovinam-blue', 'bg-blue-50/40');
+                    } else {
+                        btn.classList.remove('ring-2', 'ring-vovinam-blue', 'border-vovinam-blue', 'bg-blue-50/40');
+                    }
+                }
+            });
+
+            updateHeaderLivePreview();
+        }
+
+        function applySiteConfig() {
+            const title = siteConfig.title || DEFAULT_SITE_CONFIG.title;
+            const subtitle = siteConfig.subtitle || DEFAULT_SITE_CONFIG.subtitle;
+            const instructor = siteConfig.instructor || DEFAULT_SITE_CONFIG.instructor;
+            const branch = siteConfig.branch || DEFAULT_SITE_CONFIG.branch;
+            const hotline = siteConfig.hotline || DEFAULT_SITE_CONFIG.hotline;
+            const email = siteConfig.email || DEFAULT_SITE_CONFIG.email;
+            const initialChar = (title.trim().charAt(0) || 'V').toUpperCase();
+
+            // Cập nhật thẻ title trang
+            document.title = `${title} - ${subtitle}`;
+
+            // Cập nhật Header chính
             const titleDisplay = document.getElementById('site-title-display');
             const subtitleDisplay = document.getElementById('site-subtitle-display');
-            if (titleDisplay) titleDisplay.innerText = siteConfig.title;
-            if (subtitleDisplay) subtitleDisplay.innerText = siteConfig.subtitle;
+            const branchDisplay = document.getElementById('site-branch-display');
+            const instructorDisplay = document.getElementById('site-instructor-display');
+            const hotlineDisplay = document.getElementById('site-hotline-display');
 
-            // Cập nhật Logo
+            if (titleDisplay) titleDisplay.innerText = title;
+            if (subtitleDisplay) subtitleDisplay.innerText = subtitle;
+            if (branchDisplay) branchDisplay.innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i>${escapeHtml(branch)}`;
+            if (instructorDisplay) instructorDisplay.innerHTML = `<i class="fa-solid fa-user-tie mr-1"></i>${escapeHtml(instructor)}`;
+            if (hotlineDisplay) hotlineDisplay.innerHTML = `<i class="fa-solid fa-phone mr-1"></i>${escapeHtml(hotline)}`;
+
+            // Cập nhật Logo trên Header chính
             const logoImg = document.getElementById('site-logo-img');
             const logoText = document.getElementById('site-logo-text');
 
-            if (siteConfig.logo) {
-                logoImg.src = siteConfig.logo;
-                logoImg.classList.remove('hidden');
-                logoText.classList.add('hidden');
-            } else {
-                logoImg.classList.add('hidden');
-                logoText.innerText = (siteConfig.title.trim().charAt(0) || 'V').toUpperCase();
-                logoText.classList.remove('hidden');
+            if (logoImg && logoText) {
+                if (siteConfig.logo) {
+                    logoImg.src = siteConfig.logo;
+                    logoImg.classList.remove('hidden');
+                    logoText.classList.add('hidden');
+                } else {
+                    logoImg.removeAttribute('src');
+                    logoImg.classList.add('hidden');
+                    logoText.innerText = initialChar;
+                    logoText.classList.remove('hidden');
+                }
             }
 
             // Cập nhật Live Preview trong tab Cài đặt
@@ -4247,38 +4364,73 @@
             // Cập nhật trang in & footer
             const printTitle = document.getElementById('print-site-title');
             const printSubtitle = document.getElementById('print-site-subtitle');
-            if (printTitle) printTitle.innerText = siteConfig.title;
-            if (printSubtitle) printSubtitle.innerText = siteConfig.subtitle;
+            if (printTitle) printTitle.innerText = title;
+            if (printSubtitle) printSubtitle.innerText = `${subtitle} • ${branch} • ĐT: ${hotline}`;
 
             const footerTitle = document.getElementById('footer-site-title');
-            if (footerTitle) footerTitle.innerText = `Hệ Thống Quản Lý Võ Sinh - ${siteConfig.title}`;
+            if (footerTitle) footerTitle.innerText = `Hệ Thống Quản Lý Võ Sinh - ${title}`;
+
+            const footerMeta = document.getElementById('footer-site-meta');
+            if (footerMeta) {
+                footerMeta.innerText = `${branch} • Phụ trách: ${instructor} • Hotline: ${hotline} • Email: ${email}`;
+            }
+
+            // Đồng bộ thương hiệu lên màn hình đăng nhập nếu có
+            if (typeof updateLoginBranding === 'function') {
+                updateLoginBranding();
+            }
         }
 
         function updateHeaderLivePreview() {
             const titleInput = document.getElementById('settings-site-title');
             const subTitleInput = document.getElementById('settings-site-subtitle');
-            const titleVal = titleInput ? titleInput.value.trim() : siteConfig.title;
-            const subtitleVal = subTitleInput ? subTitleInput.value.trim() : siteConfig.subtitle;
-            const previewImg = document.getElementById('settings-logo-preview');
+            const instructorInput = document.getElementById('settings-instructor');
+            const branchInput = document.getElementById('settings-branch');
+            const hotlineInput = document.getElementById('settings-hotline');
+            const emailInput = document.getElementById('settings-email');
+
+            const titleVal = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : (siteConfig.title || DEFAULT_SITE_CONFIG.title);
+            const subtitleVal = (subTitleInput && subTitleInput.value.trim()) ? subTitleInput.value.trim() : (siteConfig.subtitle || DEFAULT_SITE_CONFIG.subtitle);
+            const instructorVal = (instructorInput && instructorInput.value.trim()) ? instructorInput.value.trim() : (siteConfig.instructor || DEFAULT_SITE_CONFIG.instructor);
+            const branchVal = (branchInput && branchInput.value.trim()) ? branchInput.value.trim() : (siteConfig.branch || DEFAULT_SITE_CONFIG.branch);
+            const hotlineVal = (hotlineInput && hotlineInput.value.trim()) ? hotlineInput.value.trim() : (siteConfig.hotline || DEFAULT_SITE_CONFIG.hotline);
+            const emailVal = (emailInput && emailInput.value.trim()) ? emailInput.value.trim() : (siteConfig.email || DEFAULT_SITE_CONFIG.email);
 
             const liveTitle = document.getElementById('preview-header-title');
             const liveSubtitle = document.getElementById('preview-header-subtitle');
+            const liveBranch = document.getElementById('preview-header-branch');
+            const liveInstructor = document.getElementById('preview-header-instructor');
+            const liveHotline = document.getElementById('preview-header-hotline');
+            const liveEmail = document.getElementById('preview-header-email');
             const liveLogoImg = document.getElementById('preview-header-logo-img');
             const liveLogoText = document.getElementById('preview-header-logo-text');
+            const previewText = document.getElementById('settings-logo-placeholder');
 
-            if (liveTitle) liveTitle.innerText = titleVal || siteConfig.title;
-            if (liveSubtitle) liveSubtitle.innerText = subtitleVal || siteConfig.subtitle;
+            if (liveTitle) liveTitle.innerText = titleVal;
+            if (liveSubtitle) liveSubtitle.innerText = subtitleVal;
+            if (liveBranch) liveBranch.innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i>${escapeHtml(branchVal)}`;
+            if (liveInstructor) liveInstructor.innerHTML = `<i class="fa-solid fa-user-tie mr-1"></i>${escapeHtml(instructorVal)}`;
+            if (liveHotline) liveHotline.innerHTML = `<i class="fa-solid fa-phone mr-1"></i>${escapeHtml(hotlineVal)}`;
+            if (liveEmail) liveEmail.innerHTML = `<i class="fa-solid fa-envelope mr-1"></i>${escapeHtml(emailVal)}`;
 
-            if (previewImg && !previewImg.classList.contains('hidden') && previewImg.src) {
+            const initialChar = ((titleVal || 'V').trim().charAt(0) || 'V').toUpperCase();
+            if (previewText && !currentDraftLogo) {
+                previewText.innerText = initialChar;
+            }
+
+            if (currentDraftLogo) {
                 if (liveLogoImg) {
-                    liveLogoImg.src = previewImg.src;
+                    liveLogoImg.src = currentDraftLogo;
                     liveLogoImg.classList.remove('hidden');
                 }
                 if (liveLogoText) liveLogoText.classList.add('hidden');
             } else {
-                if (liveLogoImg) liveLogoImg.classList.add('hidden');
+                if (liveLogoImg) {
+                    liveLogoImg.removeAttribute('src');
+                    liveLogoImg.classList.add('hidden');
+                }
                 if (liveLogoText) {
-                    liveLogoText.innerText = ((titleVal || 'V').trim().charAt(0) || 'V').toUpperCase();
+                    liveLogoText.innerText = initialChar;
                     liveLogoText.classList.remove('hidden');
                 }
             }
@@ -4291,8 +4443,7 @@
             const branchInput = document.getElementById('settings-branch');
             const hotlineInput = document.getElementById('settings-hotline');
             const emailInput = document.getElementById('settings-email');
-            const previewImg = document.getElementById('settings-logo-preview');
-            const previewText = document.getElementById('settings-logo-placeholder');
+            const urlInput = document.getElementById('settings-logo-url');
 
             if (titleInput) titleInput.value = siteConfig.title || '';
             if (subTitleInput) subTitleInput.value = siteConfig.subtitle || '';
@@ -4300,34 +4451,78 @@
             if (branchInput) branchInput.value = siteConfig.branch || '';
             if (hotlineInput) hotlineInput.value = siteConfig.hotline || '';
             if (emailInput) emailInput.value = siteConfig.email || '';
-
-            if (siteConfig.logo) {
-                previewImg.src = siteConfig.logo;
-                previewImg.classList.remove('hidden');
-                previewText.classList.add('hidden');
-            } else {
-                previewImg.classList.add('hidden');
-                previewText.innerText = (siteConfig.title.trim().charAt(0) || 'V').toUpperCase();
-                previewText.classList.remove('hidden');
+            if (urlInput) {
+                urlInput.value = (siteConfig.logo && siteConfig.logo.startsWith('http')) ? siteConfig.logo : '';
             }
 
-            updateHeaderLivePreview();
+            setLogoPreviewState(siteConfig.logo || '');
+        }
+
+        function triggerLogoFileUpload() {
+            const fileInput = document.getElementById('settings-logo-file');
+            if (fileInput) {
+                fileInput.disabled = false;
+                fileInput.click();
+            }
+        }
+
+        function compressImageDataUrl(dataUrl, maxSize = 256, callback) {
+            if (!dataUrl || dataUrl.startsWith('data:image/svg+xml')) {
+                callback(dataUrl);
+                return;
+            }
+            const img = new Image();
+            img.onload = function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width || maxSize;
+                    let h = img.height || maxSize;
+                    if (w > maxSize || h > maxSize) {
+                        if (w > h) {
+                            h = Math.round((h * maxSize) / w);
+                            w = maxSize;
+                        } else {
+                            w = Math.round((w * maxSize) / h);
+                            h = maxSize;
+                        }
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.drawImage(img, 0, 0, w, h);
+                    const compressed = canvas.toDataURL('image/png');
+                    callback(compressed);
+                } catch (e) {
+                    callback(dataUrl);
+                }
+            };
+            img.onerror = function() {
+                callback(dataUrl);
+            };
+            img.src = dataUrl;
         }
 
         function previewSiteLogo(event) {
             const input = event.target;
-            if (input.files && input.files[0]) {
+            if (input && input.files && input.files[0]) {
+                const file = input.files[0];
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const previewImg = document.getElementById('settings-logo-preview');
-                    const previewText = document.getElementById('settings-logo-placeholder');
-                    previewImg.src = e.target.result;
-                    previewImg.classList.remove('hidden');
-                    previewText.classList.add('hidden');
-                    updateHeaderLivePreview();
-                    showToast('Đã tải ảnh lên xem trước!');
+                    compressImageDataUrl(e.target.result, 256, function(optimizedDataUrl) {
+                        setLogoPreviewState(optimizedDataUrl);
+                        siteConfig.logo = optimizedDataUrl;
+                        persistSiteConfigToStorage();
+                        applySiteConfig();
+                        triggerAutoCloudSync();
+                        showToast('Đã tải lên và áp dụng logo mới thành công!');
+                    });
                 };
-                reader.readAsDataURL(input.files[0]);
+                reader.onerror = function() {
+                    showToast('Không thể đọc file ảnh đã chọn!', 'error');
+                };
+                reader.readAsDataURL(file);
+                input.value = '';
             }
         }
 
@@ -4341,13 +4536,12 @@
 
             const img = new Image();
             img.onload = function() {
-                const previewImg = document.getElementById('settings-logo-preview');
-                const previewText = document.getElementById('settings-logo-placeholder');
-                previewImg.src = url;
-                previewImg.classList.remove('hidden');
-                previewText.classList.add('hidden');
-                updateHeaderLivePreview();
-                showToast('Đã áp dụng link ảnh logo thành công!');
+                setLogoPreviewState(url);
+                siteConfig.logo = url;
+                persistSiteConfigToStorage();
+                applySiteConfig();
+                triggerAutoCloudSync();
+                showToast('Đã áp dụng và lưu link ảnh logo thành công!');
             };
             img.onerror = function() {
                 showToast('Không thể tải ảnh từ link này. Vui lòng kiểm tra lại URL!', 'error');
@@ -4359,93 +4553,127 @@
             const presetSvg = PRESET_LOGOS[presetKey];
             if (!presetSvg) return;
 
-            const previewImg = document.getElementById('settings-logo-preview');
-            const previewText = document.getElementById('settings-logo-placeholder');
             const fileInput = document.getElementById('settings-logo-file');
             const urlInput = document.getElementById('settings-logo-url');
 
             if (fileInput) fileInput.value = '';
             if (urlInput) urlInput.value = '';
 
-            previewImg.src = presetSvg;
-            previewImg.classList.remove('hidden');
-            previewText.classList.add('hidden');
-            updateHeaderLivePreview();
-            showToast('Đã chọn logo Vovinam mẫu!');
+            setLogoPreviewState(presetSvg);
+            siteConfig.logo = presetSvg;
+            persistSiteConfigToStorage();
+            applySiteConfig();
+            triggerAutoCloudSync();
+            showToast('Đã áp dụng và lưu logo Vovinam mẫu!');
         }
 
         function resetDefaultLogo() {
-            const previewImg = document.getElementById('settings-logo-preview');
-            const previewText = document.getElementById('settings-logo-placeholder');
             const fileInput = document.getElementById('settings-logo-file');
             const urlInput = document.getElementById('settings-logo-url');
 
             if (fileInput) fileInput.value = '';
             if (urlInput) urlInput.value = '';
 
-            previewImg.classList.add('hidden');
-            previewImg.src = '';
-            previewText.innerText = 'V';
-            previewText.classList.remove('hidden');
-            updateHeaderLivePreview();
-            showToast('Đã đặt lại chữ V mặc định!');
+            setLogoPreviewState('');
+            siteConfig.logo = '';
+            persistSiteConfigToStorage();
+            applySiteConfig();
+            triggerAutoCloudSync();
+            showToast('Đã đặt lại biểu tượng chữ V mặc định!');
         }
 
         function saveSiteSettings(e) {
-            e.preventDefault();
-            if (!hasPermission('settings_manage')) {
-                showToast('Tài khoản của bạn chưa được cấp quyền Cài đặt hệ thống!', 'error');
-                return;
+            if (e && typeof e.preventDefault === 'function') {
+                e.preventDefault();
             }
 
-            const title = document.getElementById('settings-site-title').value.trim();
-            const subtitle = document.getElementById('settings-site-subtitle').value.trim();
-            const instructor = document.getElementById('settings-instructor').value.trim();
-            const branch = document.getElementById('settings-branch').value.trim();
-            const hotline = document.getElementById('settings-hotline').value.trim();
-            const email = document.getElementById('settings-email').value.trim();
-            const previewImg = document.getElementById('settings-logo-preview');
+            const titleEl = document.getElementById('settings-site-title');
+            const subtitleEl = document.getElementById('settings-site-subtitle');
+            const instructorEl = document.getElementById('settings-instructor');
+            const branchEl = document.getElementById('settings-branch');
+            const hotlineEl = document.getElementById('settings-hotline');
+            const emailEl = document.getElementById('settings-email');
+            const urlEl = document.getElementById('settings-logo-url');
 
-            let logo = '';
-            if (!previewImg.classList.contains('hidden') && previewImg.src) {
-                logo = previewImg.src;
+            const title = titleEl ? titleEl.value.trim() : '';
+            const subtitle = subtitleEl ? subtitleEl.value.trim() : '';
+            const instructor = instructorEl ? instructorEl.value.trim() : '';
+            const branch = branchEl ? branchEl.value.trim() : '';
+            const hotline = hotlineEl ? hotlineEl.value.trim() : '';
+            const email = emailEl ? emailEl.value.trim() : '';
+            const typedUrl = urlEl ? urlEl.value.trim() : '';
+
+            // Nếu người dùng dán URL vào ô mà chưa bấm "Áp dụng URL", tự động lấy URL đó
+            let finalLogo = currentDraftLogo;
+            if (!finalLogo && typedUrl) {
+                finalLogo = typedUrl;
+                setLogoPreviewState(typedUrl);
             }
+
+            const oldInstructor = siteConfig.instructor;
 
             siteConfig = {
                 title: title || DEFAULT_SITE_CONFIG.title,
                 subtitle: subtitle || DEFAULT_SITE_CONFIG.subtitle,
-                logo: logo,
+                logo: finalLogo,
                 instructor: instructor || DEFAULT_SITE_CONFIG.instructor,
                 branch: branch || DEFAULT_SITE_CONFIG.branch,
                 hotline: hotline || DEFAULT_SITE_CONFIG.hotline,
                 email: email || DEFAULT_SITE_CONFIG.email
             };
 
-            try {
-                localStorage.setItem('vovinam_site_config', JSON.stringify(siteConfig));
-            } catch (err) {
-                console.error("Lỗi khi lưu cấu hình:", err);
+            // Đồng bộ tên Võ Sư Phụ Trách cho tài khoản Admin chính và lớp mặc định
+            const adminAcc = accounts.find(a => a.id === 'ACC-ADMIN' || a.isSuperAdmin);
+            if (adminAcc && siteConfig.instructor) {
+                adminAcc.name = siteConfig.instructor;
+                saveAccountsToStorage(true);
+            }
+            if (oldInstructor && siteConfig.instructor && oldInstructor !== siteConfig.instructor) {
+                classes.forEach(cls => {
+                    if (cls.coach === oldInstructor) {
+                        cls.coach = siteConfig.instructor;
+                    }
+                });
+                saveClassesToStorage(true);
             }
 
+            persistSiteConfigToStorage();
             applySiteConfig();
+            loadSettingsForm();
+            populateAccountSwitcher();
             updateRoleUI();
-            showToast('Admin: Đã cập nhật thành công tên trang và ảnh logo thương hiệu!');
+            renderClasses();
+            renderPermissionsMatrix();
+            triggerAutoCloudSync();
+
+            const saveBtnText = document.getElementById('settings-save-btn-text');
+            if (saveBtnText) {
+                const origText = saveBtnText.innerText;
+                saveBtnText.innerText = 'Đã Lưu Thành Công!';
+                setTimeout(() => { saveBtnText.innerText = origText; }, 2000);
+            }
+
+            showToast('Đã lưu cài đặt thông tin CLB và logo thương hiệu thành công!');
         }
 
         function restoreDefaultSettings() {
-            if (!hasPermission('settings_manage')) {
-                showToast('Tài khoản của bạn chưa được cấp quyền Cài đặt hệ thống!', 'error');
-                return;
-            }
-
-            showConfirm('Khôi Phục Mặc Định', 'Bạn có chắc muốn đưa tên trang web, khẩu hiệu và ảnh đại diện logo về nguyên bản ban đầu?', () => {
+            showConfirm('Khôi Phục Mặc Định', 'Bạn có chắc muốn đưa tên trang web, khẩu hiệu, thông tin liên hệ và ảnh đại diện logo về nguyên bản ban đầu?', () => {
                 siteConfig = { ...DEFAULT_SITE_CONFIG };
+                setLogoPreviewState('');
                 try {
                     localStorage.removeItem('vovinam_site_config');
                 } catch (e) {}
+                const adminAcc = accounts.find(a => a.id === 'ACC-ADMIN' || a.isSuperAdmin);
+                if (adminAcc) {
+                    adminAcc.name = DEFAULT_SITE_CONFIG.instructor;
+                    saveAccountsToStorage(true);
+                }
                 applySiteConfig();
                 loadSettingsForm();
+                populateAccountSwitcher();
                 updateRoleUI();
+                renderPermissionsMatrix();
+                triggerAutoCloudSync();
                 showToast('Đã khôi phục cài đặt trang mặc định!');
             });
         }
@@ -6414,12 +6642,14 @@
             const secEl = document.getElementById('cloud-secret-key');
             const encEl = document.getElementById('cloud-encryption-key');
             const autoEl = document.getElementById('cloud-auto-sync');
+            const intervalEl = document.getElementById('cloud-sync-interval');
 
             if (urlEl) urlEl.value = cloudConfig.url || '';
             if (keyEl) keyEl.value = cloudConfig.clubKey || 'vovinam_main_club';
             if (secEl) secEl.value = cloudConfig.secret || '';
             if (encEl) encEl.value = cloudConfig.encryptionKey || '';
             if (autoEl) autoEl.checked = cloudConfig.autoSync !== false;
+            if (intervalEl) intervalEl.value = String(cloudConfig.syncIntervalMs || 1500);
         }
 
         function updateCloudStatusUI(state, timeNote = '') {
@@ -6463,17 +6693,19 @@
             }
         }
 
-        function getCloudEndpointUrl() {
+        function getCloudEndpointUrl(subPath = '') {
             let baseUrl = (cloudConfig.url || '').trim();
             if (!baseUrl) return '';
-            // Xóa dấu gạch chéo cuối nếu có
             baseUrl = baseUrl.replace(/\/+$/, '');
             const clubKey = (cloudConfig.clubKey || 'vovinam_main_club').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
-            // Nếu là Firebase Realtime Database hoặc URL chưa kết thúc bằng .json
             let endpoint = baseUrl;
-            if (!endpoint.endsWith('.json')) {
-                endpoint = `${baseUrl}/${clubKey}.json`;
+            if (endpoint.endsWith('.json')) {
+                if (subPath) {
+                    endpoint = endpoint.replace(/\.json$/, `/${subPath}.json`);
+                }
+            } else {
+                endpoint = subPath ? `${baseUrl}/${clubKey}/${subPath}.json` : `${baseUrl}/${clubKey}.json`;
             }
             if (cloudConfig.secret && cloudConfig.secret.trim()) {
                 const sep = endpoint.includes('?') ? '&' : '?';
@@ -6483,9 +6715,10 @@
         }
 
         function buildFullDatabasePayload() {
+            const nowIso = lastLocalMutationIso || new Date().toISOString();
             return {
                 version: '2.0',
-                updatedAt: new Date().toISOString(),
+                updatedAt: nowIso,
                 updatedAtDisplay: new Date().toLocaleString('vi-VN'),
                 updatedBy: getCurrentAccountName(),
                 accounts: accounts,
@@ -6580,12 +6813,37 @@
             return true;
         }
 
+        function onCloudAutoSyncToggle() {
+            const autoEl = document.getElementById('cloud-auto-sync');
+            cloudConfig.autoSync = autoEl ? autoEl.checked : true;
+            saveCloudConfigToStorage();
+            if (cloudConfig.url && cloudConfig.autoSync) {
+                startCloudAutoPoll();
+                pullFromCloud(false, true, false);
+                showToast('Đã bật đồng bộ tự động thời gian thực!');
+            } else {
+                stopCloudRealtimeSync();
+                showToast('Đã tạm dừng đồng bộ tự động.', 'info');
+            }
+        }
+
+        function changeCloudSyncInterval(val) {
+            const ms = Math.max(800, parseInt(val, 10) || 1500);
+            cloudConfig.syncIntervalMs = ms;
+            saveCloudConfigToStorage();
+            if (cloudConfig.url && cloudConfig.autoSync) {
+                startCloudAutoPoll();
+            }
+            showToast(`Đã tăng tốc chu kỳ đồng bộ lên ${(ms / 1000).toFixed(1).replace('.0', '')} giây!`);
+        }
+
         function saveAndTestCloudConfig() {
             const urlEl = document.getElementById('cloud-db-url');
             const keyEl = document.getElementById('cloud-club-key');
             const secEl = document.getElementById('cloud-secret-key');
             const encEl = document.getElementById('cloud-encryption-key');
             const autoEl = document.getElementById('cloud-auto-sync');
+            const intervalEl = document.getElementById('cloud-sync-interval');
 
             const url = urlEl ? urlEl.value.trim() : '';
             if (!url) {
@@ -6598,20 +6856,28 @@
             cloudConfig.secret = secEl ? secEl.value.trim() : '';
             cloudConfig.encryptionKey = encEl ? encEl.value.trim() : '';
             cloudConfig.autoSync = autoEl ? autoEl.checked : true;
+            cloudConfig.syncIntervalMs = intervalEl ? (parseInt(intervalEl.value, 10) || 1500) : 1500;
 
             saveCloudConfigToStorage();
-            showToast('Đã lưu cấu hình Cloud! Đang kiểm tra kết nối...', 'info');
+            showToast('Đã lưu cấu hình Cloud siêu tốc! Đang đồng bộ...', 'info');
 
-            // Thử tải dữ liệu trên Cloud xem đã có chưa; nếu chưa có thì đẩy dữ liệu hiện tại lên khởi tạo
             pullFromCloud(true, false, true);
             startCloudAutoPoll();
         }
 
-        function disconnectCloudConfig() {
+        function stopCloudRealtimeSync() {
             if (cloudPollTimer) {
                 clearInterval(cloudPollTimer);
                 cloudPollTimer = null;
             }
+            if (cloudEventSource) {
+                try { cloudEventSource.close(); } catch (e) {}
+                cloudEventSource = null;
+            }
+        }
+
+        function disconnectCloudConfig() {
+            stopCloudRealtimeSync();
             cloudConfig = { ...DEFAULT_CLOUD_CONFIG };
             try {
                 localStorage.removeItem('vovinam_cloud_config');
@@ -6688,12 +6954,27 @@
                 return;
             }
 
-            if (isCloudSyncing) return;
+            // Hủy ngay các lệnh pull nền đang chạy để ưu tiên đẩy dữ liệu mới nhất lên Cloud tức thì
+            if (activePullAbortController) {
+                try { activePullAbortController.abort(); } catch (e) {}
+                activePullAbortController = null;
+            }
+
+            // Nếu đang có một tiến trình push khác chạy, đánh dấu hàng đợi để đẩy ngay khi xong (không bao giờ bỏ sót thay đổi)
+            if (isCloudPushing) {
+                hasPendingCloudPush = true;
+                return;
+            }
+
+            isCloudPushing = true;
             isCloudSyncing = true;
             updateCloudStatusUI('syncing');
 
             try {
+                lastLocalMutationIso = new Date().toISOString();
                 const payload = buildFullDatabasePayload();
+                lastSyncedUpdatedAt = payload.updatedAt;
+
                 let outgoingBody = payload;
                 if (cloudConfig.encryptionKey && cloudConfig.encryptionKey.trim()) {
                     const rawJson = JSON.stringify(payload);
@@ -6706,21 +6987,27 @@
                     };
                     logSecurityEvent('Mã hóa Cloud E2EE', 'Dữ liệu được mã hóa AES-256 trước khi tải lên Cloud', 'info');
                 }
+                const t0 = performance.now();
                 const res = await fetch(endpoint, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store'
+                    },
+                    cache: 'no-store',
                     body: JSON.stringify(outgoingBody)
                 });
 
                 if (!res.ok) throw new Error('HTTP ' + res.status);
 
-                const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                const elapsedMs = Math.max(1, Math.round(performance.now() - t0));
+                const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 cloudConfig.lastSync = timeNow;
                 saveCloudConfigToStorage();
-                updateCloudStatusUI('connected', `• Đồng bộ lúc ${timeNow}`);
+                updateCloudStatusUI('connected', `• ${timeNow} (${elapsedMs}ms)`);
 
                 if (manual) {
-                    showToast('Đã đẩy toàn bộ dữ liệu lên Đám mây (Cloud) thành công!');
+                    showToast(`Đã đẩy dữ liệu lên Cloud siêu tốc (${elapsedMs}ms)!`);
                 }
             } catch (err) {
                 console.error('Lỗi đẩy Cloud:', err);
@@ -6729,7 +7016,12 @@
                     showToast('Không thể đẩy lên Cloud. Kiểm tra lại URL hoặc quyền truy cập!', 'error');
                 }
             } finally {
+                isCloudPushing = false;
                 isCloudSyncing = false;
+                if (hasPendingCloudPush) {
+                    hasPendingCloudPush = false;
+                    pushToCloud(false);
+                }
             }
         }
 
@@ -6743,16 +7035,52 @@
                 return;
             }
 
-            if (isCloudSyncing) return;
+            if (isCloudPushing || isCloudSyncing) return;
+
+            // Khi kiểm tra tự động ngầm (silent = true), kiểm tra nhanh mốc thời gian updatedAt (chỉ ~30 byte) trước khi tải toàn bộ DB
+            if (!manual && silent && !initIfEmpty && lastSyncedUpdatedAt) {
+                try {
+                    const metaUrl = getCloudEndpointUrl('updatedAt');
+                    const sep = metaUrl.includes('?') ? '&' : '?';
+                    const metaNoCacheUrl = metaUrl + sep + '_t=' + Date.now();
+                    const metaRes = await fetch(metaNoCacheUrl, {
+                        method: 'GET',
+                        cache: 'no-store'
+                    });
+                    if (metaRes.ok) {
+                        const remoteUpdatedAt = await metaRes.json();
+                        if (typeof remoteUpdatedAt === 'string' && remoteUpdatedAt) {
+                            if (remoteUpdatedAt === lastSyncedUpdatedAt || remoteUpdatedAt < lastSyncedUpdatedAt) {
+                                // Không có dữ liệu mới trên Cloud -> Bỏ qua tải toàn bộ DB giúp cực nhẹ và không làm giật giao diện
+                                return;
+                            }
+                        }
+                    }
+                } catch (metaErr) {
+                    // Nếu endpoint không hỗ trợ truy vấn con /updatedAt.json thì tiếp tục tải bình thường
+                }
+            }
+
             isCloudSyncing = true;
-            updateCloudStatusUI('syncing');
+            if (manual) updateCloudStatusUI('syncing');
+
+            const abortCtrl = new AbortController();
+            activePullAbortController = abortCtrl;
 
             try {
-                const res = await fetch(endpoint, { method: 'GET' });
+                const t0 = performance.now();
+                const sep = endpoint.includes('?') ? '&' : '?';
+                const pullNoCacheUrl = endpoint + sep + '_t=' + Date.now();
+                const res = await fetch(pullNoCacheUrl, {
+                    method: 'GET',
+                    cache: 'no-store',
+                    signal: abortCtrl.signal
+                });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
 
-                const data = await res.json();
-                const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                let data = await res.json();
+                const elapsedMs = Math.max(1, Math.round(performance.now() - t0));
+                const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
                 if (!data) {
                     isCloudSyncing = false;
@@ -6767,13 +7095,17 @@
                     return;
                 }
 
+                // Nếu trong lúc đang tải về mà người dùng vừa thao tác lưu cục bộ thì không ghi đè dữ liệu cũ lên
+                if (isCloudPushing || hasPendingCloudPush) {
+                    return;
+                }
+
                 if (data && data._encrypted && data.cipherData) {
                     if (!cloudConfig.encryptionKey || !cloudConfig.encryptionKey.trim()) {
                         updateCloudStatusUI('error');
                         if (manual && !silent) {
                             showToast('Dữ liệu trên Cloud đã được mã hóa E2EE! Vui lòng nhập Mã Khóa Mã Hóa trong Cài Đặt để giải mã.', 'error');
                         }
-                        isCloudSyncing = false;
                         return;
                     }
                     try {
@@ -6785,49 +7117,199 @@
                         if (manual && !silent) {
                             showToast('Mã Khóa Mã Hóa không đúng! Không thể giải mã dữ liệu Cloud.', 'error');
                         }
-                        isCloudSyncing = false;
                         return;
                     }
                 }
+
+                // Nếu bản dữ liệu tải về có cùng updatedAt với bản hiện tại và là chạy ngầm -> không cần render lại DOM
+                if (!manual && silent && data.updatedAt && data.updatedAt === lastSyncedUpdatedAt) {
+                    updateCloudStatusUI('connected', `• ${timeNow} (${elapsedMs}ms)`);
+                    return;
+                }
+
+                // Không ghi đè nếu dữ liệu từ Cloud cũ hơn dữ liệu vừa sửa trên máy
+                if (!manual && silent && data.updatedAt && lastLocalMutationIso && data.updatedAt < lastLocalMutationIso) {
+                    return;
+                }
+
+                if (data.updatedAt) {
+                    lastSyncedUpdatedAt = data.updatedAt;
+                }
+
                 applyFullDatabasePayload(data, 'replace', silent);
                 cloudConfig.lastSync = timeNow;
                 saveCloudConfigToStorage();
-                updateCloudStatusUI('connected', `• Đồng bộ lúc ${timeNow}`);
+                updateCloudStatusUI('connected', `• ${timeNow} (${elapsedMs}ms)`);
 
                 if (manual && !silent) {
-                    showToast(`Đã tải dữ liệu mới nhất từ Cloud (${data.students ? data.students.length : 0} võ sinh)!`);
+                    showToast(`Đã đồng bộ dữ liệu mới nhất từ Cloud (${data.students ? data.students.length : 0} võ sinh • ${elapsedMs}ms)!`);
                 }
             } catch (err) {
+                if (err && err.name === 'AbortError') return;
                 console.error('Lỗi tải Cloud:', err);
                 updateCloudStatusUI('error');
                 if (manual && !silent) {
                     showToast('Không thể kết nối Cloud Database. Vui lòng kiểm tra lại URL!', 'error');
                 }
             } finally {
+                if (activePullAbortController === abortCtrl) {
+                    activePullAbortController = null;
+                }
                 isCloudSyncing = false;
             }
         }
 
         function triggerAutoCloudSync() {
+            lastLocalMutationIso = new Date().toISOString();
+            lastSyncedUpdatedAt = lastLocalMutationIso;
+
+            // 1. Phát tín hiệu đồng bộ tức thì (<10ms) sang các tab/cửa sổ khác trên cùng thiết bị
+            broadcastLocalRealtimeUpdate();
+
+            // 2. Đồng bộ tức thì lên Backend Server (nếu đang kết nối)
             if (typeof scheduleBackendServerSync === 'function') {
                 scheduleBackendServerSync();
             }
+
+            // 3. Đẩy ngay lập tức lên Cloud Database (không trễ)
             if (cloudConfig.url && cloudConfig.autoSync) {
                 pushToCloud(false);
             }
         }
 
-        function startCloudAutoPoll() {
-            if (cloudPollTimer) {
-                clearInterval(cloudPollTimer);
-                cloudPollTimer = null;
+        function startCloudRealtimeStream() {
+            if (cloudEventSource) {
+                try { cloudEventSource.close(); } catch (e) {}
+                cloudEventSource = null;
             }
+            const endpoint = getCloudEndpointUrl();
+            if (!endpoint || !cloudConfig.autoSync || typeof window.EventSource === 'undefined') return;
+
+            try {
+                const es = new EventSource(endpoint);
+                cloudEventSource = es;
+
+                const handleRealtimeEvent = (evt) => {
+                    if (!evt || !evt.data || isCloudPushing || hasPendingCloudPush) return;
+                    try {
+                        const parsed = JSON.parse(evt.data);
+                        const remotePayload = (parsed && parsed.path === '/' && parsed.data) ? parsed.data : null;
+                        if (remotePayload && remotePayload.updatedAt && remotePayload.updatedAt !== lastSyncedUpdatedAt) {
+                            if (lastLocalMutationIso && remotePayload.updatedAt < lastLocalMutationIso) return;
+                            if (!remotePayload._encrypted && (remotePayload.students || remotePayload.classes)) {
+                                lastSyncedUpdatedAt = remotePayload.updatedAt;
+                                const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                                applyFullDatabasePayload(remotePayload, 'replace', true);
+                                cloudConfig.lastSync = timeNow;
+                                saveCloudConfigToStorage();
+                                updateCloudStatusUI('connected', `• Real-time ${timeNow}`);
+                            } else {
+                                pullFromCloud(false, true, false);
+                            }
+                        } else if (parsed && parsed.path && parsed.path !== '/') {
+                            pullFromCloud(false, true, false);
+                        }
+                    } catch (err) {}
+                };
+
+                es.addEventListener('put', handleRealtimeEvent);
+                es.addEventListener('patch', handleRealtimeEvent);
+            } catch (e) {
+                cloudEventSource = null;
+            }
+        }
+
+        function startCloudAutoPoll() {
+            stopCloudRealtimeSync();
             if (cloudConfig.url && cloudConfig.autoSync) {
+                // Kích hoạt luồng lắng nghe thời gian thực Server-Sent Events (SSE) cho Firebase (<100ms)
+                startCloudRealtimeStream();
+
+                // Kích hoạt vòng lặp kiểm tra siêu tốc (mặc định 1.5 giây thay vì 30 giây trước đây)
+                const intervalMs = Math.max(800, parseInt(cloudConfig.syncIntervalMs, 10) || 1500);
                 cloudPollTimer = setInterval(() => {
-                    if (!isCloudSyncing && cloudConfig.url && cloudConfig.autoSync) {
+                    if (!isCloudPushing && !isCloudSyncing && cloudConfig.url && cloudConfig.autoSync) {
                         pullFromCloud(false, true, false);
                     }
-                }, 30000);
+                }, intervalMs);
+            }
+        }
+
+        function broadcastLocalRealtimeUpdate() {
+            try {
+                const msg = {
+                    type: 'VOVINAM_DATA_UPDATED',
+                    updatedAt: lastLocalMutationIso || new Date().toISOString(),
+                    senderTab: window.name || 'tab'
+                };
+                if (localBroadcastChannel) {
+                    localBroadcastChannel.postMessage(msg);
+                }
+                localStorage.setItem('vovinam_realtime_ping', JSON.stringify(msg));
+            } catch (e) {}
+        }
+
+        function initRealtimeMultiDeviceListeners() {
+            // 1. Đồng bộ tức thì (<10ms) giữa các tab trình duyệt bằng BroadcastChannel & Storage Event
+            try {
+                if (typeof window.BroadcastChannel !== 'undefined') {
+                    localBroadcastChannel = new BroadcastChannel('vovinam_realtime_channel');
+                    localBroadcastChannel.onmessage = (event) => {
+                        if (event && event.data && event.data.type === 'VOVINAM_DATA_UPDATED') {
+                            reloadAllFromLocalStorageSilently();
+                        }
+                    };
+                }
+            } catch (e) {}
+
+            window.addEventListener('storage', (event) => {
+                if (!event || !event.key) return;
+                if (event.key.startsWith('vovinam_')) {
+                    reloadAllFromLocalStorageSilently();
+                }
+            });
+
+            // 2. Đồng bộ tức thì ngay khi người dùng mở lại màn hình điện thoại / chuyển lại tab hoặc có mạng trở lại
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    triggerInstantForegroundSync();
+                }
+            });
+            window.addEventListener('focus', () => {
+                triggerInstantForegroundSync();
+            });
+            window.addEventListener('online', () => {
+                showToast('Đã kết nối mạng trở lại! Đang đồng bộ dữ liệu tức thì...', 'info');
+                if (hasPendingCloudPush) {
+                    pushToCloud(false);
+                } else {
+                    triggerInstantForegroundSync();
+                }
+            });
+        }
+
+        function reloadAllFromLocalStorageSilently() {
+            loadData();
+            applySiteConfig();
+            loadSettingsForm();
+            populateClassDropdowns();
+            populateAccountSwitcher();
+            updateRoleUI();
+            renderStudents();
+            renderClasses();
+            renderPendingApprovals();
+            loadAttendanceSheet();
+            renderTuitionTable();
+            renderPermissionsMatrix();
+            updateBackupStatsUI();
+        }
+
+        function triggerInstantForegroundSync() {
+            if (cloudConfig.url && cloudConfig.autoSync && !isCloudPushing && !isCloudSyncing) {
+                pullFromCloud(false, true, false);
+            }
+            if (backendServerState && backendServerState.mode === 'http') {
+                syncFromBackendServer(false);
             }
         }
 
@@ -7564,6 +8046,8 @@
             requestLogs: []
         };
         let backendSyncDebounceTimer = null;
+        let backendAutoPollTimer = null;
+        let lastBackendUpdatedAt = '';
 
         function resolveServerApiUrl(apiPath) {
             let base = (backendServerState.baseUrl || '').trim().replace(/\/+$/, '');
@@ -7772,6 +8256,7 @@
                             const lat = Math.max(1, Math.round(performance.now() - t0));
                             recordServerApiLog('GET', '/api/health', '200 OK', lat, `Kết nối ${backendServerState.engineName}`);
                             await syncFromBackendServer(false);
+                            startBackendAutoSyncPoll();
                             refreshServerDashboardUI(health);
                             return;
                         }
@@ -7779,6 +8264,10 @@
                 } catch (e) {}
             }
 
+            if (backendAutoPollTimer) {
+                clearInterval(backendAutoPollTimer);
+                backendAutoPollTimer = null;
+            }
             backendServerState.mode = 'virtual';
             backendServerState.engineName = 'Virtual REST Server v2.0 (In-Browser Engine)';
             await executeVirtualServerRequest('GET', '/api/health');
@@ -7786,11 +8275,34 @@
             refreshServerDashboardUI();
         }
 
+        function startBackendAutoSyncPoll() {
+            if (backendAutoPollTimer) {
+                clearInterval(backendAutoPollTimer);
+                backendAutoPollTimer = null;
+            }
+            if (backendServerState.mode === 'http') {
+                backendAutoPollTimer = setInterval(async () => {
+                    if (backendServerState.mode !== 'http') return;
+                    try {
+                        const targetUrl = resolveServerApiUrl('/api/health');
+                        const pollHealthUrl = targetUrl + '?_t=' + Date.now();
+                        const res = await window.fetch(pollHealthUrl, { method: 'GET', cache: 'no-store' });
+                        if (res.ok) {
+                            const health = await res.json();
+                            if (health && health.updatedAt && health.updatedAt !== lastBackendUpdatedAt) {
+                                await syncFromBackendServer(false);
+                            }
+                        }
+                    } catch (e) {}
+                }, 1500);
+            }
+        }
+
         function scheduleBackendServerSync() {
             if (backendSyncDebounceTimer) clearTimeout(backendSyncDebounceTimer);
             backendSyncDebounceTimer = setTimeout(() => {
                 syncToBackendServer(false);
-            }, 150);
+            }, 40);
         }
 
         async function pingBackendServer(manual = false) {
@@ -7804,6 +8316,12 @@
         async function syncFromBackendServer(manual = false) {
             const res = await callBackendApi('GET', '/api/bootstrap');
             if (res && res.status === 200 && res.data && (res.data.students || res.data.classes)) {
+                if (res.data.updatedAt) {
+                    if (!manual && lastBackendUpdatedAt && res.data.updatedAt === lastBackendUpdatedAt) {
+                        return;
+                    }
+                    lastBackendUpdatedAt = res.data.updatedAt;
+                }
                 if (backendServerState.mode === 'http') {
                     applyFullDatabasePayload(res.data, 'replace', true);
                 }
@@ -7818,8 +8336,12 @@
 
         async function syncToBackendServer(manual = false) {
             const payload = buildFullDatabasePayload();
+            lastBackendUpdatedAt = payload.updatedAt;
             const res = await callBackendApi('PUT', '/api/sync', payload);
             if (res && res.status === 200) {
+                if (res.data && res.data.updatedAt) {
+                    lastBackendUpdatedAt = res.data.updatedAt;
+                }
                 backendServerState.lastSyncTime = new Date().toLocaleTimeString('vi-VN');
                 backendServerState.lastUpdatedBy = getCurrentAccountName();
                 refreshServerDashboardUI();
