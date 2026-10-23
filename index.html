@@ -41,6 +41,21 @@
         ::-webkit-scrollbar-thumb { background: #0056b3; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #003875; }
 
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        main > section:not(.hidden) {
+            animation: fadeSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .card-hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .card-hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 86, 179, 0.08), 0 8px 10px -6px rgba(0, 86, 179, 0.04);
+        }
+
         @media print {
             body * { visibility: hidden !important; }
             body:not(.printing-session) #print-section,
@@ -74,8 +89,14 @@
     <header class="bg-gradient-to-r from-vovinam-navy via-vovinam-blue to-blue-700 text-white shadow-md sticky top-0 z-30 no-print border-b border-white/10">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 sm:h-20 gap-2">
-                <!-- Logo & Brand (Gọn gàng, tinh tế) -->
-                <div class="flex items-center space-x-3 min-w-0 flex-shrink-0">
+                <!-- Nút Menu Tab (Bên trái) + Logo & Brand (Gọn gàng, tinh tế) -->
+                <div class="flex items-center space-x-2.5 sm:space-x-3 min-w-0 flex-shrink-0">
+                    <!-- Mobile Menu Button (Chuyển sang bên trái) -->
+                    <div class="lg:hidden flex items-center flex-shrink-0">
+                        <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="p-2 rounded-xl bg-slate-900/35 hover:bg-slate-900/50 text-white border border-white/15 transition focus:outline-none">
+                            <i class="fa-solid fa-bars text-lg"></i>
+                        </button>
+                    </div>
                     <div onclick="switchTab('students')" class="w-10 h-10 sm:w-11 sm:h-11 bg-white rounded-2xl flex items-center justify-center text-vovinam-blue font-black text-xl sm:text-2xl border-2 border-vovinam-gold shadow-sm overflow-hidden flex-shrink-0 cursor-pointer hover:scale-105 transition">
                         <img id="site-logo-img" src="" alt="Logo" class="w-full h-full object-cover hidden">
                         <span id="site-logo-text" class="text-vovinam-blue font-black text-xl sm:text-2xl">V</span>
@@ -92,7 +113,7 @@
                 </div>
 
                 <!-- Navigation Tabs Desktop (6 Tab Nghiệp Vụ Chính + Menu Hệ Thống) -->
-                <nav class="hidden lg:flex items-center bg-slate-950/25 p-1 rounded-2xl border border-white/10 space-x-0.5">
+                <nav class="hidden lg:flex items-center bg-slate-900/35 p-1 rounded-2xl border border-white/15 space-x-0.5">
                     <button onclick="switchTab('students')" id="tab-btn-students" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 bg-white text-vovinam-navy shadow-sm">
                         <i class="fa-solid fa-users"></i>
                         <span>Võ Sinh</span>
@@ -147,15 +168,15 @@
                 <!-- Cụm Tài Khoản & Đồng Bộ Gọn Đẹp Bên Phải -->
                 <div class="flex items-center space-x-2">
                     <!-- Chấm trạng thái Cloud nhanh (chỉ hiện icon gọn đẹp) -->
-                    <button type="button" onclick="openCloudSyncSettingsSection()" title="Cấu hình Đồng bộ Đám mây (Cloud Sync)" class="hidden sm:flex items-center space-x-1.5 bg-slate-950/30 hover:bg-slate-950/45 px-2.5 py-1.5 rounded-xl border border-white/15 transition cursor-pointer">
+                    <button type="button" onclick="openCloudSyncSettingsSection()" title="Cấu hình Đồng bộ Đám mây (Cloud Sync)" class="hidden sm:flex items-center space-x-1.5 bg-slate-900/35 hover:bg-slate-900/50 px-2.5 py-1.5 rounded-xl border border-white/15 transition cursor-pointer">
                         <span id="cloud-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
                         <i class="fa-solid fa-cloud text-xs text-blue-100"></i>
                     </button>
 
                     <!-- Nút Hồ Sơ Tài Khoản & Menu Tiện Ích Nhanh (Popover) -->
                     <div class="relative" id="user-account-menu-wrapper">
-                        <button type="button" onclick="toggleUserAccountMenu(event)" id="user-menu-btn" class="flex items-center space-x-2 bg-slate-950/30 hover:bg-slate-950/45 pl-1.5 pr-2.5 py-1.5 rounded-2xl border border-white/15 transition focus:outline-none">
-                            <div id="header-user-avatar" class="w-7 h-7 rounded-xl bg-vovinam-gold text-slate-950 font-black text-xs flex items-center justify-center shadow-xs">
+                        <button type="button" onclick="toggleUserAccountMenu(event)" id="user-menu-btn" class="flex items-center space-x-2 bg-slate-900/35 hover:bg-slate-900/50 pl-1.5 pr-2.5 py-1.5 rounded-2xl border border-white/15 transition focus:outline-none">
+                            <div id="header-user-avatar" class="w-7 h-7 rounded-xl bg-vovinam-gold text-slate-900 font-black text-xs flex items-center justify-center shadow-xs">
                                 V
                             </div>
                             <div class="text-left hidden sm:block max-w-[130px]">
@@ -169,15 +190,25 @@
 
                         <!-- Popover Hộp Tài Khoản, Quyền Hạn & Đồng Bộ (Ẩn mặc định, chỉ mở khi bấm) -->
                         <div id="user-account-dropdown" class="hidden absolute right-0 mt-2.5 w-80 sm:w-96 bg-white text-slate-800 rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden z-50">
-                            <!-- Phần 1: Thông tin tài khoản & Quyền hạn (Thay thế hộp thông báo lớn ngoài trang) -->
+                            <!-- Phần 1: Thông tin tài khoản & Quyền hạn (Kèm Ảnh Đại Diện Riêng) -->
                             <div id="role-info-banner" class="p-4 bg-gradient-to-br from-slate-900 via-vovinam-navy to-slate-900 text-white">
                                 <div class="flex items-start justify-between gap-2">
-                                    <div class="flex items-center space-x-2.5">
-                                        <div class="w-10 h-10 rounded-2xl bg-vovinam-gold/20 border border-vovinam-gold/40 text-vovinam-gold flex items-center justify-center font-black text-base flex-shrink-0">
-                                            <i class="fa-solid fa-user-shield"></i>
+                                    <div class="flex items-center space-x-3">
+                                        <div onclick="closeHeaderDropdowns(); openPersonalAvatarModal()" title="Bấm để thay đổi ảnh đại diện tài khoản" class="relative w-12 h-12 rounded-2xl bg-vovinam-gold/20 border-2 border-vovinam-gold/60 text-vovinam-gold flex items-center justify-center font-black text-base flex-shrink-0 cursor-pointer group overflow-hidden shadow-md">
+                                            <img id="popover-user-avatar-img" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                                            <span id="popover-user-avatar-fallback" class="flex items-center justify-center w-full h-full"><i class="fa-solid fa-user-shield"></i></span>
+                                            <div class="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs">
+                                                <i class="fa-solid fa-camera"></i>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div class="text-[10px] uppercase tracking-wider text-blue-200 font-semibold">Tài khoản đang sử dụng</div>
+                                        <div class="min-w-0">
+                                            <div class="flex items-center space-x-1.5">
+                                                <span class="text-[10px] uppercase tracking-wider text-blue-200 font-semibold">Tài khoản đang sử dụng</span>
+                                                <button type="button" onclick="closeHeaderDropdowns(); openPersonalAvatarModal()" class="text-[10px] font-bold text-vovinam-gold hover:underline flex items-center space-x-1">
+                                                    <i class="fa-solid fa-camera text-[9px]"></i>
+                                                    <span>Sửa ảnh</span>
+                                                </button>
+                                            </div>
                                             <p id="role-banner-text" class="text-xs text-slate-100 mt-0.5 leading-snug">Đang đăng nhập quyền <strong>Quản Trị Viên (Admin)</strong></p>
                                         </div>
                                     </div>
@@ -242,8 +273,15 @@
                                 </div>
                             </div>
 
-                            <!-- Phần 4: Tác vụ bảo mật tài khoản -->
+                            <!-- Phần 4: Tác vụ cá nhân & bảo mật tài khoản -->
                             <div class="p-2 bg-white grid grid-cols-2 gap-1 text-xs">
+                                <button type="button" onclick="closeHeaderDropdowns(); openPersonalAvatarModal()" class="col-span-2 px-3 py-2 rounded-xl text-left font-bold text-vovinam-blue bg-blue-50/70 hover:bg-blue-100/80 border border-blue-100 flex items-center justify-between transition">
+                                    <span class="flex items-center space-x-2">
+                                        <i class="fa-solid fa-camera-retro text-vovinam-blue w-4 text-center"></i>
+                                        <span>Đổi Ảnh Đại Diện Tài Khoản</span>
+                                    </span>
+                                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-white text-vovinam-blue border border-blue-200">Cá nhân</span>
+                                </button>
                                 <button onclick="closeHeaderDropdowns(); openChangePasswordModal()" class="px-3 py-2 rounded-xl text-left font-semibold text-slate-700 hover:bg-slate-100 flex items-center space-x-2 transition">
                                     <i class="fa-solid fa-key text-amber-500 w-4 text-center"></i>
                                     <span>Đổi Mật Khẩu</span>
@@ -264,12 +302,6 @@
                         </div>
                     </div>
 
-                    <!-- Mobile Menu Button -->
-                    <div class="lg:hidden flex items-center">
-                        <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="p-2 rounded-xl text-white hover:bg-white/10 focus:outline-none">
-                            <i class="fa-solid fa-bars text-lg"></i>
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -316,10 +348,114 @@
             <span id="toast-msg" class="text-xs sm:text-sm font-medium">Thông báo</span>
         </div>
 
+        <!-- Thanh Tổng Quan Tài Khoản & Chỉ Số Nhanh (Quick Workspace Bar) -->
+        <div class="mb-6 bg-white rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 no-print">
+            <div class="flex items-center space-x-3 min-w-0">
+                <div onclick="openPersonalAvatarModal()" title="Bấm để thay đổi ảnh đại diện riêng của tài khoản" class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-vovinam-blue to-vovinam-navy text-vovinam-gold font-black text-lg flex items-center justify-center shadow-sm border-2 border-vovinam-gold/70 cursor-pointer group overflow-hidden flex-shrink-0">
+                    <img id="workspace-bar-avatar-img" src="" alt="Account Avatar" class="w-full h-full object-cover hidden">
+                    <span id="workspace-bar-avatar-text">V</span>
+                    <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="text-xs sm:text-sm font-black text-slate-800 truncate" id="workspace-bar-user-name">Võ Sư Admin</span>
+                        <span id="workspace-bar-role-pill" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-vovinam-blue border border-blue-200">Chủ Nhiệm CLB</span>
+                        <button type="button" onclick="openPersonalAvatarModal()" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition flex items-center space-x-1">
+                            <i class="fa-solid fa-camera text-[9px] text-amber-600"></i>
+                            <span>Đổi ảnh đại diện</span>
+                        </button>
+                    </div>
+                    <p id="workspace-bar-subtext" class="text-[11px] text-slate-500 truncate mt-0.5">Phạm vi phụ trách: Tất cả các lớp • Bấm vào ảnh đại diện để tải ảnh riêng của bạn</p>
+                </div>
+            </div>
+
+            <!-- Cụm Chỉ Số Nhanh (Quick Navigation Pills) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 lg:flex lg:items-center">
+                <button type="button" onclick="switchTab('students')" class="px-3 py-2 rounded-xl bg-slate-50 hover:bg-blue-50/80 border border-slate-200/80 hover:border-blue-200 transition flex items-center space-x-2.5 text-left">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100/80 text-vovinam-blue flex items-center justify-center text-xs flex-shrink-0">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-[10px] font-bold uppercase text-slate-400 leading-none">Võ Sinh</div>
+                        <div id="quick-kpi-students" class="text-xs sm:text-sm font-black text-slate-800 truncate mt-0.5">0</div>
+                    </div>
+                </button>
+                <button type="button" onclick="switchTab('classes')" class="px-3 py-2 rounded-xl bg-slate-50 hover:bg-indigo-50/80 border border-slate-200/80 hover:border-indigo-200 transition flex items-center space-x-2.5 text-left">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-100/80 text-indigo-600 flex items-center justify-center text-xs flex-shrink-0">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-[10px] font-bold uppercase text-slate-400 leading-none">Lớp Mở</div>
+                        <div id="quick-kpi-classes" class="text-xs sm:text-sm font-black text-indigo-700 truncate mt-0.5">0</div>
+                    </div>
+                </button>
+                <button type="button" onclick="switchTab('attendance')" class="px-3 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50/80 border border-slate-200/80 hover:border-emerald-200 transition flex items-center space-x-2.5 text-left">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100/80 text-emerald-600 flex items-center justify-center text-xs flex-shrink-0">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-[10px] font-bold uppercase text-slate-400 leading-none">Điểm Danh</div>
+                        <div id="quick-kpi-attendance" class="text-xs sm:text-sm font-black text-emerald-600 truncate mt-0.5">0 buổi</div>
+                    </div>
+                </button>
+                <button type="button" onclick="switchTab('tuition')" class="px-3 py-2 rounded-xl bg-slate-50 hover:bg-amber-50/80 border border-slate-200/80 hover:border-amber-200 transition flex items-center space-x-2.5 text-left">
+                    <div class="w-8 h-8 rounded-lg bg-amber-100/80 text-amber-600 flex items-center justify-center text-xs flex-shrink-0">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-[10px] font-bold uppercase text-slate-400 leading-none">Học Phí</div>
+                        <div id="quick-kpi-tuition" class="text-xs sm:text-sm font-black text-amber-600 truncate mt-0.5">0 đã đóng</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
         <!-- ================= TAB 1: DANH SÁCH VÕ SINH ================= -->
-        <section id="tab-students" class="space-y-6">
+        <section id="tab-students" class="space-y-5">
+            <!-- 4 Thẻ Thống Kê Nhanh Võ Sinh -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3 card-hover-lift">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-vovinam-blue flex items-center justify-center text-lg flex-shrink-0">
+                        <i class="fa-solid fa-user-ninja"></i>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tổng Võ Sinh</p>
+                        <p id="st-stat-total" class="text-lg font-black text-slate-800">0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3 card-hover-lift">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg flex-shrink-0">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chính Thức</p>
+                        <p id="st-stat-official" class="text-lg font-black text-emerald-600">0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3 card-hover-lift">
+                    <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg flex-shrink-0">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Học Ghép / Bù</p>
+                        <p id="st-stat-guest" class="text-lg font-black text-purple-600">0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3 card-hover-lift">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg flex-shrink-0">
+                        <i class="fa-solid fa-medal"></i>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Hoàng / Hồng Đai</p>
+                        <p id="st-stat-advanced" class="text-lg font-black text-amber-600">0</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Filter Bar -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="relative">
                         <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
@@ -359,36 +495,52 @@
                 </div>
             </div>
 
-            <!-- Student Table -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                    <h2 class="text-base font-bold text-gray-800 flex items-center space-x-2">
+            <!-- Student Table & Card Grid Container -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/60">
+                    <h2 class="text-sm sm:text-base font-bold text-slate-800 flex items-center space-x-2">
                         <i class="fa-solid fa-list text-vovinam-blue"></i>
                         <span>Danh Sách Võ Sinh (<span id="student-count">0</span>)</span>
                     </h2>
-                    <div class="text-xs text-gray-500">
-                        <span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-1"></span> Chính thức
-                        <span class="inline-block w-3 h-3 rounded-full bg-purple-500 ml-3 mr-1"></span> Học thêm
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="text-xs text-slate-500 hidden sm:flex items-center">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500 mr-1.5"></span> Chính thức
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-purple-500 ml-3 mr-1.5"></span> Học thêm
+                        </div>
+                        <div class="inline-flex rounded-xl bg-slate-200/70 p-1 border border-slate-200">
+                            <button type="button" id="btn-student-view-table" onclick="setStudentViewMode('table')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-vovinam-blue shadow-xs transition flex items-center space-x-1">
+                                <i class="fa-solid fa-table-list"></i>
+                                <span>Dạng Bảng</span>
+                            </button>
+                            <button type="button" id="btn-student-view-grid" onclick="setStudentViewMode('grid')" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center space-x-1">
+                                <i class="fa-solid fa-grip"></i>
+                                <span>Thẻ Hồ Sơ</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div id="student-table-wrapper" class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
-                            <tr class="bg-gray-100/70 text-gray-600 font-semibold border-b border-gray-200">
+                            <tr class="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200 text-xs uppercase tracking-wider">
                                 <th class="py-3 px-4">Số định danh</th>
                                 <th class="py-3 px-4">Võ sinh</th>
                                 <th class="py-3 px-4">Ngày sinh / Tuổi</th>
                                 <th class="py-3 px-4">Cấp Đai Vovinam</th>
                                 <th class="py-3 px-4">Lớp / Phân loại</th>
                                 <th class="py-3 px-4">Phụ huynh & SĐT</th>
-                                <th class="py-3 px-4">Trạng Thái</th>
+                                <th class="py-3 px-4 text-center">Trạng Thái</th>
                                 <th class="py-3 px-4 text-center">Thao tác</th>
                             </tr>
                         </thead>
-                        <tbody id="student-table-body" class="divide-y divide-gray-100">
+                        <tbody id="student-table-body" class="divide-y divide-slate-100">
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Chế độ xem Thẻ Hồ Sơ (Grid View) -->
+                <div id="student-grid-wrapper" class="hidden p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50/40">
                 </div>
 
                 <div id="no-students-msg" class="hidden p-12 text-center text-gray-400">
@@ -833,12 +985,15 @@
                         <p id="perm-stat-custom" class="text-lg font-black text-amber-600">0</p>
                     </div>
                 </div>
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
+                <div onclick="openPersonalAvatarModal()" title="Bấm để thay đổi ảnh đại diện tài khoản đang đăng nhập" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3 cursor-pointer hover:border-vovinam-blue transition group">
+                    <div id="perm-stat-current-avatar" class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg overflow-hidden border border-purple-200 flex-shrink-0">
                         <i class="fa-solid fa-circle-user"></i>
                     </div>
-                    <div class="min-w-0">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Đang Đăng Nhập</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>Đang Đăng Nhập</span>
+                            <span class="text-[10px] text-vovinam-blue group-hover:underline"><i class="fa-solid fa-camera mr-0.5"></i>Đổi ảnh</span>
+                        </p>
                         <p id="perm-stat-current" class="text-xs sm:text-sm font-black text-purple-700 truncate">Võ Sư Admin</p>
                     </div>
                 </div>
@@ -957,7 +1112,7 @@
                         <div>
                             <h3 class="text-sm sm:text-base font-black text-white flex items-center space-x-2">
                                 <span>Trung Tâm Giám Sát An Ninh &amp; Phòng Thủ Dữ Liệu</span>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-slate-950 uppercase">ĐÃ KÍCH HOẠT</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-slate-900 uppercase">ĐÃ KÍCH HOẠT</span>
                             </h3>
                             <p class="text-xs text-slate-400 mt-0.5">Phòng vệ đa tầng: Băm PBKDF2-SHA256, Khóa dò mật khẩu LocalStorage, Lá chắn XSS &amp; CSV Injection, Mã hóa E2EE Cloud</p>
                         </div>
@@ -1487,7 +1642,7 @@
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
                             <h2 class="text-base sm:text-lg font-black uppercase tracking-wide text-white">Trung Tâm Quản Trị Máy Chủ &amp; RESTful API</h2>
-                            <span id="srv-mode-pill" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-slate-950 uppercase">ONLINE • REST API v2.0</span>
+                            <span id="srv-mode-pill" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-slate-900 uppercase">ONLINE • REST API v2.0</span>
                         </div>
                         <p id="srv-engine-desc" class="text-xs text-slate-300 mt-1">
                             Hệ thống vận hành trên kiến trúc Client-Server (Node.js / Python SQLite3 REST API + Cơ chế tự động chuyển đổi dự phòng thông minh).
@@ -1653,7 +1808,7 @@
                             <span id="srv-api-test-label">Phản hồi từ Máy chủ (JSON Response):</span>
                             <span id="srv-api-test-status" class="font-bold text-emerald-600">200 OK</span>
                         </div>
-                        <pre id="srv-api-response-viewer" class="p-3 bg-slate-950 text-emerald-400 font-mono text-[11px] rounded-2xl overflow-x-auto max-h-44 border border-slate-800">{ "ok": true, "message": "Bấm vào một Endpoint phía trên để xem dữ liệu trả về từ Máy chủ..." }</pre>
+                        <pre id="srv-api-response-viewer" class="p-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-2xl overflow-x-auto max-h-44 border border-slate-800">{ "ok": true, "message": "Bấm vào một Endpoint phía trên để xem dữ liệu trả về từ Máy chủ..." }</pre>
                     </div>
                 </div>
             </div>
@@ -2328,6 +2483,69 @@
             <form id="account-form" onsubmit="saveAccount(event)" class="p-6 space-y-5 overflow-y-auto flex-1">
                 <input type="hidden" id="acc-id">
 
+                <!-- Ảnh Đại Diện Riêng Cho Tài Khoản -->
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                    <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                        <div class="relative w-20 h-20 rounded-2xl bg-white border-2 border-vovinam-blue shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0">
+                            <img id="acc-avatar-preview-img" src="" alt="Avatar tài khoản" class="w-full h-full object-cover hidden">
+                            <span id="acc-avatar-preview-placeholder" class="text-2xl font-black text-vovinam-blue">V</span>
+                        </div>
+                        <div class="flex-1 space-y-2 text-center sm:text-left w-full">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-800 uppercase tracking-wide">Ảnh Đại Diện Riêng Của Tài Khoản</label>
+                                <p class="text-[11px] text-slate-500">Tải ảnh chân dung từ máy, dán link ảnh hoặc chọn biểu tượng Võ Sư / HLV bên dưới.</p>
+                            </div>
+                            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                                <label class="cursor-pointer px-3 py-1.5 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs transition">
+                                    <i class="fa-solid fa-upload"></i>
+                                    <span>Tải ảnh từ máy</span>
+                                    <input type="file" id="acc-avatar-file" accept="image/*" onchange="previewAccountModalAvatar(event)" class="hidden">
+                                </label>
+                                <button type="button" onclick="resetAccountModalAvatar()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                    <span>Chữ cái mặc định</span>
+                                </button>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-1.5 pt-0.5">
+                                <input type="text" id="acc-avatar-url" onkeydown="if(event.key==='Enter'){event.preventDefault(); applyAccountModalAvatarUrl();}" placeholder="Hoặc dán link ảnh trực tuyến (https://...)" class="flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-vovinam-blue focus:outline-none">
+                                <button type="button" onclick="applyAccountModalAvatarUrl()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition whitespace-nowrap">
+                                    Áp dụng URL
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Bộ chọn nhanh Avatar mẫu theo chức danh -->
+                    <div class="pt-2.5 border-t border-slate-200/80">
+                        <p class="text-[11px] font-bold text-slate-600 mb-2"><i class="fa-solid fa-user-astronaut text-vovinam-blue mr-1"></i>Hoặc chọn nhanh biểu tượng đại diện theo vai trò:</p>
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                            <button type="button" onclick="selectAccountModalPresetAvatar('master_red')" class="p-1.5 bg-white hover:bg-red-50 rounded-xl border border-slate-200 hover:border-red-300 transition flex flex-col items-center text-center group">
+                                <span class="w-7 h-7 rounded-lg bg-red-600 text-amber-300 font-black text-xs flex items-center justify-center mb-1 shadow-xs"><i class="fa-solid fa-dragon"></i></span>
+                                <span class="text-[10px] font-semibold text-slate-700 group-hover:text-red-700 truncate w-full">Võ Sư</span>
+                            </button>
+                            <button type="button" onclick="selectAccountModalPresetAvatar('coach_gold')" class="p-1.5 bg-white hover:bg-amber-50 rounded-xl border border-slate-200 hover:border-amber-300 transition flex flex-col items-center text-center group">
+                                <span class="w-7 h-7 rounded-lg bg-amber-500 text-slate-900 font-black text-xs flex items-center justify-center mb-1 shadow-xs"><i class="fa-solid fa-medal"></i></span>
+                                <span class="text-[10px] font-semibold text-slate-700 group-hover:text-amber-700 truncate w-full">HLV Hoàng Đai</span>
+                            </button>
+                            <button type="button" onclick="selectAccountModalPresetAvatar('instructor_blue')" class="p-1.5 bg-white hover:bg-blue-50 rounded-xl border border-slate-200 hover:border-blue-300 transition flex flex-col items-center text-center group">
+                                <span class="w-7 h-7 rounded-lg bg-vovinam-blue text-white font-black text-xs flex items-center justify-center mb-1 shadow-xs"><i class="fa-solid fa-user-ninja"></i></span>
+                                <span class="text-[10px] font-semibold text-slate-700 group-hover:text-vovinam-blue truncate w-full">HLV Đứng Lớp</span>
+                            </button>
+                            <button type="button" onclick="selectAccountModalPresetAvatar('treasurer_emerald')" class="p-1.5 bg-white hover:bg-emerald-50 rounded-xl border border-slate-200 hover:border-emerald-300 transition flex flex-col items-center text-center group">
+                                <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center mb-1 shadow-xs"><i class="fa-solid fa-coins"></i></span>
+                                <span class="text-[10px] font-semibold text-slate-700 group-hover:text-emerald-700 truncate w-full">Thủ Quỹ</span>
+                            </button>
+                            <button type="button" onclick="selectAccountModalPresetAvatar('training_purple')" class="p-1.5 bg-white hover:bg-purple-50 rounded-xl border border-slate-200 hover:border-purple-300 transition flex flex-col items-center text-center group">
+                                <span class="w-7 h-7 rounded-lg bg-purple-600 text-white font-black text-xs flex items-center justify-center mb-1 shadow-xs"><i class="fa-solid fa-graduation-cap"></i></span>
+                                <span class="text-[10px] font-semibold text-slate-700 group-hover:text-purple-700 truncate w-full">Ban Đào Tạo</span>
+                            </button>
+                            <button type="button" onclick="selectAccountModalPresetAvatar('shield_navy')" class="p-1.5 bg-white hover:bg-slate-100 rounded-xl border border-slate-200 hover:border-slate-400 transition flex flex-col items-center text-center group">
+                                <span class="w-7 h-7 rounded-lg bg-vovinam-navy text-vovinam-gold font-black text-xs flex items-center justify-center mb-1 shadow-xs"><i class="fa-solid fa-shield-halved"></i></span>
+                                <span class="text-[10px] font-semibold text-slate-700 group-hover:text-slate-900 truncate w-full">Quản Trị</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Thông tin định danh & Bảo mật tài khoản -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2464,7 +2682,7 @@
 
 
     <!-- ================= MODAL: ĐĂNG NHẬP HỆ THỐNG BẢO MẬT (LOGIN OVERLAY) ================= -->
-    <div id="login-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 transform transition-all my-8">
             <!-- Header Màn Hình Đăng Nhập -->
             <div class="bg-gradient-to-r from-vovinam-navy via-vovinam-blue to-blue-700 px-6 py-6 text-white text-center relative">
@@ -2524,15 +2742,152 @@
                 </button>
             </form>
 
-            <!-- Bảng Tài Khoản Mẫu Có Sẵn (Kèm Mật Khẩu Riêng Của Từng Người) -->
-            <div class="px-6 pb-6 pt-2 border-t border-slate-100 bg-slate-50/60">
-                <p class="text-xs font-bold text-slate-700 mb-2.5 flex items-center space-x-1.5">
-                    <i class="fa-solid fa-id-card-clip text-vovinam-blue"></i>
-                    <span>Tài Khoản Mẫu Định Danh (Bấm để chọn tài khoản đăng nhập):</span>
-                </p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs" id="quick-login-list">
+            <!-- Bảng Tài Khoản Mẫu Có Sẵn (Thu Gọn - Bấm Sổ Xuống Để Hiển Thị) -->
+            <div class="px-6 pb-5 pt-2.5 border-t border-slate-100 bg-slate-50/60">
+                <button type="button" id="quick-login-toggle-btn" onclick="toggleQuickLoginDropdown()" class="w-full px-3.5 py-2.5 rounded-2xl bg-white hover:bg-blue-50/60 border border-slate-200/90 hover:border-vovinam-blue/40 transition flex items-center justify-between text-xs font-bold text-slate-700 shadow-xs focus:outline-none">
+                    <span class="flex items-center space-x-2 min-w-0">
+                        <i class="fa-solid fa-id-card-clip text-vovinam-blue"></i>
+                        <span id="quick-login-toggle-label" class="truncate">Tài Khoản Mẫu Định Danh (Bấm để chọn tài khoản đăng nhập)</span>
+                    </span>
+                    <span class="flex items-center space-x-1.5 flex-shrink-0 ml-2">
+                        <span id="quick-login-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-vovinam-blue border border-blue-200">4 tài khoản</span>
+                        <i id="quick-login-chevron" class="fa-solid fa-chevron-down text-[11px] text-slate-400 transition-transform duration-200"></i>
+                    </span>
+                </button>
+                <div id="quick-login-dropdown-panel" class="hidden mt-2.5 pt-1">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs" id="quick-login-list">
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: CẬP NHẬT ẢNH ĐẠI DIỆN RIÊNG CHO TÀI KHOẢN ================= -->
+    <div id="personal-avatar-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+            <div class="bg-gradient-to-r from-vovinam-navy via-vovinam-blue to-blue-700 px-6 py-4 text-white flex justify-between items-center flex-shrink-0">
+                <h3 class="text-base font-bold flex items-center space-x-2">
+                    <i class="fa-solid fa-camera-retro text-vovinam-gold"></i>
+                    <span>Ảnh Đại Diện Riêng Của Tài Khoản</span>
+                </h3>
+                <button type="button" onclick="closePersonalAvatarModal()" class="text-white/80 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="savePersonalAvatar(event)" class="p-6 space-y-5 overflow-y-auto flex-1">
+                <input type="hidden" id="personal-avatar-acc-id">
+
+                <!-- Thông tin tài khoản đang chỉnh ảnh -->
+                <div class="p-4 bg-gradient-to-r from-slate-50 to-blue-50/50 rounded-2xl border border-blue-100 flex flex-col sm:flex-row items-center gap-4">
+                    <div class="relative w-24 h-24 rounded-3xl bg-vovinam-blue text-vovinam-gold border-4 border-white shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <img id="personal-avatar-preview-img" src="" alt="Preview Avatar" class="w-full h-full object-cover hidden">
+                        <span id="personal-avatar-preview-text" class="text-3xl font-black text-white">V</span>
+                    </div>
+                    <div class="text-center sm:text-left min-w-0 flex-1 space-y-1">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-vovinam-blue uppercase tracking-wider">Hồ sơ tài khoản</span>
+                        <h4 id="personal-avatar-acc-name" class="text-base sm:text-lg font-black text-slate-800 truncate">Võ Sư Admin</h4>
+                        <p id="personal-avatar-acc-role" class="text-xs font-semibold text-vovinam-blue truncate">Chủ Nhiệm CLB (Quản Trị Tối Cao)</p>
+                        <p id="personal-avatar-acc-username" class="text-[11px] text-slate-500 font-mono">@admin</p>
+                    </div>
+                </div>
+
+                <!-- Tải ảnh từ thiết bị hoặc dán URL -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">1. Tải Ảnh Chân Dung Từ Thiết Bị Hoặc Dán Link Ảnh</label>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label class="cursor-pointer px-4 py-2.5 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow-sm transition">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Chọn ảnh từ máy tính / điện thoại</span>
+                            <input type="file" id="personal-avatar-file" accept="image/*" onchange="onPersonalAvatarFileSelect(event)" class="hidden">
+                        </label>
+                        <button type="button" onclick="resetPersonalAvatarToDefault()" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Dùng chữ cái mặc định</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-link absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            <input type="text" id="personal-avatar-url" onkeydown="if(event.key==='Enter'){event.preventDefault(); applyPersonalAvatarUrl();}" placeholder="Dán đường dẫn ảnh trực tuyến (https://... hoặc data:image/...)" class="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none">
+                        </div>
+                        <button type="button" onclick="applyPersonalAvatarUrl()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition whitespace-nowrap">
+                            Áp dụng URL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bộ sưu tập Avatar Võ Sư / HLV Vovinam mẫu -->
+                <div class="space-y-2.5 pt-2 border-t border-slate-100">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">2. Hoặc Chọn Biểu Tượng Đại Diện Vovinam Theo Vai Trò</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <button type="button" onclick="selectPersonalPresetAvatar('master_red')" class="p-2.5 rounded-2xl border border-slate-200 hover:border-red-400 hover:bg-red-50/40 transition flex items-center space-x-2.5 text-left group">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-red-800 text-amber-300 flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs">
+                                <i class="fa-solid fa-dragon"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-red-700 truncate">Hồng Đai Võ Sư</div>
+                                <div class="text-[10px] text-slate-400">Chưởng môn / Chủ nhiệm</div>
+                            </div>
+                        </button>
+                        <button type="button" onclick="selectPersonalPresetAvatar('coach_gold')" class="p-2.5 rounded-2xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50/40 transition flex items-center space-x-2.5 text-left group">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-900 flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs">
+                                <i class="fa-solid fa-medal"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-amber-700 truncate">HLV Hoàng Đai</div>
+                                <div class="text-[10px] text-slate-400">Huấn luyện viên chính</div>
+                            </div>
+                        </button>
+                        <button type="button" onclick="selectPersonalPresetAvatar('instructor_blue')" class="p-2.5 rounded-2xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/40 transition flex items-center space-x-2.5 text-left group">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-vovinam-blue to-vovinam-navy text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs">
+                                <i class="fa-solid fa-user-ninja"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-vovinam-blue truncate">HLV Lam Đai</div>
+                                <div class="text-[10px] text-slate-400">Phụ trách điểm danh</div>
+                            </div>
+                        </button>
+                        <button type="button" onclick="selectPersonalPresetAvatar('treasurer_emerald')" class="p-2.5 rounded-2xl border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/40 transition flex items-center space-x-2.5 text-left group">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs">
+                                <i class="fa-solid fa-coins"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-emerald-700 truncate">Thủ Quỹ CLB</div>
+                                <div class="text-[10px] text-slate-400">Quản lý học phí</div>
+                            </div>
+                        </button>
+                        <button type="button" onclick="selectPersonalPresetAvatar('training_purple')" class="p-2.5 rounded-2xl border border-slate-200 hover:border-purple-400 hover:bg-purple-50/40 transition flex items-center space-x-2.5 text-left group">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-purple-700 truncate">Ban Đào Tạo</div>
+                                <div class="text-[10px] text-slate-400">Chuyên môn & Lịch tập</div>
+                            </div>
+                        </button>
+                        <button type="button" onclick="selectPersonalPresetAvatar('shield_navy')" class="p-2.5 rounded-2xl border border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition flex items-center space-x-2.5 text-left group">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 text-vovinam-gold flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-slate-900 truncate">Khiên Quản Trị</div>
+                                <div class="text-[10px] text-slate-400">Bảo mật hệ thống</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-[11px] text-slate-400 italic">Tự động đồng bộ lên Header, Phân quyền & Cloud</span>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="closePersonalAvatarModal()" class="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-semibold">Hủy</button>
+                        <button type="submit" class="px-5 py-2 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Lưu Ảnh Đại Diện</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -2634,6 +2989,17 @@
                     <label for="switch-target-account" class="block text-xs font-bold text-slate-700 mb-1">Chọn Tài Khoản Cần Chuyển Tới</label>
                     <select id="switch-target-account" onchange="onSwitchAccountSelectChange(this.value)" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-bold text-slate-800">
                     </select>
+                </div>
+
+                <!-- Thẻ xem trước tài khoản được chọn kèm Ảnh Đại Diện -->
+                <div id="switch-account-preview-card" class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center space-x-3">
+                    <div id="switch-account-preview-avatar" class="w-11 h-11 rounded-xl bg-vovinam-blue text-white font-black text-base flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200">
+                        V
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div id="switch-account-preview-name" class="text-xs sm:text-sm font-black text-slate-800 truncate">Võ Sư Admin</div>
+                        <div id="switch-account-preview-meta" class="text-[11px] text-vovinam-blue font-semibold truncate">@admin • Chủ Nhiệm CLB</div>
+                    </div>
                 </div>
 
                 <div>
@@ -2765,7 +3131,7 @@
     </div>
 
     <!-- ================= MODAL: KHÓA MÀN HÌNH DO KHÔNG THAO TÁC (SESSION AUTO-LOCK) ================= -->
-    <div id="session-lock-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div id="session-lock-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center border border-slate-200">
             <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3 text-2xl border border-amber-200">
                 <i class="fa-solid fa-lock"></i>
@@ -3301,7 +3667,15 @@
             try { localStorage.setItem('vovinam_session_locked', '1'); } catch (e) {}
             document.getElementById('lock-screen-user').innerText = acc.name;
             document.getElementById('lock-screen-role').innerText = acc.roleTitle;
-            document.getElementById('lock-screen-avatar').innerText = acc.name.charAt(0).toUpperCase();
+            const lockAvatarEl = document.getElementById('lock-screen-avatar');
+            if (lockAvatarEl) {
+                const safeAva = sanitizeImageUrl(acc.avatar || '');
+                if (safeAva) {
+                    lockAvatarEl.innerHTML = `<img src="${safeAva}" alt="${escapeHtml(acc.name)}" class="w-full h-full object-cover rounded-lg">`;
+                } else {
+                    lockAvatarEl.innerText = acc.name.charAt(0).toUpperCase();
+                }
+            }
             document.getElementById('lock-screen-password').value = '';
             document.getElementById('lock-screen-error').classList.add('hidden');
             lockModal.classList.remove('hidden');
@@ -3492,6 +3866,16 @@
             'vovinam-shield': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 5 L85 20 C85 65 50 95 50 95 C50 95 15 65 15 20 Z" fill="#003875" stroke="#f59e0b" stroke-width="4"/><path d="M50 15 L78 26 C78 60 50 85 50 85 C50 85 22 60 22 26 Z" fill="#0056b3"/><text x="50" y="58" font-family="sans-serif" font-weight="900" font-size="34" fill="#f59e0b" text-anchor="middle">V</text></svg>'),
             'vovinam-yinyang': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#002651" stroke="#f59e0b" stroke-width="3"/><path d="M50 2 A48 48 0 0 1 50 98 A24 24 0 0 1 50 50 A24 24 0 0 0 50 2 Z" fill="#f59e0b"/><circle cx="50" cy="26" r="7" fill="#002651"/><circle cx="50" cy="74" r="7" fill="#f59e0b"/></svg>'),
             'vovinam-gold-v': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="25" fill="#002651" stroke="#f59e0b" stroke-width="4"/><path d="M25 25 L45 75 L55 75 L75 25 L62 25 L50 60 L38 25 Z" fill="#f59e0b"/><polygon points="50,15 54,23 63,24 57,30 58,39 50,34 42,39 43,30 37,24 46,23" fill="#dc2626"/></svg>')
+        };
+
+        // Bộ biểu tượng Ảnh Đại Diện Tài Khoản Vovinam mẫu theo chức danh
+        const PRESET_ACCOUNT_AVATARS = {
+            'master_red': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#dc2626"/><stop offset="100%" stop-color="#7f1d1d"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#g1)"/><circle cx="50" cy="36" r="16" fill="#fef08a"/><path d="M24 84 C24 64 76 64 76 84 Z" fill="#fef08a"/><rect x="22" y="72" width="56" height="8" rx="4" fill="#dc2626" stroke="#f59e0b" stroke-width="2"/><circle cx="50" cy="76" r="4" fill="#f59e0b"/></svg>'),
+            'coach_gold': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#b45309"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#g2)"/><circle cx="50" cy="36" r="16" fill="#ffffff"/><path d="M24 84 C24 64 76 64 76 84 Z" fill="#003875"/><rect x="24" y="73" width="52" height="7" rx="3.5" fill="#facc15" stroke="#dc2626" stroke-width="1.5"/></svg>'),
+            'instructor_blue': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0056b3"/><stop offset="100%" stop-color="#002651"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#g3)"/><circle cx="50" cy="36" r="16" fill="#e0f2fe"/><path d="M24 84 C24 64 76 64 76 84 Z" fill="#38bdf8"/><rect x="24" y="73" width="52" height="7" rx="3.5" fill="#0284c7" stroke="#facc15" stroke-width="1.5"/></svg>'),
+            'treasurer_emerald': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#065f46"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#g4)"/><circle cx="50" cy="36" r="16" fill="#ecfdf5"/><path d="M24 84 C24 64 76 64 76 84 Z" fill="#d1fae5"/><circle cx="50" cy="74" r="9" fill="#fbbf24" stroke="#ffffff" stroke-width="2"/></svg>'),
+            'training_purple': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g5" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#4c1d95"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#g5)"/><circle cx="50" cy="36" r="16" fill="#f3e8ff"/><path d="M24 84 C24 64 76 64 76 84 Z" fill="#ddd6fe"/><polygon points="50,62 54,70 63,71 56,77 58,85 50,80 42,85 44,77 37,71 46,70" fill="#facc15"/></svg>'),
+            'shield_navy': 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#0f172a"/><path d="M50 14 L80 26 C80 62 50 86 50 86 C50 86 20 62 20 26 Z" fill="#0056b3" stroke="#f59e0b" stroke-width="4"/><text x="50" y="58" font-family="Inter, sans-serif" font-weight="900" font-size="30" fill="#f59e0b" text-anchor="middle">V</text></svg>')
         };
 
         // Danh sách tài khoản và phân quyền mẫu ban đầu (Có mật khẩu riêng từng người)
@@ -4003,10 +4387,54 @@
             const logoUrlInput = document.getElementById('settings-logo-url');
 
             if (userDisplay) userDisplay.innerText = acc.name;
+            const safeAccAvatar = sanitizeImageUrl(acc.avatar || '');
+            const initialChar = (acc.name || 'V').trim().charAt(0).toUpperCase();
+
             const headerAvatar = document.getElementById('header-user-avatar');
             if (headerAvatar) {
-                headerAvatar.innerText = (acc.name || 'V').trim().charAt(0).toUpperCase();
+                if (safeAccAvatar) {
+                    headerAvatar.innerHTML = `<img src="${safeAccAvatar}" alt="${escapeHtml(acc.name)}" class="w-full h-full object-cover rounded-xl">`;
+                } else {
+                    headerAvatar.innerText = initialChar;
+                }
             }
+
+            const popAvatarImg = document.getElementById('popover-user-avatar-img');
+            const popAvatarFallback = document.getElementById('popover-user-avatar-fallback');
+            if (popAvatarImg && popAvatarFallback) {
+                if (safeAccAvatar) {
+                    popAvatarImg.src = safeAccAvatar;
+                    popAvatarImg.classList.remove('hidden');
+                    popAvatarFallback.classList.add('hidden');
+                } else {
+                    popAvatarImg.removeAttribute('src');
+                    popAvatarImg.classList.add('hidden');
+                    popAvatarFallback.classList.remove('hidden');
+                    popAvatarFallback.innerHTML = acc.isSuperAdmin ? '<i class="fa-solid fa-user-shield"></i>' : escapeHtml(initialChar);
+                }
+            }
+
+            const wbAvatarImg = document.getElementById('workspace-bar-avatar-img');
+            const wbAvatarText = document.getElementById('workspace-bar-avatar-text');
+            const wbUserName = document.getElementById('workspace-bar-user-name');
+            const wbRolePill = document.getElementById('workspace-bar-role-pill');
+            const wbSubtext = document.getElementById('workspace-bar-subtext');
+            if (wbUserName) wbUserName.innerText = acc.name;
+            if (wbRolePill) wbRolePill.innerText = acc.roleTitle || (acc.isSuperAdmin ? 'Quản Trị Viên' : 'Huấn Luyện Viên');
+            if (wbSubtext) wbSubtext.innerText = `ID: ${formatUsername(acc.username)} • Phụ trách: ${acc.assignedClasses || 'Tất cả các lớp'}`;
+            if (wbAvatarImg && wbAvatarText) {
+                if (safeAccAvatar) {
+                    wbAvatarImg.src = safeAccAvatar;
+                    wbAvatarImg.classList.remove('hidden');
+                    wbAvatarText.classList.add('hidden');
+                } else {
+                    wbAvatarImg.removeAttribute('src');
+                    wbAvatarImg.classList.add('hidden');
+                    wbAvatarText.innerText = initialChar;
+                    wbAvatarText.classList.remove('hidden');
+                }
+            }
+            updateQuickWorkspaceKPIs();
 
             const enabledPermsCount = Object.keys(PERMISSION_LABELS).filter(k => hasPermission(k)).length;
             if (acc.isSuperAdmin) {
@@ -4135,9 +4563,21 @@
             const adminCount = accounts.filter(a => a.isSuperAdmin || (a.permissions && a.permissions.settings_manage)).length;
             const curAcc = getCurrentAccount();
 
+            const customCountEl = document.getElementById('perm-stat-custom');
+            const curAvatarEl = document.getElementById('perm-stat-current-avatar');
+
             if (totalEl) totalEl.innerText = `${accounts.length} tài khoản`;
             if (adminsEl) adminsEl.innerText = `${adminCount} tài khoản`;
+            if (customCountEl) customCountEl.innerText = `${Math.max(0, accounts.length - adminCount)} tài khoản`;
             if (curEl && curAcc) curEl.innerText = curAcc.name;
+            if (curAvatarEl && curAcc) {
+                const curSafeAva = sanitizeImageUrl(curAcc.avatar || '');
+                if (curSafeAva) {
+                    curAvatarEl.innerHTML = `<img src="${curSafeAva}" alt="${escapeHtml(curAcc.name)}" class="w-full h-full object-cover">`;
+                } else {
+                    curAvatarEl.innerHTML = `<span class="font-black text-sm">${escapeHtml(curAcc.name.charAt(0).toUpperCase())}</span>`;
+                }
+            }
 
             const canEditPerms = hasPermission('settings_manage');
             const permKeys = ['students_direct', 'classes_manage', 'attendance_manage', 'tuition_manage', 'approvals_manage', 'reports_export', 'settings_manage'];
@@ -4145,12 +4585,19 @@
             tbody.innerHTML = accounts.map(acc => {
                 const isCurrent = acc.id === currentAccountId;
                 const isLocked = acc.status === 'locked';
+                const safeAccAva = sanitizeImageUrl(acc.avatar || '');
+                const canChangeThisAvatar = isCurrent || canEditPerms;
+                const safeJsAccId = escapeJsAttr(acc.id);
                 return `
                     <tr class="hover:bg-blue-50/30 transition border-b border-slate-100 ${isCurrent ? 'bg-blue-50/40' : ''} ${isLocked ? 'bg-red-50/30' : ''}">
                         <td class="py-3.5 px-4">
                             <div class="flex items-center space-x-2.5">
-                                <div class="w-9 h-9 rounded-xl ${acc.isSuperAdmin ? 'bg-vovinam-blue text-vovinam-gold' : (isLocked ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-700')} font-black text-sm flex items-center justify-center flex-shrink-0 border border-slate-200">
-                                    ${escapeHtml(acc.name).charAt(0).toUpperCase()}
+                                <div ${canChangeThisAvatar ? `onclick="openPersonalAvatarModal('${safeJsAccId}')"` : ''} title="${canChangeThisAvatar ? 'Bấm để đổi ảnh đại diện cho tài khoản này' : escapeHtml(acc.name)}" class="relative w-10 h-10 rounded-xl ${acc.isSuperAdmin ? 'bg-vovinam-blue text-vovinam-gold' : (isLocked ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-700')} font-black text-sm flex items-center justify-center flex-shrink-0 border border-slate-200 overflow-hidden ${canChangeThisAvatar ? 'cursor-pointer group shadow-xs' : ''}">
+                                    ${safeAccAva
+                                        ? `<img src="${safeAccAva}" alt="${escapeHtml(acc.name)}" class="w-full h-full object-cover">`
+                                        : `<span>${escapeHtml(acc.name).charAt(0).toUpperCase()}</span>`
+                                    }
+                                    ${canChangeThisAvatar ? `<div class="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[10px]"><i class="fa-solid fa-camera"></i></div>` : ''}
                                 </div>
                                 <div>
                                     <div class="flex items-center space-x-1.5 flex-wrap">
@@ -4188,6 +4635,11 @@
                                 <button onclick="promptSwitchToAccount('${escapeJsAttr(acc.id)}')" title="Đăng nhập tài khoản này (Cần mật khẩu)" class="px-2 py-1 rounded-lg text-[11px] font-bold transition ${isCurrent ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 hover:bg-vovinam-blue hover:text-white text-slate-700'}">
                                     ${isCurrent ? 'Đang dùng' : 'Đăng nhập'}
                                 </button>
+                                ${(isCurrent || canEditPerms) ? `
+                                    <button onclick="openPersonalAvatarModal('${escapeJsAttr(acc.id)}')" title="Đổi ảnh đại diện tài khoản" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
+                                        <i class="fa-solid fa-camera"></i>
+                                    </button>
+                                ` : ''}
                                 ${canEditPerms ? `
                                     <button onclick="openAdminResetPasswordModal('${escapeJsAttr(acc.id)}')" title="Admin đặt lại mật khẩu" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition">
                                         <i class="fa-solid fa-key"></i>
@@ -4256,8 +4708,9 @@
                 document.getElementById('acc-assigned-class').value = 'Tất cả các lớp';
                 if (pwdInput) { pwdInput.required = true; pwdInput.value = ''; }
                 if (pwdReq) pwdReq.classList.remove('hidden');
-                if (pwdHint) pwdHint.innerText = 'Thiết lập mật khẩu khởi tạo cho tài khoản này (tối thiểu 4 ký tự).';
+                if (pwdHint) pwdHint.innerText = 'Thiết lập mật khẩu khởi tạo cho tài khoản này (tối thiểu 6 ký tự).';
                 if (statusSelect) statusSelect.value = 'active';
+                setAccountModalAvatarPreview('');
                 applyRolePreset('coach');
             } else {
                 const acc = accounts.find(a => a.id === accId);
@@ -4273,6 +4726,7 @@
                 if (pwdReq) pwdReq.classList.add('hidden');
                 if (pwdHint) pwdHint.innerText = 'Để trống nếu muốn giữ nguyên mật khẩu cũ của tài khoản.';
                 if (statusSelect) statusSelect.value = acc.status || 'active';
+                setAccountModalAvatarPreview(acc.avatar || '', acc.name || 'V');
 
                 const perms = acc.permissions || {};
                 document.getElementById('perm-students-direct').checked = acc.isSuperAdmin || Boolean(perms.students_direct);
@@ -4394,10 +4848,12 @@
                     const updatedHash = passwordInput 
                         ? hashPasswordSync(passwordInput) 
                         : (accounts[idx].passwordHash || hashPasswordSync(accounts[idx].password || '123456'));
+                    const finalAvatar = sanitizeImageUrl(currentAccountModalAvatar || '');
                     accounts[idx] = {
                         ...accounts[idx],
                         name,
                         username,
+                        avatar: finalAvatar,
                         roleTitle,
                         assignedClasses,
                         status: isSuper ? 'active' : status,
@@ -4414,17 +4870,19 @@
                         } : permissions
                     };
                     delete accounts[idx].password;
-                    showToast(`Đã cập nhật tài khoản và bảo mật cho ${escapeHtml(name)}!`);
+                    showToast(`Đã cập nhật tài khoản và ảnh đại diện cho ${escapeHtml(name)}!`);
                 }
             } else {
                 if (!passwordInput || passwordInput.length < 6) {
                     showToast('Vui lòng nhập mật khẩu khởi tạo từ 6 ký tự trở lên!', 'error');
                     return;
                 }
+                const finalAvatar = sanitizeImageUrl(currentAccountModalAvatar || '');
                 const newAcc = {
                     id: 'ACC-' + Date.now(),
                     name,
                     username,
+                    avatar: finalAvatar,
                     passwordHash: hashPasswordSync(passwordInput),
                     status: status,
                     passwordChangedAt: new Date().toISOString().split('T')[0],
@@ -5113,6 +5571,7 @@
 
             const totalStudentsCount = students.length;
             if (totalClassesEl) totalClassesEl.innerText = classes.length;
+            if (typeof updateQuickWorkspaceKPIs === 'function') updateQuickWorkspaceKPIs();
             if (classStudentsEl) classStudentsEl.innerText = totalStudentsCount;
             if (avgStudentsEl) {
                 const avg = classes.length > 0 ? (totalStudentsCount / classes.length).toFixed(1) : 0;
@@ -5633,17 +6092,86 @@
                 return matchSearch && matchBelt && matchClass;
             });
 
+            // Cập nhật 4 thẻ thống kê Võ Sinh
+            const stTotalEl = document.getElementById('st-stat-total');
+            const stOfficialEl = document.getElementById('st-stat-official');
+            const stGuestEl = document.getElementById('st-stat-guest');
+            const stAdvEl = document.getElementById('st-stat-advanced');
+            const officialCount = students.filter(s => s.type !== 'guest').length;
+            const guestCount = students.filter(s => s.type === 'guest').length;
+            const advCount = students.filter(s => s.belt && (s.belt.includes('Hoàng đai') || s.belt.includes('Hồng đai'))).length;
+            if (stTotalEl) stTotalEl.innerText = `${students.length} võ sinh`;
+            if (stOfficialEl) stOfficialEl.innerText = `${officialCount} chính thức`;
+            if (stGuestEl) stGuestEl.innerText = `${guestCount} học bù`;
+            if (stAdvEl) stAdvEl.innerText = `${advCount} môn sinh`;
+            updateQuickWorkspaceKPIs();
+
             document.getElementById('student-count').innerText = filtered.length;
             const tbody = document.getElementById('student-table-body');
+            const gridContainer = document.getElementById('student-grid-wrapper');
             const emptyMsg = document.getElementById('no-students-msg');
 
             if (filtered.length === 0) {
                 tbody.innerHTML = '';
+                if (gridContainer) gridContainer.innerHTML = '';
                 emptyMsg.classList.remove('hidden');
                 return;
             }
 
             emptyMsg.classList.add('hidden');
+            if (gridContainer) {
+                gridContainer.innerHTML = filtered.map(s => {
+                    const age = calculateAge(s.dob);
+                    const isGuest = s.type === 'guest';
+                    const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 120);
+                    const safeId = escapeHtml(s.id);
+                    const safeJsId = escapeJsAttr(s.id);
+                    const safeName = escapeHtml(s.name);
+                    const safeClass = escapeHtml(s.className);
+                    const safeParent = escapeHtml(s.parent || 'Chưa cập nhật');
+                    const safePhone = escapeHtml(s.phone || 'N/A');
+                    const safeTelHref = String(s.phone || '').replace(/[^0-9+]/g, '');
+                    return `
+                        <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs card-hover-lift flex flex-col justify-between space-y-3">
+                            <div class="flex items-start space-x-3.5">
+                                <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsId}')" class="w-14 h-14 rounded-2xl object-cover border-2 border-vovinam-blue/20 shadow-xs cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition flex-shrink-0">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <span class="text-[11px] font-mono font-bold text-slate-400">${safeId}</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isGuest ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-vovinam-blue'}">${isGuest ? 'Học ghép/bù' : 'Chính thức'}</span>
+                                    </div>
+                                    <button type="button" onclick="viewStudentDetail('${safeJsId}')" class="font-black text-slate-800 hover:text-vovinam-blue text-sm truncate block text-left w-full mt-0.5">${safeName}</button>
+                                    <div class="mt-1">${getBeltBadge(s.belt)}</div>
+                                </div>
+                            </div>
+                            <div class="pt-2.5 border-t border-slate-100 text-xs text-slate-600 space-y-1">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-400"><i class="fa-solid fa-chalkboard-user mr-1 text-vovinam-blue"></i>Lớp:</span>
+                                    <strong class="text-slate-700 truncate max-w-[170px]">${safeClass}</strong>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-400"><i class="fa-solid fa-cake-candles mr-1 text-amber-500"></i>Ngày sinh:</span>
+                                    <span>${s.dob ? new Date(s.dob).toLocaleDateString('vi-VN') : 'N/A'} (${age} tuổi)</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-400"><i class="fa-solid fa-phone mr-1 text-emerald-600"></i>Liên hệ:</span>
+                                    <a href="tel:${safeTelHref}" class="font-bold text-vovinam-blue hover:underline">${safePhone} (${safeParent})</a>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                <button type="button" onclick="viewStudentDetail('${safeJsId}')" class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-vovinam-blue text-xs font-bold transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-id-card"></i>
+                                    <span>Xem Hồ Sơ</span>
+                                </button>
+                                <div class="flex items-center space-x-1">
+                                    <button type="button" onclick="editStudent('${safeJsId}')" title="Sửa" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button type="button" onclick="deleteStudent('${safeJsId}')" title="Xóa" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
             tbody.innerHTML = filtered.map(s => {
                 const age = calculateAge(s.dob);
                 const isGuest = s.type === 'guest';
@@ -6208,6 +6736,7 @@
             document.getElementById('stat-present').innerText = present;
             document.getElementById('stat-absent').innerText = absent;
             document.getElementById('stat-excused').innerText = excused;
+            if (typeof updateQuickWorkspaceKPIs === 'function') updateQuickWorkspaceKPIs();
         }
 
         function updateAttendanceStats(list) {
@@ -6220,6 +6749,7 @@
             document.getElementById('stat-present').innerText = present;
             document.getElementById('stat-absent').innerText = absent;
             document.getElementById('stat-excused').innerText = excused;
+            if (typeof updateQuickWorkspaceKPIs === 'function') updateQuickWorkspaceKPIs();
         }
 
         function collectCurrentSessionReportData() {
@@ -6617,6 +7147,7 @@
             document.getElementById('tuition-stat-paid').innerText = paidCount;
             document.getElementById('tuition-stat-unpaid').innerText = unpaidCount;
             document.getElementById('tuition-stat-amount').innerText = totalAmount.toLocaleString('vi-VN') + ' VNĐ';
+            if (typeof updateQuickWorkspaceKPIs === 'function') updateQuickWorkspaceKPIs();
         }
 
         function openTuitionModal(studentId) {
@@ -8625,9 +9156,25 @@
             }
         }
 
+        function toggleQuickLoginDropdown(forceState = null) {
+            const panel = document.getElementById('quick-login-dropdown-panel');
+            const chevron = document.getElementById('quick-login-chevron');
+            if (!panel) return;
+            const shouldOpen = forceState !== null ? forceState : panel.classList.contains('hidden');
+            if (shouldOpen) {
+                panel.classList.remove('hidden');
+                if (chevron) chevron.classList.add('rotate-180');
+            } else {
+                panel.classList.add('hidden');
+                if (chevron) chevron.classList.remove('rotate-180');
+            }
+        }
+
         // Render danh sách tài khoản mà KHÔNG để lộ mật khẩu
         function renderQuickLoginList() {
             const container = document.getElementById('quick-login-list');
+            const countBadge = document.getElementById('quick-login-count-badge');
+            if (countBadge) countBadge.innerText = `${accounts.length} tài khoản`;
             if (!container) return;
 
             container.innerHTML = accounts.map(acc => {
@@ -8637,12 +9184,13 @@
                 const safeUser = formatUsername(acc.username);
                 const safeRole = escapeHtml(acc.roleTitle);
 
+                const safeAccAva = sanitizeImageUrl(acc.avatar || '');
                 return `
                     <button type="button" onclick="selectQuickLogin('${escapeHtml(acc.username)}')"
                         class="p-2.5 rounded-2xl border ${roleColor} hover:border-vovinam-blue hover:shadow-sm transition text-left flex items-center justify-between group">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-7 h-7 rounded-lg ${acc.isSuperAdmin ? 'bg-vovinam-blue text-vovinam-gold' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-black text-xs">
-                                ${safeName.charAt(0).toUpperCase()}
+                        <div class="flex items-center space-x-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-xl ${acc.isSuperAdmin ? 'bg-vovinam-blue text-vovinam-gold' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-black text-xs overflow-hidden flex-shrink-0 border border-slate-200">
+                                ${safeAccAva ? `<img src="${safeAccAva}" alt="${safeName}" class="w-full h-full object-cover">` : safeName.charAt(0).toUpperCase()}
                             </div>
                             <div class="min-w-0">
                                 <div class="font-bold text-xs truncate group-hover:text-vovinam-blue">${safeName}</div>
@@ -8655,12 +9203,18 @@
             }).join('');
         }
 
-        // Chọn tài khoản để đăng nhập: tự động điền username (đã làm sạch không thừa @) và focus vào mật khẩu
+        // Chọn tài khoản để đăng nhập: tự động điền username (đã làm sạch không thừa @), thu gọn danh sách và focus vào mật khẩu
         function selectQuickLogin(username) {
             const userInp = document.getElementById('login-username');
             const passInp = document.getElementById('login-password');
             const cleanUser = (username || '').replace(/^@+/, '');
             if (userInp) userInp.value = cleanUser;
+            const acc = accounts.find(a => (a.username || '').toLowerCase().replace(/^@+/, '') === cleanUser.toLowerCase());
+            const toggleLabel = document.getElementById('quick-login-toggle-label');
+            if (toggleLabel && acc) {
+                toggleLabel.innerHTML = `Đã chọn: <strong class="text-vovinam-blue">${escapeHtml(acc.name)}</strong> (${formatUsername(cleanUser)})`;
+            }
+            toggleQuickLoginDropdown(false);
             if (passInp) {
                 passInp.value = '';
                 passInp.focus();
@@ -8811,7 +9365,14 @@
             const userEl = document.getElementById('cp-user-username');
             const errBox = document.getElementById('cp-error-box');
 
-            if (avatar) avatar.innerText = acc.name.charAt(0).toUpperCase();
+            if (avatar) {
+                const safeAva = sanitizeImageUrl(acc.avatar || '');
+                if (safeAva) {
+                    avatar.innerHTML = `<img src="${safeAva}" alt="${escapeHtml(acc.name)}" class="w-full h-full object-cover rounded-xl">`;
+                } else {
+                    avatar.innerText = acc.name.charAt(0).toUpperCase();
+                }
+            }
             if (nameEl) nameEl.innerText = acc.name;
             if (userEl) userEl.innerText = `Tên đăng nhập: ${formatUsername(acc.username)}`;
             if (errBox) errBox.classList.add('hidden');
@@ -8941,8 +9502,23 @@
 
         function onSwitchAccountSelectChange(accId) {
             const hint = document.getElementById('switch-quick-pass-hint');
-            if (!hint) return;
-            hint.innerText = 'Vui lòng nhập mật khẩu riêng của tài khoản';
+            if (hint) hint.innerText = 'Vui lòng nhập mật khẩu riêng của tài khoản';
+
+            const acc = accounts.find(a => a.id === accId);
+            if (!acc) return;
+            const prevAva = document.getElementById('switch-account-preview-avatar');
+            const prevName = document.getElementById('switch-account-preview-name');
+            const prevMeta = document.getElementById('switch-account-preview-meta');
+            if (prevName) prevName.innerText = acc.name;
+            if (prevMeta) prevMeta.innerText = `${formatUsername(acc.username)} • ${acc.roleTitle}`;
+            if (prevAva) {
+                const safeAva = sanitizeImageUrl(acc.avatar || '');
+                if (safeAva) {
+                    prevAva.innerHTML = `<img src="${safeAva}" alt="${escapeHtml(acc.name)}" class="w-full h-full object-cover">`;
+                } else {
+                    prevAva.innerText = (acc.name || 'V').charAt(0).toUpperCase();
+                }
+            }
         }
 
         function promptSwitchToAccount(accId) {
@@ -9123,6 +9699,248 @@
                 }
                 showToast('Đã tạo mật khẩu ngẫu nhiên an toàn và điền vào ô mật khẩu!', 'info');
             }
+        }
+
+        // ================= QUẢN LÝ ẢNH ĐẠI DIỆN RIÊNG CHO TÀI KHOẢN & TỐI ƯU GIAO DIỆN =================
+        let currentAccountModalAvatar = '';
+        let currentPersonalDraftAvatar = '';
+        let currentStudentViewMode = 'table';
+
+        function updateQuickWorkspaceKPIs() {
+            const stEl = document.getElementById('quick-kpi-students');
+            const clEl = document.getElementById('quick-kpi-classes');
+            const atEl = document.getElementById('quick-kpi-attendance');
+            const tuEl = document.getElementById('quick-kpi-tuition');
+
+            if (stEl) stEl.innerText = `${students.length} võ sinh`;
+            const activeCls = classes.filter(c => c.status !== 'paused').length;
+            if (clEl) clEl.innerText = `${activeCls}/${classes.length} lớp`;
+            if (atEl) atEl.innerText = `${Object.keys(attendanceRecords).length} buổi tập`;
+
+            const monthInput = document.getElementById('tuition-month');
+            const curMonth = monthInput ? monthInput.value : '';
+            const monthMap = (curMonth && tuitionRecords[curMonth]) ? tuitionRecords[curMonth] : {};
+            const paidCount = students.filter(s => monthMap[s.id] && monthMap[s.id].status === 'paid').length;
+            if (tuEl) tuEl.innerText = `${paidCount}/${students.length} đã đóng`;
+        }
+
+        function setStudentViewMode(mode) {
+            currentStudentViewMode = mode === 'grid' ? 'grid' : 'table';
+            const tableWrap = document.getElementById('student-table-wrapper');
+            const gridWrap = document.getElementById('student-grid-wrapper');
+            const btnTable = document.getElementById('btn-student-view-table');
+            const btnGrid = document.getElementById('btn-student-view-grid');
+
+            if (currentStudentViewMode === 'grid') {
+                if (tableWrap) tableWrap.classList.add('hidden');
+                if (gridWrap) gridWrap.classList.remove('hidden');
+                if (btnGrid) btnGrid.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-vovinam-blue shadow-xs transition flex items-center space-x-1';
+                if (btnTable) btnTable.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center space-x-1';
+            } else {
+                if (tableWrap) tableWrap.classList.remove('hidden');
+                if (gridWrap) gridWrap.classList.add('hidden');
+                if (btnTable) btnTable.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-vovinam-blue shadow-xs transition flex items-center space-x-1';
+                if (btnGrid) btnGrid.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center space-x-1';
+            }
+        }
+
+        // --- Xử lý Ảnh Đại Diện trong Modal Thêm/Sửa Tài Khoản (Admin) ---
+        function setAccountModalAvatarPreview(dataUrl, fallbackName = 'V') {
+            currentAccountModalAvatar = sanitizeImageUrl(dataUrl || '');
+            const imgEl = document.getElementById('acc-avatar-preview-img');
+            const phEl = document.getElementById('acc-avatar-preview-placeholder');
+            const urlInp = document.getElementById('acc-avatar-url');
+            const nameInp = document.getElementById('acc-name');
+            const initial = ((nameInp && nameInp.value.trim()) || fallbackName || 'V').trim().charAt(0).toUpperCase();
+
+            if (imgEl && phEl) {
+                if (currentAccountModalAvatar) {
+                    imgEl.src = currentAccountModalAvatar;
+                    imgEl.classList.remove('hidden');
+                    phEl.classList.add('hidden');
+                } else {
+                    imgEl.removeAttribute('src');
+                    imgEl.classList.add('hidden');
+                    phEl.innerText = initial;
+                    phEl.classList.remove('hidden');
+                }
+            }
+            if (urlInp) {
+                urlInp.value = currentAccountModalAvatar.startsWith('http') ? currentAccountModalAvatar : '';
+            }
+        }
+
+        function previewAccountModalAvatar(event) {
+            const input = event.target;
+            if (input && input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    compressImageDataUrl(e.target.result, 256, function(compressed) {
+                        const safe = sanitizeImageUrl(compressed);
+                        if (!safe) {
+                            showToast('Định dạng ảnh không hợp lệ!', 'error');
+                            return;
+                        }
+                        setAccountModalAvatarPreview(safe);
+                        showToast('Đã nạp ảnh đại diện cho tài khoản!');
+                    });
+                };
+                reader.readAsDataURL(input.files[0]);
+                input.value = '';
+            }
+        }
+
+        function applyAccountModalAvatarUrl() {
+            const urlInp = document.getElementById('acc-avatar-url');
+            const raw = urlInp ? urlInp.value.trim() : '';
+            const safe = sanitizeImageUrl(raw);
+            if (!safe) {
+                showToast('Vui lòng nhập đường dẫn URL ảnh hợp lệ (https://... hoặc data:image/...)', 'error');
+                return;
+            }
+            setAccountModalAvatarPreview(safe);
+            showToast('Đã áp dụng URL ảnh đại diện tài khoản!');
+        }
+
+        function selectAccountModalPresetAvatar(presetKey) {
+            const svgUri = PRESET_ACCOUNT_AVATARS[presetKey];
+            if (!svgUri) return;
+            setAccountModalAvatarPreview(svgUri);
+            showToast('Đã chọn biểu tượng đại diện Vovinam!');
+        }
+
+        function resetAccountModalAvatar() {
+            setAccountModalAvatarPreview('');
+            showToast('Đã đặt về chữ cái mặc định!', 'info');
+        }
+
+        // --- Xử lý Modal Đổi Ảnh Đại Diện Cá Nhân / Từng Tài Khoản (#personal-avatar-modal) ---
+        function openPersonalAvatarModal(targetAccId = null) {
+            const accId = targetAccId || currentAccountId;
+            const acc = accounts.find(a => a.id === accId) || getCurrentAccount();
+            if (!acc) return;
+
+            if (acc.id !== currentAccountId && !hasPermission('settings_manage')) {
+                showToast('Bạn chỉ có thể đổi ảnh đại diện của chính mình (cần quyền Hệ thống để đổi cho tài khoản khác)!', 'error');
+                return;
+            }
+
+            document.getElementById('personal-avatar-acc-id').value = acc.id;
+            document.getElementById('personal-avatar-acc-name').innerText = acc.name;
+            document.getElementById('personal-avatar-acc-role').innerText = acc.roleTitle || 'Thành viên CLB';
+            document.getElementById('personal-avatar-acc-username').innerText = `${formatUsername(acc.username)} • Phụ trách: ${acc.assignedClasses || 'Tất cả các lớp'}`;
+
+            setPersonalAvatarDraftPreview(acc.avatar || '', acc.name);
+            document.getElementById('personal-avatar-modal').classList.remove('hidden');
+        }
+
+        function closePersonalAvatarModal() {
+            document.getElementById('personal-avatar-modal').classList.add('hidden');
+        }
+
+        function setPersonalAvatarDraftPreview(dataUrl, fallbackName = 'V') {
+            currentPersonalDraftAvatar = sanitizeImageUrl(dataUrl || '');
+            const imgEl = document.getElementById('personal-avatar-preview-img');
+            const txtEl = document.getElementById('personal-avatar-preview-text');
+            const urlInp = document.getElementById('personal-avatar-url');
+            const nameEl = document.getElementById('personal-avatar-acc-name');
+            const initial = ((nameEl && nameEl.innerText.trim()) || fallbackName || 'V').charAt(0).toUpperCase();
+
+            if (imgEl && txtEl) {
+                if (currentPersonalDraftAvatar) {
+                    imgEl.src = currentPersonalDraftAvatar;
+                    imgEl.classList.remove('hidden');
+                    txtEl.classList.add('hidden');
+                } else {
+                    imgEl.removeAttribute('src');
+                    imgEl.classList.add('hidden');
+                    txtEl.innerText = initial;
+                    txtEl.classList.remove('hidden');
+                }
+            }
+            if (urlInp) {
+                urlInp.value = currentPersonalDraftAvatar.startsWith('http') ? currentPersonalDraftAvatar : '';
+            }
+        }
+
+        function onPersonalAvatarFileSelect(event) {
+            const input = event.target;
+            if (input && input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    compressImageDataUrl(e.target.result, 256, function(compressed) {
+                        const safe = sanitizeImageUrl(compressed);
+                        if (!safe) {
+                            showToast('Định dạng file ảnh không hợp lệ!', 'error');
+                            return;
+                        }
+                        setPersonalAvatarDraftPreview(safe);
+                        showToast('Đã tải ảnh lên khung xem trước! Bấm "Lưu Ảnh Đại Diện" để hoàn tất.');
+                    });
+                };
+                reader.readAsDataURL(input.files[0]);
+                input.value = '';
+            }
+        }
+
+        function applyPersonalAvatarUrl() {
+            const urlInp = document.getElementById('personal-avatar-url');
+            const raw = urlInp ? urlInp.value.trim() : '';
+            const safe = sanitizeImageUrl(raw);
+            if (!safe) {
+                showToast('Đường dẫn URL ảnh không hợp lệ! Vui lòng nhập link bắt đầu bằng https://', 'error');
+                return;
+            }
+            const img = new Image();
+            img.onload = function() {
+                setPersonalAvatarDraftPreview(safe);
+                showToast('Đã nạp ảnh từ URL! Bấm "Lưu Ảnh Đại Diện" để áp dụng.');
+            };
+            img.onerror = function() {
+                showToast('Không thể tải ảnh từ đường dẫn URL này!', 'error');
+            };
+            img.src = safe;
+        }
+
+        function selectPersonalPresetAvatar(presetKey) {
+            const svgUri = PRESET_ACCOUNT_AVATARS[presetKey];
+            if (!svgUri) return;
+            setPersonalAvatarDraftPreview(svgUri);
+            showToast('Đã chọn biểu tượng Vovinam mẫu!');
+        }
+
+        function resetPersonalAvatarToDefault() {
+            setPersonalAvatarDraftPreview('');
+            showToast('Đã chuyển về biểu tượng chữ cái mặc định!', 'info');
+        }
+
+        function savePersonalAvatar(e) {
+            e.preventDefault();
+            const accId = document.getElementById('personal-avatar-acc-id').value || currentAccountId;
+            const idx = accounts.findIndex(a => a.id === accId);
+            if (idx === -1) return;
+
+            if (accId !== currentAccountId && !hasPermission('settings_manage')) {
+                showToast('Không có quyền thay đổi ảnh của tài khoản khác!', 'error');
+                return;
+            }
+
+            // Nếu người dùng gõ URL vào ô mà chưa bấm Áp dụng URL, tự động lấy URL đó
+            const urlInp = document.getElementById('personal-avatar-url');
+            const typedUrl = urlInp ? urlInp.value.trim() : '';
+            let finalAvatar = currentPersonalDraftAvatar;
+            if (!finalAvatar && typedUrl) {
+                finalAvatar = sanitizeImageUrl(typedUrl);
+            }
+
+            accounts[idx].avatar = sanitizeImageUrl(finalAvatar || '');
+            saveAccountsToStorage();
+            closePersonalAvatarModal();
+            updateRoleUI();
+            renderPermissionsMatrix();
+            renderQuickLoginList();
+            logSecurityEvent('Cập nhật ảnh đại diện', `Tài khoản ${accounts[idx].name} cập nhật ảnh đại diện mới`, 'info');
+            showToast(`Đã lưu ảnh đại diện riêng cho tài khoản "${accounts[idx].name}"!`);
         }
 
         // ================= AVATAR SVG NỘI BỘ (KHÔNG PHỤ THUỘC PLACEHOLD.CO) =================
