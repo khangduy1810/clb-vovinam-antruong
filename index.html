@@ -83,27 +83,27 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased overflow-x-hidden">
 
     <!-- Header / Navbar Tối Ưu Hóa Gọn Đẹp -->
     <header class="bg-gradient-to-r from-vovinam-navy via-vovinam-blue to-blue-700 text-white shadow-md sticky top-0 z-30 no-print border-b border-white/10">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 sm:h-20 gap-2">
+            <div class="flex items-center justify-between h-16 sm:h-20 gap-2 min-w-0">
                 <!-- Nút Menu Tab (Bên trái) + Logo & Brand (Gọn gàng, tinh tế) -->
-                <div class="flex items-center space-x-2.5 sm:space-x-3 min-w-0 flex-shrink-0">
+                <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 overflow-hidden">
                     <!-- Mobile Menu Button (Chuyển sang bên trái) -->
                     <div class="lg:hidden flex items-center flex-shrink-0">
                         <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="p-2 rounded-xl bg-slate-900/35 hover:bg-slate-900/50 text-white border border-white/15 transition focus:outline-none">
                             <i class="fa-solid fa-bars text-lg"></i>
                         </button>
                     </div>
-                    <div onclick="switchTab('students')" class="w-10 h-10 sm:w-11 sm:h-11 bg-white rounded-2xl flex items-center justify-center text-vovinam-blue font-black text-xl sm:text-2xl border-2 border-vovinam-gold shadow-sm overflow-hidden flex-shrink-0 cursor-pointer hover:scale-105 transition">
+                    <div onclick="switchTab('students')" class="w-9 h-9 sm:w-11 sm:h-11 bg-white rounded-2xl flex items-center justify-center text-vovinam-blue font-black text-lg sm:text-2xl border-2 border-vovinam-gold shadow-sm overflow-hidden flex-shrink-0 cursor-pointer hover:scale-105 transition">
                         <img id="site-logo-img" src="" alt="Logo" class="w-full h-full object-cover hidden">
-                        <span id="site-logo-text" class="text-vovinam-blue font-black text-xl sm:text-2xl">V</span>
+                        <span id="site-logo-text" class="text-vovinam-blue font-black text-lg sm:text-2xl">V</span>
                     </div>
-                    <div class="min-w-0">
-                        <h1 id="site-title-display" class="text-sm sm:text-lg lg:text-xl font-black tracking-wide uppercase text-vovinam-gold drop-shadow-sm truncate">VOVINAM VIỆT VÕ ĐẠO</h1>
-                        <p id="site-subtitle-display" class="text-[11px] text-blue-100/90 font-medium truncate max-w-[200px] sm:max-w-xs">Hệ Thống Quản Lý Võ Sinh & Điểm Danh Chuyên Cần</p>
+                    <div class="min-w-0 flex-1 overflow-hidden">
+                        <h1 id="site-title-display" class="text-xs sm:text-lg lg:text-xl font-black tracking-wide uppercase text-vovinam-gold drop-shadow-sm truncate">VOVINAM VIỆT VÕ ĐẠO</h1>
+                        <p id="site-subtitle-display" class="text-[11px] text-blue-100/90 font-medium truncate">Hệ Thống Quản Lý Võ Sinh & Điểm Danh Chuyên Cần</p>
                         <div id="site-meta-display" class="hidden">
                             <span id="site-branch-display"><i class="fa-solid fa-location-dot mr-1"></i>CLB Vovinam Trung Tâm Thể Thao</span>
                             <span id="site-instructor-display"><i class="fa-solid fa-user-tie mr-1"></i>Võ Sư Admin</span>
@@ -166,7 +166,7 @@
                 </nav>
 
                 <!-- Cụm Tài Khoản & Đồng Bộ Gọn Đẹp Bên Phải -->
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
                     <!-- Chấm trạng thái Cloud nhanh (chỉ hiện icon gọn đẹp) -->
                     <button type="button" onclick="openCloudSyncSettingsSection()" title="Cấu hình Đồng bộ Đám mây (Cloud Sync)" class="hidden sm:flex items-center space-x-1.5 bg-slate-900/35 hover:bg-slate-900/50 px-2.5 py-1.5 rounded-xl border border-white/15 transition cursor-pointer">
                         <span id="cloud-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
@@ -189,7 +189,7 @@
                         </button>
 
                         <!-- Popover Hộp Tài Khoản, Quyền Hạn & Đồng Bộ (Ẩn mặc định, chỉ mở khi bấm) -->
-                        <div id="user-account-dropdown" class="hidden absolute right-0 mt-2.5 w-80 sm:w-96 bg-white text-slate-800 rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden z-50">
+                        <div id="user-account-dropdown" class="hidden absolute right-0 mt-2.5 w-[calc(100vw-1.5rem)] max-w-[22rem] sm:w-96 sm:max-w-none bg-white text-slate-800 rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden z-50">
                             <!-- Phần 1: Thông tin tài khoản & Quyền hạn (Kèm Ảnh Đại Diện Riêng) -->
                             <div id="role-info-banner" class="p-4 bg-gradient-to-br from-slate-900 via-vovinam-navy to-slate-900 text-white">
                                 <div class="flex items-start justify-between gap-2">
@@ -348,8 +348,8 @@
             <span id="toast-msg" class="text-xs sm:text-sm font-medium">Thông báo</span>
         </div>
 
-        <!-- Thanh Tổng Quan Tài Khoản & Chỉ Số Nhanh (Quick Workspace Bar) -->
-        <div class="mb-6 bg-white rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 no-print">
+        <!-- Thanh Tổng Quan Tài Khoản & Chỉ Số Nhanh (Quick Workspace Bar - Đã ẩn theo yêu cầu) -->
+        <div class="hidden mb-6 bg-white rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-200/80 flex-col lg:flex-row lg:items-center justify-between gap-3.5 no-print">
             <div class="flex items-center space-x-3 min-w-0">
                 <div onclick="openPersonalAvatarModal()" title="Bấm để thay đổi ảnh đại diện riêng của tài khoản" class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-vovinam-blue to-vovinam-navy text-vovinam-gold font-black text-lg flex items-center justify-center shadow-sm border-2 border-vovinam-gold/70 cursor-pointer group overflow-hidden flex-shrink-0">
                     <img id="workspace-bar-avatar-img" src="" alt="Account Avatar" class="w-full h-full object-cover hidden">
@@ -459,7 +459,7 @@
                 <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="relative">
                         <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
-                        <input type="text" id="search-student" oninput="renderStudents()" placeholder="Tìm theo tên, số định danh, SĐT..." class="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none">
+                        <input type="text" id="search-student" oninput="renderStudents()" placeholder="Tìm theo tên, số CCCD, SĐT..." class="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none">
                     </div>
                     <div>
                         <select id="filter-belt" onchange="renderStudents()" class="w-full py-2 px-3 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none">
@@ -524,7 +524,8 @@
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
                             <tr class="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200 text-xs uppercase tracking-wider">
-                                <th class="py-3 px-4">Số định danh</th>
+                                <th class="py-3 px-3 w-12 text-center">STT</th>
+                                <th class="py-3 px-4">Số CCCD</th>
                                 <th class="py-3 px-4">Võ sinh</th>
                                 <th class="py-3 px-4">Ngày sinh / Tuổi</th>
                                 <th class="py-3 px-4">Cấp Đai Vovinam</th>
@@ -2008,8 +2009,8 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                     <div class="min-w-0 flex flex-col">
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5 truncate">Số Định Danh / Mã Số <span class="text-red-500">*</span></label>
-                        <input type="text" id="student-id-number" required placeholder="VD: VVN001 hoặc CCCD" class="w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5 truncate">Số Căn Cước Công Dân (CCCD) <span class="text-red-500">*</span></label>
+                        <input type="text" id="student-id-number" required placeholder="Nhập số CCCD (VD: 079208001234)" class="w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
                     </div>
 
                     <div class="min-w-0 flex flex-col">
@@ -2306,7 +2307,7 @@
                     <thead>
                         <tr class="bg-slate-100/70 text-slate-600 font-bold border-b border-slate-200">
                             <th class="py-2.5 px-3 w-10 text-center">STT</th>
-                            <th class="py-2.5 px-3">Mã Định Danh</th>
+                            <th class="py-2.5 px-3">Số CCCD</th>
                             <th class="py-2.5 px-3">Họ và Tên</th>
                             <th class="py-2.5 px-3">Cấp Đai</th>
                             <th class="py-2.5 px-3">Phụ Huynh & SĐT</th>
@@ -2412,7 +2413,7 @@
                             <thead>
                                 <tr class="bg-slate-100/80 text-slate-600 font-bold border-b border-slate-200">
                                     <th class="py-2.5 px-3 w-12 text-center">STT</th>
-                                    <th class="py-2.5 px-3">Mã Số</th>
+                                    <th class="py-2.5 px-3">Số CCCD</th>
                                     <th class="py-2.5 px-3">Họ và Tên Võ Sinh</th>
                                     <th class="py-2.5 px-3">Cấp Đai</th>
                                     <th class="py-2.5 px-3">Hình Thức (Lớp Chính / Học Thêm)</th>
@@ -3807,7 +3808,7 @@
         // Dữ liệu mẫu chuẩn bị sẵn
         const SAMPLE_STUDENTS = [
             {
-                id: 'VVN-0102',
+                id: '079212001024',
                 name: 'Nguyễn Hoàng Nam',
                 dob: '2012-05-15',
                 belt: 'Lam đai I',
@@ -3820,7 +3821,7 @@
                 avatar: ''
             },
             {
-                id: 'VVN-0105',
+                id: '079310001058',
                 name: 'Lê Minh Anh',
                 dob: '2010-11-20',
                 belt: 'Lam đai III',
@@ -3833,7 +3834,7 @@
                 avatar: ''
             },
             {
-                id: 'VVN-0208',
+                id: '079208002081',
                 name: 'Trần Bảo Quốc',
                 dob: '2008-03-08',
                 belt: 'Hoàng đai I',
@@ -3846,7 +3847,7 @@
                 avatar: ''
             },
             {
-                id: 'VVN-0301',
+                id: '079214003019',
                 name: 'Phạm Đăng Khoa',
                 dob: '2014-08-12',
                 belt: 'Lam đai',
@@ -4116,8 +4117,15 @@
                     saveStudentsToStorage(true);
                 }
 
-                // Chuẩn hóa tên lớp cũ nếu cần
+                // Chuẩn hóa tên lớp cũ & mã mẫu sang số CCCD nếu cần
+                const sampleIdMap = {
+                    'VVN-0102': '079212001024',
+                    'VVN-0105': '079310001058',
+                    'VVN-0208': '079208002081',
+                    'VVN-0301': '079214003019'
+                };
                 students.forEach(st => {
+                    if (sampleIdMap[st.id]) st.id = sampleIdMap[st.id];
                     if (st.className === 'Sáng T2-T4-T6') st.className = 'Lớp Sáng T2-T4-T6';
                     if (st.className === 'Chiều T2-T4-T6') st.className = 'Lớp Chiều T2-T4-T6';
                     if (st.className === 'Tối T3-T5-T7') st.className = 'Lớp Tối T3-T5-T7';
@@ -6120,7 +6128,7 @@
 
             emptyMsg.classList.add('hidden');
             if (gridContainer) {
-                gridContainer.innerHTML = filtered.map(s => {
+                gridContainer.innerHTML = filtered.map((s, idx) => {
                     const age = calculateAge(s.dob);
                     const isGuest = s.type === 'guest';
                     const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 120);
@@ -6137,8 +6145,11 @@
                                 <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsId}')" class="w-14 h-14 rounded-2xl object-cover border-2 border-vovinam-blue/20 shadow-xs cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition flex-shrink-0">
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center justify-between gap-1">
-                                        <span class="text-[11px] font-mono font-bold text-slate-400">${safeId}</span>
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isGuest ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-vovinam-blue'}">${isGuest ? 'Học ghép/bù' : 'Chính thức'}</span>
+                                        <div class="flex items-center space-x-1.5 min-w-0">
+                                            <span class="px-1.5 py-0.5 rounded-md bg-vovinam-blue/10 text-vovinam-blue font-black text-[10px] flex-shrink-0">STT #${idx + 1}</span>
+                                            <span class="text-[11px] font-mono font-bold text-slate-500 truncate" title="Số CCCD: ${safeId}">CCCD: ${safeId}</span>
+                                        </div>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${isGuest ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-vovinam-blue'}">${isGuest ? 'Học ghép/bù' : 'Chính thức'}</span>
                                     </div>
                                     <button type="button" onclick="viewStudentDetail('${safeJsId}')" class="font-black text-slate-800 hover:text-vovinam-blue text-sm truncate block text-left w-full mt-0.5">${safeName}</button>
                                     <div class="mt-1">${getBeltBadge(s.belt)}</div>
@@ -6172,7 +6183,7 @@
                     `;
                 }).join('');
             }
-            tbody.innerHTML = filtered.map(s => {
+            tbody.innerHTML = filtered.map((s, idx) => {
                 const age = calculateAge(s.dob);
                 const isGuest = s.type === 'guest';
                 const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 100);
@@ -6197,6 +6208,9 @@
 
                 return `
                     <tr class="hover:bg-blue-50/50 transition border-b border-slate-100">
+                        <td class="py-3 px-3 text-center font-bold text-slate-400 text-xs">
+                            ${idx + 1}
+                        </td>
                         <td class="py-3 px-4 font-mono font-bold text-xs text-slate-700">
                             ${safeId}
                         </td>
@@ -6264,7 +6278,7 @@
             // Gán dữ liệu cơ bản
             document.getElementById('detail-avatar').src = avatarSrc;
             document.getElementById('detail-name').innerText = s.name;
-            document.getElementById('detail-id').innerText = `Mã định danh: ${s.id}`;
+            document.getElementById('detail-id').innerText = `Số CCCD: ${s.id}`;
             document.getElementById('detail-belt-badge').innerHTML = getBeltBadge(s.belt);
             document.getElementById('detail-age').innerText = `${calculateAge(s.dob)} tuổi`;
             document.getElementById('detail-dob').innerText = s.dob ? new Date(s.dob).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
@@ -6443,14 +6457,33 @@
 
             if (hasPermission('students_direct')) {
                 if (originalId) {
+                    if (idNumber !== originalId && students.some(s => s.id === idNumber)) {
+                        showToast('Số CCCD này đã tồn tại trên hệ thống!', 'error');
+                        return;
+                    }
                     const idx = students.findIndex(s => s.id === originalId);
                     if (idx !== -1) {
                         students[idx] = { ...students[idx], ...studentData };
+                        if (idNumber !== originalId) {
+                            Object.keys(attendanceRecords).forEach(k => {
+                                (attendanceRecords[k] || []).forEach(r => {
+                                    if (r.studentId === originalId) r.studentId = idNumber;
+                                });
+                            });
+                            Object.keys(tuitionRecords).forEach(m => {
+                                if (tuitionRecords[m] && tuitionRecords[m][originalId]) {
+                                    tuitionRecords[m][idNumber] = tuitionRecords[m][originalId];
+                                    delete tuitionRecords[m][originalId];
+                                }
+                            });
+                            saveAttendanceToStorage(true);
+                            saveTuitionToStorage(true);
+                        }
                         showToast(`${getCurrentAccountName()}: Đã cập nhật thông tin võ sinh!`);
                     }
                 } else {
                     if (students.some(s => s.id === idNumber)) {
-                        showToast('Số định danh này đã tồn tại trên hệ thống!', 'error');
+                        showToast('Số CCCD này đã tồn tại trên hệ thống!', 'error');
                         return;
                     }
                     unmarkEntityDeleted('students', studentData.id);
@@ -6461,6 +6494,10 @@
             } else {
                 // Tài khoản không có quyền trực tiếp: Đẩy vào yêu cầu phê duyệt
                 if (originalId) {
+                    if (idNumber !== originalId && students.some(s => s.id === idNumber)) {
+                        showToast('Số CCCD này đã tồn tại trên hệ thống!', 'error');
+                        return;
+                    }
                     pendingRequests.push({
                         reqId: 'REQ_' + Date.now(),
                         type: 'EDIT',
@@ -6473,7 +6510,7 @@
                     showToast('Đã gửi yêu cầu SỬA hồ sơ chờ phê duyệt!', 'info');
                 } else {
                     if (students.some(s => s.id === idNumber)) {
-                        showToast('Số định danh này đã tồn tại trên hệ thống!', 'error');
+                        showToast('Số CCCD này đã tồn tại trên hệ thống!', 'error');
                         return;
                     }
                     pendingRequests.push({
@@ -6502,7 +6539,7 @@
             document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square"></i><span>Cập Nhật Thông Tin Võ Sinh</span>';
             document.getElementById('student-id').value = s.id;
             document.getElementById('student-id-number').value = s.id;
-            document.getElementById('student-id-number').disabled = true; // Không sửa mã số gốc
+            document.getElementById('student-id-number').disabled = false; // Cho phép cập nhật số CCCD
             document.getElementById('student-name').value = s.name;
             document.getElementById('student-dob').value = s.dob;
             document.getElementById('student-belt').value = s.belt;
@@ -7032,7 +7069,7 @@
             csv += `Số võ sinh Vắng:,"${report.totalAbsent} võ sinh (Vắng không phép: ${report.absentUnexcusedCount} | Có phép/Trễ: ${report.absentExcusedCount})"\n\n`;
 
             csv += `DANH SÁCH CHI TIẾT VÕ SINH\n`;
-            csv += `STT,Mã Định Danh,Họ và Tên Võ Sinh,Cấp Đai,Lớp Chính / Học Thêm,Trạng Thái (Có Mặt / Vắng),Ghi Chú Buổi Học\n`;
+            csv += `STT,Số CCCD,Họ và Tên Võ Sinh,Cấp Đai,Lớp Chính / Học Thêm,Trạng Thái (Có Mặt / Vắng),Ghi Chú Buổi Học\n`;
 
             report.items.forEach(item => {
                 const row = [
@@ -7409,10 +7446,11 @@
                 return;
             }
 
-            let csvContent = "\uFEFFSố Định Danh,Họ và Tên,Ngày Sinh,Tuổi,Cấp Đai,Lớp Luyện Tập,Phân Loại,Phụ Huynh,Số Điện Thoại,Địa Chỉ\n";
-            students.forEach(s => {
+            let csvContent = "\uFEFFSTT,Số CCCD,Họ và Tên,Ngày Sinh,Tuổi,Cấp Đai,Lớp Luyện Tập,Phân Loại,Phụ Huynh,Số Điện Thoại,Địa Chỉ\n";
+            students.forEach((s, idx) => {
                 const age = calculateAge(s.dob);
                 const row = [
+                    sanitizeCsvCell(idx + 1),
                     sanitizeCsvCell(s.id),
                     sanitizeCsvCell(s.name),
                     sanitizeCsvCell(s.dob || ''),
@@ -7441,14 +7479,14 @@
             const endDate = document.getElementById('report-end').value;
 
             let csvContent = `\uFEFF${sanitizeCsvCell('BÁO CÁO ĐIỂM DANH VOVINAM (' + startDate + ' ĐẾN ' + endDate + ')')}\n\n`;
-            csvContent += "Mã Số,Họ và Tên,Lớp Học,Tổng Buổi,Có Mặt,Vắng K.Phép,Có Phép / Trễ,Tỷ Lệ Chuyên Cần (%)\n";
+            csvContent += "STT,Số CCCD,Họ và Tên,Lớp Học,Tổng Buổi,Có Mặt,Vắng K.Phép,Có Phép / Trễ,Tỷ Lệ Chuyên Cần (%)\n";
 
             const allKeys = Object.keys(attendanceRecords).filter(key => {
                 const date = key.split('_')[0];
                 return (!startDate || date >= startDate) && (!endDate || date <= endDate);
             });
 
-            students.forEach(s => {
+            students.forEach((s, idx) => {
                 let sTotal = 0, sPresent = 0, sAbsent = 0, sExcused = 0;
                 allKeys.forEach(key => {
                     const rec = (attendanceRecords[key] || []).find(r => r.studentId === s.id);
@@ -7462,6 +7500,7 @@
 
                 const rate = sTotal > 0 ? Math.round((sPresent / sTotal) * 100) : 0;
                 const row = [
+                    sanitizeCsvCell(idx + 1),
                     sanitizeCsvCell(s.id),
                     sanitizeCsvCell(s.name),
                     sanitizeCsvCell(s.className),
@@ -7488,13 +7527,14 @@
             const monthData = tuitionRecords[month] || {};
 
             let csvContent = `\uFEFF${sanitizeCsvCell('BÁO CÁO HỌC PHÍ VOVINAM THÁNG ' + month)}\n\n`;
-            csvContent += "Mã Số,Họ và Tên,Lớp Luyện Tập,Trạng Thái,Số Tiền (VNĐ),Số Biên Lai / Ghi Chú\n";
+            csvContent += "STT,Số CCCD,Họ và Tên,Lớp Luyện Tập,Trạng Thái,Số Tiền (VNĐ),Số Biên Lai / Ghi Chú\n";
 
-            students.forEach(s => {
+            students.forEach((s, idx) => {
                 const rec = monthData[s.id] || { status: 'unpaid', amount: 350000, receipt: '' };
                 const sttText = rec.status === 'paid' ? 'Đã đóng' : (rec.status === 'discount' ? 'Miễn giảm' : 'Chưa đóng');
 
                 const row = [
+                    sanitizeCsvCell(idx + 1),
                     sanitizeCsvCell(s.id),
                     sanitizeCsvCell(s.name),
                     sanitizeCsvCell(s.className),
