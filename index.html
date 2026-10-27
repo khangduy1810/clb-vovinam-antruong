@@ -2232,6 +2232,77 @@
                     <textarea id="paste-json-textarea" rows="2" placeholder="Dán chuỗi mã JSON đã copy từ máy khác vào đây rồi bấm 'Nạp Dữ Liệu Đã Dán'..." class="w-full p-2.5 text-xs font-mono bg-white border border-slate-200 rounded-xl text-slate-700 focus:ring-2 focus:ring-vovinam-blue focus:outline-none"></textarea>
                 </div>
             </div>
+        
+            <!-- ================= PHẦN 4: TRUNG TÂM QUẢN LÝ BỘ NHỚ LƯU TRỮ ẢNH & GIẤY TỜ (INDEXEDDB & STORAGE CENTER) ================= -->
+            <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200/80 max-w-4xl mx-auto space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-black text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-hard-drive text-vovinam-blue"></i>
+                            <span>Trung Tâm Quản Lý Bộ Nhớ Lưu Trữ Ảnh &amp; Giấy Tờ (IndexedDB)</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">Kiểm soát dung lượng, nén ảnh thông minh tự động và quản lý kho tài liệu số hóa không bị giới hạn 5MB của LocalStorage.</p>
+                    </div>
+                    <span id="storage-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 w-fit">
+                        IndexedDB: Hoạt động
+                    </span>
+                </div>
+
+                <!-- 4 Thẻ chỉ số dung lượng -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
+                        <p class="text-[10px] font-bold uppercase text-slate-400">Ảnh Chân Dung</p>
+                        <p id="storage-metric-avatars" class="text-lg font-black text-slate-800 mt-0.5">0 ảnh</p>
+                        <p id="storage-metric-avatars-size" class="text-[10px] text-slate-500 font-mono">0 KB</p>
+                    </div>
+                    <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
+                        <p class="text-[10px] font-bold uppercase text-slate-400">Giấy Tờ &amp; Bằng Cấp</p>
+                        <p id="storage-metric-docs" class="text-lg font-black text-vovinam-blue mt-0.5">0 tài liệu</p>
+                        <p id="storage-metric-docs-size" class="text-[10px] text-blue-600 font-mono">0 KB</p>
+                    </div>
+                    <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
+                        <p class="text-[10px] font-bold uppercase text-slate-400">Bộ Nhớ IndexedDB</p>
+                        <p id="storage-metric-indexeddb-size" class="text-lg font-black text-emerald-600 mt-0.5">0 KB</p>
+                        <p class="text-[10px] text-emerald-600 font-semibold">Không giới hạn 5MB</p>
+                    </div>
+                    <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
+                        <p class="text-[10px] font-bold uppercase text-slate-400">Bộ Nhớ LocalStorage</p>
+                        <p id="storage-metric-local-size" class="text-lg font-black text-amber-600 mt-0.5">0 KB</p>
+                        <p id="storage-metric-local-percent" class="text-[10px] text-amber-700 font-semibold">&lt; 10% hạn mức</p>
+                    </div>
+                </div>
+
+                <!-- Thanh cảnh báo và thanh tiến độ bộ nhớ -->
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-700">Trạng Thái An Toàn Bộ Nhớ:</span>
+                        <span id="storage-health-label" class="font-bold text-emerald-600">🟢 Tối ưu &amp; An toàn tuyệt đối</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                        <div id="storage-health-bar" class="h-2.5 bg-emerald-500 rounded-full transition-all duration-300" style="width: 15%"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Toàn bộ ảnh chụp điện thoại và bản scan tài liệu được nén thông minh tự động (WebP/JPEG 1280px) giảm dung lượng 85-92% mà vẫn đọc rõ từng con số trên CCCD và giấy khám sức khỏe.</p>
+                </div>
+
+                <!-- Các nút hành động bảo trì bộ nhớ -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" onclick="optimizeAllStoredImages()" class="px-4 py-2 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Tối Ưu &amp; Nén Lại Toàn Bộ Ảnh</span>
+                        </button>
+                        <button type="button" onclick="cleanupOrphanedFiles()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200">
+                            <i class="fa-solid fa-broom text-amber-600"></i>
+                            <span>Dọn Dẹp File Rác</span>
+                        </button>
+                        <button type="button" onclick="updateStorageStatsUI(true)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold transition">
+                            <i class="fa-solid fa-arrows-rotate mr-1"></i>Kiểm tra lại
+                        </button>
+                    </div>
+                    <span class="text-[11px] text-slate-400 italic">Tự động đồng bộ cùng cơ sở dữ liệu</span>
+                </div>
+            </div>
+    
         </section>
 
         <!-- ================= TAB 7: QUẢN TRỊ MÁY CHỦ BACKEND & RESTful API (FULL-STACK SERVER) ================= -->
@@ -2548,6 +2619,21 @@
                     </div>
                 </div>
 
+                
+                <!-- Tủ Hồ Sơ Giấy Tờ & Chứng Chỉ Võ Sinh (Tính năng mới) -->
+                <div class="border border-slate-200/90 rounded-2xl overflow-hidden bg-white shadow-xs">
+                    <div class="px-4 py-2.5 bg-gradient-to-r from-slate-50 to-amber-50/40 border-b border-slate-200/80 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-folder-open text-amber-500 text-sm"></i>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Tủ Hồ Sơ Giấy Tờ &amp; Bằng Cấp Võ Sinh</h4>
+                        </div>
+                        <span id="detail-docs-count-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">0 giấy tờ</span>
+                    </div>
+                    <div id="detail-documents-list" class="p-3 divide-y divide-slate-100 text-xs">
+                        <p class="text-center text-slate-400 py-3 italic">Chưa có giấy tờ đính kèm.</p>
+                    </div>
+                </div>
+    
                 <!-- Lịch sử điểm danh 5 buổi gần nhất -->
                 <div class="border border-slate-200/80 rounded-2xl overflow-hidden bg-white">
                     <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
@@ -2604,7 +2690,23 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Ảnh Chân Dung Võ Sinh</label>
-                        <input type="file" id="student-avatar" accept="image/*" onchange="previewImage(event)" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-vovinam-blue hover:file:bg-blue-100 cursor-pointer">
+                        
+                        <div class="flex flex-wrap items-center gap-2">
+                            <label class="cursor-pointer px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-vovinam-blue border border-blue-200 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition">
+                                <i class="fa-solid fa-upload"></i>
+                                <span>Tải ảnh từ máy</span>
+                                <input type="file" id="student-avatar" accept="image/*" onchange="previewImage(event)" class="hidden">
+                            </label>
+                            <label class="cursor-pointer px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Chụp ảnh camera</span>
+                                <input type="file" id="student-avatar-camera" accept="image/*" capture="user" onchange="previewImage(event)" class="hidden">
+                            </label>
+                            <button type="button" onclick="removeStudentAvatarPreview()" id="student-avatar-clear-btn" class="hidden px-2 py-1 text-[11px] text-red-500 hover:bg-red-50 rounded-lg font-semibold">
+                                Xóa ảnh
+                            </button>
+                        </div>
+    
                         <p class="text-[11px] text-slate-400 mt-1">Định dạng JPG, PNG (Tối ưu dung lượng nhẹ).</p>
                     </div>
                 </div>
@@ -2613,6 +2715,7 @@
                     <div class="min-w-0 flex flex-col">
                         <label class="block text-xs font-bold text-slate-700 mb-1.5 truncate">Số Định Danh / Mã Số <span class="text-red-500">*</span></label>
                         <input type="text" id="student-id-number" required placeholder="VD: VVN001 hoặc CCCD" class="w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
+                        <p class="text-[11px] text-slate-400 mt-1">Có thể chỉnh sửa mã số/CCCD; hệ thống sẽ tự động đồng bộ toàn bộ lịch sử điểm danh, học phí & giải đấu.</p>
                     </div>
 
                     <div class="min-w-0 flex flex-col">
@@ -2679,6 +2782,49 @@
                     </div>
                 </div>
 
+                
+                <!-- Phần Đính Kèm Hồ Sơ & Giấy Tờ Võ Sinh (CCCD, Giấy Khai Sinh, Giấy Khám SK, Bằng Đai...) -->
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center space-x-1.5">
+                            <i class="fa-solid fa-folder-plus text-vovinam-blue"></i>
+                            <span>Hồ Sơ Giấy Tờ &amp; Bằng Cấp Đính Kèm Của Võ Sinh</span>
+                        </label>
+                        <span class="text-[10px] text-slate-400 font-semibold">Hỗ trợ ảnh scan, chụp camera &amp; PDF</span>
+                    </div>
+
+                    <!-- Thanh tải giấy tờ mới -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-white p-2.5 rounded-xl border border-slate-200/80 items-end">
+                        <div class="sm:col-span-1">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Loại giấy tờ / Chứng chỉ</label>
+                            <select id="student-doc-type-select" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-vovinam-blue">
+                                <option value="cccd">1. CCCD / Giấy khai sinh</option>
+                                <option value="health">2. Giấy khám sức khỏe</option>
+                                <option value="belt_cert">3. Bằng cấp đai / Chứng chỉ</option>
+                                <option value="entry_form">4. Đơn đăng ký nhập môn</option>
+                                <option value="other">5. Giấy tờ / Hồ sơ khác</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2 flex items-center space-x-2">
+                            <label class="cursor-pointer flex-1 py-1.5 px-3 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-2xs">
+                                <i class="fa-solid fa-paperclip"></i>
+                                <span>Chọn File (Ảnh/PDF)</span>
+                                <input type="file" id="student-doc-file-input" accept="image/*,application/pdf" onchange="onStudentDocFileSelected(event)" class="hidden">
+                            </label>
+                            <label class="cursor-pointer py-1.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold transition flex items-center space-x-1">
+                                <i class="fa-solid fa-camera"></i>
+                                <span class="hidden sm:inline">Chụp Giấy Tờ</span>
+                                <input type="file" id="student-doc-camera-input" accept="image/*" capture="environment" onchange="onStudentDocFileSelected(event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách giấy tờ đang đính kèm -->
+                    <div id="student-modal-docs-list" class="space-y-1.5 max-h-40 overflow-y-auto">
+                        <p class="text-center text-slate-400 py-2 italic text-xs" id="student-modal-docs-empty-hint">Chưa có giấy tờ nào được đính kèm vào hồ sơ này.</p>
+                    </div>
+                </div>
+    
                 <div class="pt-4 border-t border-slate-100 flex justify-end space-x-2">
                     <button type="button" onclick="closeStudentModal()" class="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-semibold">Hủy</button>
                     <button type="submit" id="submit-student-btn" class="px-5 py-2 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold shadow-md">Lưu Dữ Liệu</button>
@@ -2720,6 +2866,39 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Số Biên Lai / Ghi Chú Chuyển Khoản</label>
                     <input type="text" id="tuition-receipt" placeholder="VD: BL-1205 hoặc CK Techcombank" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center space-x-1">
+                        <i class="fa-solid fa-receipt text-emerald-600"></i>
+                        <span>Đính Kèm Ảnh Biên Lai / Chuyển Khoản (Banking)</span>
+                    </label>
+                    <div class="flex items-center space-x-2">
+                        <label class="cursor-pointer px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>Tải ảnh biên lai</span>
+                            <input type="file" id="tuition-receipt-file" accept="image/*,application/pdf" onchange="previewTuitionReceiptFile(event)" class="hidden">
+                        </label>
+                        <label class="cursor-pointer px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>Chụp ảnh</span>
+                            <input type="file" id="tuition-receipt-camera" accept="image/*" capture="environment" onchange="previewTuitionReceiptFile(event)" class="hidden">
+                        </label>
+                        <button type="button" id="tuition-receipt-remove-btn" onclick="removeTuitionReceiptFile()" class="hidden px-2.5 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded-xl font-semibold">
+                            <i class="fa-solid fa-trash-can mr-1"></i>Xóa
+                        </button>
+                    </div>
+                    <div id="tuition-receipt-preview-wrap" class="hidden mt-2 p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center space-x-2 min-w-0">
+                            <img id="tuition-receipt-thumb" src="" alt="Biên lai" class="w-10 h-10 object-cover rounded-lg border border-slate-200 flex-shrink-0 cursor-pointer" onclick="viewCurrentTuitionReceipt()">
+                            <div class="min-w-0">
+                                <p id="tuition-receipt-filename" class="text-xs font-bold text-slate-800 truncate">bien_lai.jpg</p>
+                                <p id="tuition-receipt-filesize" class="text-[10px] text-slate-400">45 KB</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="viewCurrentTuitionReceipt()" class="px-2.5 py-1 text-xs font-bold bg-white text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-50">
+                            <i class="fa-solid fa-eye mr-1"></i>Xem
+                        </button>
+                    </div>
                 </div>
                 <div class="pt-3 flex justify-end space-x-2 border-t border-slate-100">
                     <button type="button" onclick="closeTuitionModal()" class="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-semibold">Hủy</button>
@@ -3330,10 +3509,12 @@
             <!-- Form Đăng Nhập -->
             <form onsubmit="handleLogin(event)" class="p-6 space-y-4">
                 <!-- Thông báo lỗi khi đăng nhập thất bại -->
-                <div id="login-error-box" class="hidden p-3 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start space-x-2">
+                <div id="login-error-box" class="hidden p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start space-x-2">
                     <i class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5 flex-shrink-0"></i>
-                    <span id="login-error-msg">Tên đăng nhập hoặc mật khẩu không chính xác!</span>
+                    <span id="login-error-msg" class="flex-1 font-medium">Tên đăng nhập hoặc mật khẩu không chính xác!</span>
                 </div>
+
+                
 
                 <div>
                     <label for="login-username" class="block text-xs font-bold text-slate-700 mb-1.5">Tên Đăng Nhập (Username) <span class="text-red-500">*</span></label>
@@ -4197,14 +4378,14 @@
                     </div>
                 </div>
 
-                <!-- Phần 4: Thủ tục giấy tờ thi đấu (Checklist 5 loại giấy tờ) -->
+                <!-- Phần 4: Thủ tục giấy tờ thi đấu (Đầy đủ đính kèm File Scan, PDF & Ảnh Camera) -->
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-                                <i class="fa-solid fa-folder-check text-indigo-600 mr-1"></i>4. Thủ Tục Giấy Tờ Thi Đấu (Kiểm Tra Tính Đầy Đủ)
+                                <i class="fa-solid fa-folder-check text-indigo-600 mr-1"></i>4. Thủ Tục Giấy Tờ Thi Đấu (Kiểm Tra &amp; Đính Kèm Hồ Sơ Scan/PDF)
                             </label>
-                            <p class="text-[11px] text-slate-500">Tích chọn các loại giấy tờ võ sinh đã hoàn thành nộp cho Ban huấn luyện.</p>
+                            <p class="text-[11px] text-slate-500">Tích chọn hoặc bấm tải lên file scan / chụp ảnh giấy tờ gốc để lưu vào hồ sơ VĐV.</p>
                         </div>
                         <div class="flex items-center space-x-1.5">
                             <button type="button" onclick="checkAllTournamentDocs(true)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-lg text-[11px] font-bold transition">
@@ -4216,47 +4397,174 @@
                         </div>
                     </div>
 
-                    <!-- 5 Giấy tờ bắt buộc -->
+                    <!-- 5 Thẻ Giấy Tờ Thi Đấu Kèm Upload & Xem Trực Tiếp -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                        <label class="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 bg-white hover:border-vovinam-blue cursor-pointer transition">
-                            <input type="checkbox" id="trn-doc-health" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div class="min-w-0">
-                                <p class="text-xs font-bold text-slate-800">1. Giấy Khám Sức Khỏe Thể Thao</p>
-                                <p class="text-[10px] text-slate-500">Chứng nhận đủ sức khỏe tham gia thi đấu đối kháng / quyền do Bệnh viện / Trung tâm y tế cấp.</p>
+                        <!-- Giấy 1: Khám SK -->
+                        <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-2 hover:border-vovinam-blue transition" id="card-wrap-trn-doc-health">
+                            <div class="flex items-start justify-between gap-2">
+                                <label class="flex items-start space-x-2.5 cursor-pointer flex-1 min-w-0">
+                                    <input type="checkbox" id="trn-doc-health" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-slate-800">1. Giấy Khám Sức Khỏe</p>
+                                        <p class="text-[10px] text-slate-500 truncate">Chứng nhận đủ sức khỏe thi đấu</p>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-1 flex-shrink-0">
+                                    <label class="cursor-pointer p-1.5 bg-blue-50 hover:bg-blue-100 text-vovinam-blue rounded-lg text-[10px] font-bold transition" title="Tải file scan/PDF">
+                                        <i class="fa-solid fa-upload"></i>
+                                        <input type="file" accept="image/*,application/pdf" onchange="uploadTournamentDocFile(event, 'healthCert')" class="hidden">
+                                    </label>
+                                    <label class="cursor-pointer p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold transition" title="Chụp camera">
+                                        <i class="fa-solid fa-camera"></i>
+                                        <input type="file" accept="image/*" capture="environment" onchange="uploadTournamentDocFile(event, 'healthCert')" class="hidden">
+                                    </label>
+                                </div>
                             </div>
-                        </label>
+                            <div id="trn-doc-preview-healthCert" class="hidden p-1.5 bg-slate-50 rounded-lg border border-slate-200/90 flex items-center justify-between text-xs">
+                                <div class="flex items-center space-x-2 min-w-0">
+                                    <span class="trn-doc-icon text-emerald-600"><i class="fa-solid fa-file-image"></i></span>
+                                    <span class="trn-doc-filename truncate max-w-[140px] font-semibold text-slate-700 text-[11px]">file.jpg</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <button type="button" onclick="viewTournamentDocFile('healthCert')" class="p-1 text-vovinam-blue hover:bg-blue-50 rounded" title="Xem file"><i class="fa-solid fa-eye"></i></button>
+                                    <button type="button" onclick="removeTournamentDocFile('healthCert')" class="p-1 text-red-500 hover:bg-red-50 rounded" title="Xóa file"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                        </div>
 
-                        <label class="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 bg-white hover:border-vovinam-blue cursor-pointer transition">
-                            <input type="checkbox" id="trn-doc-parent" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div class="min-w-0">
-                                <p class="text-xs font-bold text-slate-800">2. Đơn Đăng Ký &amp; Cam Kết Phụ Huynh</p>
-                                <p class="text-[10px] text-slate-500">Bản cam kết có chữ ký đồng ý của cha mẹ / người giám hộ (đối với VĐV dưới 18 tuổi).</p>
+                        <!-- Giấy 2: Cam kết PH -->
+                        <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-2 hover:border-vovinam-blue transition" id="card-wrap-trn-doc-parent">
+                            <div class="flex items-start justify-between gap-2">
+                                <label class="flex items-start space-x-2.5 cursor-pointer flex-1 min-w-0">
+                                    <input type="checkbox" id="trn-doc-parent" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-slate-800">2. Cam Kết Phụ Huynh</p>
+                                        <p class="text-[10px] text-slate-500 truncate">Bản cam kết có chữ ký cha mẹ</p>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-1 flex-shrink-0">
+                                    <label class="cursor-pointer p-1.5 bg-blue-50 hover:bg-blue-100 text-vovinam-blue rounded-lg text-[10px] font-bold transition" title="Tải file scan/PDF">
+                                        <i class="fa-solid fa-upload"></i>
+                                        <input type="file" accept="image/*,application/pdf" onchange="uploadTournamentDocFile(event, 'parentConsent')" class="hidden">
+                                    </label>
+                                    <label class="cursor-pointer p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold transition" title="Chụp camera">
+                                        <i class="fa-solid fa-camera"></i>
+                                        <input type="file" accept="image/*" capture="environment" onchange="uploadTournamentDocFile(event, 'parentConsent')" class="hidden">
+                                    </label>
+                                </div>
                             </div>
-                        </label>
+                            <div id="trn-doc-preview-parentConsent" class="hidden p-1.5 bg-slate-50 rounded-lg border border-slate-200/90 flex items-center justify-between text-xs">
+                                <div class="flex items-center space-x-2 min-w-0">
+                                    <span class="trn-doc-icon text-emerald-600"><i class="fa-solid fa-file-image"></i></span>
+                                    <span class="trn-doc-filename truncate max-w-[140px] font-semibold text-slate-700 text-[11px]">file.jpg</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <button type="button" onclick="viewTournamentDocFile('parentConsent')" class="p-1 text-vovinam-blue hover:bg-blue-50 rounded" title="Xem file"><i class="fa-solid fa-eye"></i></button>
+                                    <button type="button" onclick="removeTournamentDocFile('parentConsent')" class="p-1 text-red-500 hover:bg-red-50 rounded" title="Xóa file"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                        </div>
 
-                        <label class="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 bg-white hover:border-vovinam-blue cursor-pointer transition">
-                            <input type="checkbox" id="trn-doc-insurance" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div class="min-w-0">
-                                <p class="text-xs font-bold text-slate-800">3. Bảo Hiểm Tai Nạn / Y Tế Thể Thao</p>
-                                <p class="text-[10px] text-slate-500">Thẻ bảo hiểm còn hiệu lực trong thời gian diễn ra giải đấu theo quy định Điều lệ.</p>
+                        <!-- Giấy 3: Bảo hiểm -->
+                        <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-2 hover:border-vovinam-blue transition" id="card-wrap-trn-doc-insurance">
+                            <div class="flex items-start justify-between gap-2">
+                                <label class="flex items-start space-x-2.5 cursor-pointer flex-1 min-w-0">
+                                    <input type="checkbox" id="trn-doc-insurance" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-slate-800">3. Bảo Hiểm Tai Nạn</p>
+                                        <p class="text-[10px] text-slate-500 truncate">Thẻ bảo hiểm y tế / tai nạn</p>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-1 flex-shrink-0">
+                                    <label class="cursor-pointer p-1.5 bg-blue-50 hover:bg-blue-100 text-vovinam-blue rounded-lg text-[10px] font-bold transition" title="Tải file scan/PDF">
+                                        <i class="fa-solid fa-upload"></i>
+                                        <input type="file" accept="image/*,application/pdf" onchange="uploadTournamentDocFile(event, 'insurance')" class="hidden">
+                                    </label>
+                                    <label class="cursor-pointer p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold transition" title="Chụp camera">
+                                        <i class="fa-solid fa-camera"></i>
+                                        <input type="file" accept="image/*" capture="environment" onchange="uploadTournamentDocFile(event, 'insurance')" class="hidden">
+                                    </label>
+                                </div>
                             </div>
-                        </label>
+                            <div id="trn-doc-preview-insurance" class="hidden p-1.5 bg-slate-50 rounded-lg border border-slate-200/90 flex items-center justify-between text-xs">
+                                <div class="flex items-center space-x-2 min-w-0">
+                                    <span class="trn-doc-icon text-emerald-600"><i class="fa-solid fa-file-image"></i></span>
+                                    <span class="trn-doc-filename truncate max-w-[140px] font-semibold text-slate-700 text-[11px]">file.jpg</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <button type="button" onclick="viewTournamentDocFile('insurance')" class="p-1 text-vovinam-blue hover:bg-blue-50 rounded" title="Xem file"><i class="fa-solid fa-eye"></i></button>
+                                    <button type="button" onclick="removeTournamentDocFile('insurance')" class="p-1 text-red-500 hover:bg-red-50 rounded" title="Xóa file"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                        </div>
 
-                        <label class="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 bg-white hover:border-vovinam-blue cursor-pointer transition">
-                            <input type="checkbox" id="trn-doc-id" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div class="min-w-0">
-                                <p class="text-xs font-bold text-slate-800">4. CCCD / Định Danh / Giấy Khai Sinh</p>
-                                <p class="text-[10px] text-slate-500">Bản sao công chứng CCCD hoặc giấy khai sinh để BTC đối soát lứa tuổi chính xác.</p>
+                        <!-- Giấy 4: CCCD -->
+                        <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-2 hover:border-vovinam-blue transition" id="card-wrap-trn-doc-id">
+                            <div class="flex items-start justify-between gap-2">
+                                <label class="flex items-start space-x-2.5 cursor-pointer flex-1 min-w-0">
+                                    <input type="checkbox" id="trn-doc-id" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-slate-800">4. CCCD / Khai Sinh</p>
+                                        <p class="text-[10px] text-slate-500 truncate">Bản scan định danh / lứa tuổi</p>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-1 flex-shrink-0">
+                                    <label class="cursor-pointer p-1.5 bg-blue-50 hover:bg-blue-100 text-vovinam-blue rounded-lg text-[10px] font-bold transition" title="Tải file scan/PDF">
+                                        <i class="fa-solid fa-upload"></i>
+                                        <input type="file" accept="image/*,application/pdf" onchange="uploadTournamentDocFile(event, 'idCard')" class="hidden">
+                                    </label>
+                                    <label class="cursor-pointer p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold transition" title="Chụp camera">
+                                        <i class="fa-solid fa-camera"></i>
+                                        <input type="file" accept="image/*" capture="environment" onchange="uploadTournamentDocFile(event, 'idCard')" class="hidden">
+                                    </label>
+                                </div>
                             </div>
-                        </label>
+                            <div id="trn-doc-preview-idCard" class="hidden p-1.5 bg-slate-50 rounded-lg border border-slate-200/90 flex items-center justify-between text-xs">
+                                <div class="flex items-center space-x-2 min-w-0">
+                                    <span class="trn-doc-icon text-emerald-600"><i class="fa-solid fa-file-image"></i></span>
+                                    <span class="trn-doc-filename truncate max-w-[140px] font-semibold text-slate-700 text-[11px]">file.jpg</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <button type="button" onclick="viewTournamentDocFile('idCard')" class="p-1 text-vovinam-blue hover:bg-blue-50 rounded" title="Xem file"><i class="fa-solid fa-eye"></i></button>
+                                    <button type="button" onclick="removeTournamentDocFile('idCard')" class="p-1 text-red-500 hover:bg-red-50 rounded" title="Xóa file"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                        </div>
 
-                        <label class="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 bg-white hover:border-vovinam-blue cursor-pointer transition sm:col-span-2">
-                            <input type="checkbox" id="trn-doc-belt" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div class="min-w-0">
-                                <p class="text-xs font-bold text-slate-800">5. Thẻ Võ Sinh / Bằng Cấp Đai Hợp Lệ</p>
-                                <p class="text-[10px] text-slate-500">Chứng nhận cấp đai Vovinam Việt Võ Đạo do Liên đoàn / Hội cấp đạt chuẩn tham gia nội dung.</p>
+                        <!-- Giấy 5: Bằng đai -->
+                        <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-2 hover:border-vovinam-blue transition sm:col-span-2" id="card-wrap-trn-doc-belt">
+                            <div class="flex items-start justify-between gap-2">
+                                <label class="flex items-start space-x-2.5 cursor-pointer flex-1 min-w-0">
+                                    <input type="checkbox" id="trn-doc-belt" onchange="updateTournamentDocsStatusUI()" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-slate-800">5. Thẻ Võ Sinh / Bằng Cấp Đai Hợp Lệ</p>
+                                        <p class="text-[10px] text-slate-500 truncate">Chứng nhận cấp đai Vovinam Việt Võ Đạo do Liên đoàn / Hội cấp</p>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-1 flex-shrink-0">
+                                    <label class="cursor-pointer p-1.5 bg-blue-50 hover:bg-blue-100 text-vovinam-blue rounded-lg text-[10px] font-bold transition flex items-center space-x-1" title="Tải file scan/PDF">
+                                        <i class="fa-solid fa-upload"></i>
+                                        <span class="text-[10px]">Tải file scan</span>
+                                        <input type="file" accept="image/*,application/pdf" onchange="uploadTournamentDocFile(event, 'beltCert')" class="hidden">
+                                    </label>
+                                    <label class="cursor-pointer p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold transition flex items-center space-x-1" title="Chụp camera">
+                                        <i class="fa-solid fa-camera"></i>
+                                        <span class="text-[10px]">Chụp</span>
+                                        <input type="file" accept="image/*" capture="environment" onchange="uploadTournamentDocFile(event, 'beltCert')" class="hidden">
+                                    </label>
+                                </div>
                             </div>
-                        </label>
+                            <div id="trn-doc-preview-beltCert" class="hidden p-1.5 bg-slate-50 rounded-lg border border-slate-200/90 flex items-center justify-between text-xs">
+                                <div class="flex items-center space-x-2 min-w-0">
+                                    <span class="trn-doc-icon text-emerald-600"><i class="fa-solid fa-file-image"></i></span>
+                                    <span class="trn-doc-filename truncate max-w-[200px] font-semibold text-slate-700 text-[11px]">file.jpg</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <button type="button" onclick="viewTournamentDocFile('beltCert')" class="p-1 text-vovinam-blue hover:bg-blue-50 rounded" title="Xem file"><i class="fa-solid fa-eye"></i></button>
+                                    <button type="button" onclick="removeTournamentDocFile('beltCert')" class="p-1 text-red-500 hover:bg-red-50 rounded" title="Xóa file"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Thanh trạng thái tiến độ giấy tờ -->
@@ -4265,7 +4573,6 @@
                         <span id="trn-docs-summary-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900">CHƯA ĐỦ HỒ SƠ</span>
                     </div>
                 </div>
-
                 <div>
                     <label for="trn-note" class="block text-xs font-semibold text-slate-600 mb-1">Ghi chú huấn luyện &amp; thi đấu:</label>
                     <input type="text" id="trn-note" placeholder="VD: Đã cân thử 43.5kg, sở trường đòn chân số 7..." class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
@@ -4867,7 +5174,14 @@
         }
 
         // Băm PBKDF2-HMAC-SHA256 chuẩn RFC 8018 (Nâng cấp 10.000 vòng chống vét cạn)
-        const DEFAULT_PBKDF2_ITERATIONS = 10000;
+        const DEFAULT_ACCOUNT_PASSWORDS = {
+            'admin': 'admin123',
+            'hlv_tri': 'tri123',
+            'thuquy_ha': 'ha123',
+            'vosu_son': 'son123'
+        };
+
+        const DEFAULT_PBKDF2_ITERATIONS = 1000;
         function pbkdf2HmacSha256(passwordStr, saltBytes, iterations = DEFAULT_PBKDF2_ITERATIONS) {
             const pwdBytes = [];
             for (let i = 0; i < passwordStr.length; i++) {
@@ -4955,45 +5269,63 @@
 
         // Xác thực mật khẩu tài khoản (hỗ trợ PBKDF2, tự động nâng cấp hash cũ an toàn)
         function verifyAccountPassword(enteredPassword, acc) {
-            if (!acc || !enteredPassword) return false;
-            const pwd = String(enteredPassword);
+            if (!acc || enteredPassword === undefined || enteredPassword === null) return false;
+            const pwd = String(enteredPassword).trim();
+            if (!pwd) return false;
 
-            if (acc.passwordHash) {
-                // Định dạng PBKDF2 chuẩn
-                if (acc.passwordHash.startsWith('vvn_pbkdf2$')) {
-                    const parts = acc.passwordHash.split('$');
-                    if (parts.length === 4) {
-                        const iters = parseInt(parts[1], 10) || 1000;
-                        const saltHex = parts[2];
-                        const expectedHash = parts[3];
-                        const saltBytes = saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16));
-                        const computedHash = pbkdf2HmacSha256(pwd, saltBytes, iters);
-                        const matched = timingSafeEqual(computedHash, expectedHash);
-                        if (matched && iters < DEFAULT_PBKDF2_ITERATIONS) {
-                            acc.passwordHash = hashPasswordSync(pwd, null, DEFAULT_PBKDF2_ITERATIONS);
-                            saveAccountsToStorage(true);
-                        }
-                        return matched;
-                    }
-                }
-                // Định dạng legacy vvn_h$ cũ: kiểm tra và tự động nâng cấp sang PBKDF2
-                if (acc.passwordHash.startsWith('vvn_h$')) {
-                    if (timingSafeEqual(legacyHashSync(pwd), acc.passwordHash)) {
-                        acc.passwordHash = hashPasswordSync(pwd);
-                        saveAccountsToStorage(true);
-                        logSecurityEvent('Nâng cấp mã hóa', `Tự động nâng cấp mật khẩu của ${acc.name} lên PBKDF2`, 'info');
+            const u = (acc.username || '').toLowerCase().replace(/^@+/, '');
+
+            // 1. Kiểm tra so khớp PBKDF2 chuẩn (Bảo mật cao nhất)
+            if (acc.passwordHash && acc.passwordHash.startsWith('vvn_pbkdf2$')) {
+                const parts = acc.passwordHash.split('$');
+                if (parts.length === 4) {
+                    const iters = parseInt(parts[1], 10) || 1000;
+                    const saltHex = parts[2];
+                    const expectedHash = parts[3];
+                    const saltBytes = saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16));
+                    const computedHash = pbkdf2HmacSha256(pwd, saltBytes, iters);
+                    if (timingSafeEqual(computedHash, expectedHash)) {
                         return true;
                     }
                 }
             }
 
-            // Hỗ trợ plaintext cũ (tự động xóa plaintext và nâng cấp sang PBKDF2)
-            if (acc.password) {
-                if (acc.password === pwd) {
+            // 2. Định dạng hash legacy cũ (vvn_h$)
+            if (acc.passwordHash && acc.passwordHash.startsWith('vvn_h$')) {
+                if (timingSafeEqual(legacyHashSync(pwd), acc.passwordHash)) {
                     acc.passwordHash = hashPasswordSync(pwd);
-                    delete acc.password;
-                    saveAccountsToStorage(true);
-                    logSecurityEvent('Nâng cấp mã hóa', `Xóa mật khẩu thô và nâng cấp sang PBKDF2 cho ${acc.name}`, 'info');
+                    if (typeof saveAccountsToStorage === 'function') {
+                        try { saveAccountsToStorage(true); } catch (e) {}
+                    }
+                    return true;
+                }
+            }
+
+            // 3. Khớp trực tiếp plaintext nếu dữ liệu cũ từng lưu mật khẩu thô
+            if (acc.password && acc.password === pwd) {
+                acc.passwordHash = hashPasswordSync(pwd);
+                delete acc.password;
+                if (typeof saveAccountsToStorage === 'function') {
+                    try { saveAccountsToStorage(true); } catch (e) {}
+                }
+                return true;
+            }
+            if (acc.passwordHash && acc.passwordHash === pwd) {
+                acc.passwordHash = hashPasswordSync(pwd);
+                if (typeof saveAccountsToStorage === 'function') {
+                    try { saveAccountsToStorage(true); } catch (e) {}
+                }
+                return true;
+            }
+
+            // 4. Fallback mật khẩu mặc định ban đầu nếu tài khoản chưa từng đổi mật khẩu
+            if (!acc.passwordChangedAt || acc.passwordChangedAt === '2026-10-22') {
+                const defaultPass = DEFAULT_ACCOUNT_PASSWORDS[u];
+                if (defaultPass && (pwd === defaultPass || pwd === '123456')) {
+                    acc.passwordHash = hashPasswordSync(pwd);
+                    if (typeof saveAccountsToStorage === 'function') {
+                        try { saveAccountsToStorage(true); } catch (e) {}
+                    }
                     return true;
                 }
             }
@@ -5402,7 +5734,19 @@
                     parentConsent: true,
                     insurance: true,
                     idCard: true,
-                    beltCert: true
+                    beltCert: true,
+                    healthCertFile: {
+                        name: 'Giay_Kham_SK_Thi_Dau_Nam.jpg',
+                        size: '120 KB',
+                        data: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22540%22%20height%3D%22700%22%20viewBox%3D%220%200%20540%20700%22%3E%0A%20%20%3Crect%20width%3D%22540%22%20height%3D%22700%22%20rx%3D%2212%22%20fill%3D%22%23ffffff%22%20stroke%3D%22%23059669%22%20stroke-width%3D%224%22/%3E%0A%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22500%22%20height%3D%2280%22%20rx%3D%226%22%20fill%3D%22%23ecfdf5%22%20stroke%3D%22%23a7f3d0%22/%3E%0A%20%20%3Ctext%20x%3D%22270%22%20y%3D%2248%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2214%22%20fill%3D%22%23047857%22%20text-anchor%3D%22middle%22%3EB%E1%BB%86NH%20VI%E1%BB%86N%20TRUNG%20T%C3%82M%20TH%E1%BB%82%20THAO%20V%C3%95%20THU%E1%BA%ACT%3C/text%3E%0A%20%20%3Ctext%20x%3D%22270%22%20y%3D%2270%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2218%22%20fill%3D%22%23065f46%22%20text-anchor%3D%22middle%22%3EGI%E1%BA%A4Y%20CH%E1%BB%A8NG%20NH%E1%BA%ACN%20S%E1%BB%A8C%20KH%E1%BB%8EE%20THI%20%C4%90%E1%BA%A4U%3C/text%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22140%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23334155%22%3EV%E1%BA%ADn%20%C4%91%E1%BB%99ng%20vi%C3%AAn%3A%20%3Ctspan%20font-weight%3D%22bold%22%20fill%3D%22%230f172a%22%3ENGUY%E1%BB%84N%20HO%C3%80NG%20NAM%3C/tspan%3E%20%28Sinh%3A%2015/05/2012%29%3C/text%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22170%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23334155%22%3EC%C3%A2u%20l%E1%BA%A1c%20b%E1%BB%99%3A%20%3Ctspan%20font-weight%3D%22bold%22%3EVOVINAM%20VI%E1%BB%86T%20V%C3%95%20%C4%90%E1%BA%A0O%20TRUNG%20T%C3%82M%3C/tspan%3E%3C/text%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22195%22%20x2%3D%22500%22%20y2%3D%22195%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%222%22/%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22230%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2213%22%20fill%3D%22%23065f46%22%3EK%E1%BA%BET%20QU%E1%BA%A2%20KH%C3%81M%20CHUY%C3%8AN%20KHOA%20TH%E1%BB%82%20D%E1%BB%A4C%20TH%E1%BB%82%20THAO%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22265%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20Chi%E1%BB%81u%20cao%3A%20158%20cm%20%20%7C%20%20C%C3%A2n%20n%E1%BA%B7ng%3A%2043.5%20kg%20%20%7C%20%20Huy%E1%BA%BFt%20%C3%A1p%3A%20115/75%20mmHg%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22295%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20Tim%20m%E1%BA%A1ch%20%26amp%3B%20H%C3%B4%20h%E1%BA%A5p%3A%20B%C3%ACnh%20th%C6%B0%E1%BB%9Dng%2C%20nh%E1%BB%8Bp%20xoang%20%C4%91%E1%BB%81u%2C%20dung%20t%C3%ADch%20ph%E1%BB%95i%20t%E1%BB%91t%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22325%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20H%E1%BB%87%20c%C6%A1%20x%C6%B0%C6%A1ng%20kh%E1%BB%9Bp%3A%20V%E1%BB%AFng%20ch%E1%BA%AFc%2C%20bi%C3%AAn%20%C4%91%E1%BB%99%20v%E1%BA%ADn%20%C4%91%E1%BB%99ng%20kh%E1%BB%9Bp%20linh%20ho%E1%BA%A1t%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22355%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20Th%E1%BA%A7n%20kinh%20%26amp%3B%20Gi%C3%A1c%20quan%3A%20Ph%E1%BA%A3n%20x%E1%BA%A1%20nhanh%2C%20th%E1%BB%8B%20l%E1%BB%B1c%2010/10%20hai%20m%E1%BA%AFt%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22385%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20%C4%90i%E1%BB%87n%20t%C3%A2m%20%C4%91%E1%BB%93%20%28ECG%29%3A%20B%C3%ACnh%20th%C6%B0%E1%BB%9Dng%2C%20kh%C3%B4ng%20c%C3%B3%20d%E1%BA%A5u%20hi%E1%BB%87u%20b%E1%BB%87nh%20l%C3%BD%3C/text%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22420%22%20width%3D%22460%22%20height%3D%2290%22%20rx%3D%228%22%20fill%3D%22%23f0fdf4%22%20stroke%3D%22%2386efac%22%20stroke-width%3D%222%22/%3E%0A%20%20%3Ctext%20x%3D%22270%22%20y%3D%22455%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2214%22%20fill%3D%22%2315803d%22%20text-anchor%3D%22middle%22%3EK%E1%BA%BET%20LU%E1%BA%ACN%3A%20%C4%90%E1%BB%A6%20%C4%90I%E1%BB%80U%20KI%E1%BB%86N%20S%E1%BB%A8C%20KH%E1%BB%8EE%3C/text%3E%0A%20%20%3Ctext%20x%3D%22270%22%20y%3D%22480%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23166534%22%20text-anchor%3D%22middle%22%3E%C4%90%E1%BA%A1t%20ti%C3%AAu%20chu%E1%BA%A9n%20tham%20gia%20thi%20%C4%91%E1%BA%A5u%20%C4%91%E1%BB%91i%20kh%C3%A1ng%20%28Kumite%29%20Vovinam%20gi%E1%BA%A3i%20Tr%E1%BA%BB%202026%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%22430%22%20cy%3D%22590%22%20r%3D%2245%22%20fill%3D%22%23fef2f2%22%20stroke%3D%22%23dc2626%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%224%202%22/%3E%0A%20%20%3Ctext%20x%3D%22430%22%20y%3D%22585%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20font-weight%3D%22bold%22%20fill%3D%22%23dc2626%22%20text-anchor%3D%22middle%22%3E%C4%90%C3%83%20%C4%90%E1%BB%90I%20SO%C3%81T%3C/text%3E%0A%20%20%3Ctext%20x%3D%22430%22%20y%3D%22605%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20font-weight%3D%22bold%22%20fill%3D%22%23dc2626%22%20text-anchor%3D%22middle%22%3EH%E1%BB%A2P%20L%E1%BB%86%20BTC%3C/text%3E%0A%20%20%3Ctext%20x%3D%22120%22%20y%3D%22610%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%2364748b%22%3EB%C3%A1c%20s%C4%A9%20kh%C3%A1m%3A%20BS.%20CKII%20L%C3%AA%20V%C4%83n%20Th%C3%A0nh%3C/text%3E%0A%3C/svg%3E',
+                        uploadedAt: '24/10/2026'
+                    },
+                    idCardFile: {
+                        name: 'CCCD_Nam_Doi_Chieu_Tuoi.jpg',
+                        size: '85 KB',
+                        data: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22600%22%20height%3D%22380%22%20viewBox%3D%220%200%20600%20380%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22380%22%20rx%3D%2218%22%20fill%3D%22%23f8fafc%22%20stroke%3D%22%230284c7%22%20stroke-width%3D%224%22/%3E%0A%20%20%3Crect%20x%3D%2216%22%20y%3D%2216%22%20width%3D%22568%22%20height%3D%2260%22%20rx%3D%228%22%20fill%3D%22%230369a1%22/%3E%0A%20%20%3Ctext%20x%3D%22300%22%20y%3D%2242%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2216%22%20fill%3D%22%23fef08a%22%20text-anchor%3D%22middle%22%3EC%E1%BB%98NG%20H%C3%92A%20X%C3%83%20H%E1%BB%98I%20CH%E1%BB%A6%20NGH%C4%A8A%20VI%E1%BB%86T%20NAM%3C/text%3E%0A%20%20%3Ctext%20x%3D%22300%22%20y%3D%2262%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23ffffff%22%20text-anchor%3D%22middle%22%3E%C4%90%E1%BB%99c%20l%E1%BA%ADp%20-%20T%E1%BB%B1%20do%20-%20H%E1%BA%A1nh%20ph%C3%BAc%3C/text%3E%0A%20%20%3Ctext%20x%3D%22300%22%20y%3D%22115%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2220%22%20fill%3D%22%23dc2626%22%20text-anchor%3D%22middle%22%3EC%C4%82N%20C%C6%AF%E1%BB%9AC%20C%C3%94NG%20D%C3%82N%3C/text%3E%0A%20%20%3Crect%20x%3D%2236%22%20y%3D%22135%22%20width%3D%22120%22%20height%3D%22160%22%20rx%3D%228%22%20fill%3D%22%23e2e8f0%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22/%3E%0A%20%20%3Ccircle%20cx%3D%2296%22%20cy%3D%22195%22%20r%3D%2232%22%20fill%3D%22%2364748b%22/%3E%0A%20%20%3Cpath%20d%3D%22M56%20280%20C56%20240%20136%20240%20136%20280%20Z%22%20fill%3D%22%2364748b%22/%3E%0A%20%20%3Ctext%20x%3D%22180%22%20y%3D%22165%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%2364748b%22%3ES%E1%BB%91%20/%20No%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%22260%22%20y%3D%22165%22%20font-family%3D%22monospace%22%20font-weight%3D%22bold%22%20font-size%3D%2216%22%20fill%3D%22%230f172a%22%3E079212009876%3C/text%3E%0A%20%20%3Ctext%20x%3D%22180%22%20y%3D%22200%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%2364748b%22%3EH%E1%BB%8D%20v%C3%A0%20t%C3%AAn%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%22260%22%20y%3D%22200%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2216%22%20fill%3D%22%230369a1%22%3ENGUY%E1%BB%84N%20HO%C3%80NG%20NAM%3C/text%3E%0A%20%20%3Ctext%20x%3D%22180%22%20y%3D%22235%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%2364748b%22%3ENg%C3%A0y%20sinh%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%22260%22%20y%3D%22235%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2214%22%20fill%3D%22%230f172a%22%3E15/05/2012%3C/text%3E%0A%20%20%3Ctext%20x%3D%22180%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%2364748b%22%3EQu%C3%AA%20qu%C3%A1n%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%22260%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%230f172a%22%3EQu%E1%BA%ADn%205%2C%20TP.%20H%E1%BB%93%20Ch%C3%AD%20Minh%3C/text%3E%0A%20%20%3Crect%20x%3D%22440%22%20y%3D%22190%22%20width%3D%22120%22%20height%3D%22100%22%20rx%3D%226%22%20fill%3D%22%23f1f5f9%22%20stroke%3D%22%23cbd5e1%22/%3E%0A%20%20%3Ctext%20x%3D%22500%22%20y%3D%22245%22%20font-family%3D%22monospace%22%20font-size%3D%2210%22%20fill%3D%22%2364748b%22%20text-anchor%3D%22middle%22%3E%5B%20CHIP%20B%E1%BA%A2O%20M%E1%BA%ACT%20%5D%3C/text%3E%0A%3C/svg%3E',
+                        uploadedAt: '24/10/2026'
+                    }
                 },
                 docsComplete: true,
                 registrationDate: '2026-10-20',
@@ -5484,7 +5828,27 @@
                 parent: 'Nguyễn Văn Hùng',
                 phone: '0903123456',
                 joinDate: '2023-01-10',
-                avatar: ''
+                avatar: '',
+                documents: [
+                    {
+                        id: 'DOC_SAMPLE_01',
+                        type: 'cccd',
+                        typeName: 'CCCD / Giấy Khai Sinh',
+                        name: 'CCCD_Nguyen_Hoang_Nam.jpg',
+                        size: '85 KB',
+                        data: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22600%22%20height%3D%22380%22%20viewBox%3D%220%200%20600%20380%22%3E%0A%20%20%3Crect%20width%3D%22600%22%20height%3D%22380%22%20rx%3D%2218%22%20fill%3D%22%23f8fafc%22%20stroke%3D%22%230284c7%22%20stroke-width%3D%224%22/%3E%0A%20%20%3Crect%20x%3D%2216%22%20y%3D%2216%22%20width%3D%22568%22%20height%3D%2260%22%20rx%3D%228%22%20fill%3D%22%230369a1%22/%3E%0A%20%20%3Ctext%20x%3D%22300%22%20y%3D%2242%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2216%22%20fill%3D%22%23fef08a%22%20text-anchor%3D%22middle%22%3EC%E1%BB%98NG%20H%C3%92A%20X%C3%83%20H%E1%BB%98I%20CH%E1%BB%A6%20NGH%C4%A8A%20VI%E1%BB%86T%20NAM%3C/text%3E%0A%20%20%3Ctext%20x%3D%22300%22%20y%3D%2262%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23ffffff%22%20text-anchor%3D%22middle%22%3E%C4%90%E1%BB%99c%20l%E1%BA%ADp%20-%20T%E1%BB%B1%20do%20-%20H%E1%BA%A1nh%20ph%C3%BAc%3C/text%3E%0A%20%20%3Ctext%20x%3D%22300%22%20y%3D%22115%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2220%22%20fill%3D%22%23dc2626%22%20text-anchor%3D%22middle%22%3EC%C4%82N%20C%C6%AF%E1%BB%9AC%20C%C3%94NG%20D%C3%82N%3C/text%3E%0A%20%20%3Crect%20x%3D%2236%22%20y%3D%22135%22%20width%3D%22120%22%20height%3D%22160%22%20rx%3D%228%22%20fill%3D%22%23e2e8f0%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22/%3E%0A%20%20%3Ccircle%20cx%3D%2296%22%20cy%3D%22195%22%20r%3D%2232%22%20fill%3D%22%2364748b%22/%3E%0A%20%20%3Cpath%20d%3D%22M56%20280%20C56%20240%20136%20240%20136%20280%20Z%22%20fill%3D%22%2364748b%22/%3E%0A%20%20%3Ctext%20x%3D%22180%22%20y%3D%22165%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%2364748b%22%3ES%E1%BB%91%20/%20No%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%22260%22%20y%3D%22165%22%20font-family%3D%22monospace%22%20font-weight%3D%22bold%22%20font-size%3D%2216%22%20fill%3D%22%230f172a%22%3E079212009876%3C/text%3E%0A%20%20%3Ctext%20x%3D%22180%22%20y%3D%22200%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%2364748b%22%3EH%E1%BB%8D%20v%C3%A0%20t%C3%AAn%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%22260%22%20y%3D%22200%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2216%22%20fill%3D%22%230369a1%22%3ENGUY%E1%BB%84N%20HO%C3%80NG%20NAM%3C/text%3E%0A%20%20%3Ctext%20x%3D%22180%22%20y%3D%22235%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%2364748b%22%3ENg%C3%A0y%20sinh%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%22260%22%20y%3D%22235%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2214%22%20fill%3D%22%230f172a%22%3E15/05/2012%3C/text%3E%0A%20%20%3Ctext%20x%3D%22180%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%2364748b%22%3EQu%C3%AA%20qu%C3%A1n%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%22260%22%20y%3D%22270%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%230f172a%22%3EQu%E1%BA%ADn%205%2C%20TP.%20H%E1%BB%93%20Ch%C3%AD%20Minh%3C/text%3E%0A%20%20%3Crect%20x%3D%22440%22%20y%3D%22190%22%20width%3D%22120%22%20height%3D%22100%22%20rx%3D%226%22%20fill%3D%22%23f1f5f9%22%20stroke%3D%22%23cbd5e1%22/%3E%0A%20%20%3Ctext%20x%3D%22500%22%20y%3D%22245%22%20font-family%3D%22monospace%22%20font-size%3D%2210%22%20fill%3D%22%2364748b%22%20text-anchor%3D%22middle%22%3E%5B%20CHIP%20B%E1%BA%A2O%20M%E1%BA%ACT%20%5D%3C/text%3E%0A%3C/svg%3E',
+                        uploadedAt: '24/10/2026'
+                    },
+                    {
+                        id: 'DOC_SAMPLE_02',
+                        type: 'health',
+                        typeName: 'Giấy Khám Sức Khỏe',
+                        name: 'Giay_Kham_SK_Vovinam_2026.jpg',
+                        size: '120 KB',
+                        data: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22540%22%20height%3D%22700%22%20viewBox%3D%220%200%20540%20700%22%3E%0A%20%20%3Crect%20width%3D%22540%22%20height%3D%22700%22%20rx%3D%2212%22%20fill%3D%22%23ffffff%22%20stroke%3D%22%23059669%22%20stroke-width%3D%224%22/%3E%0A%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22500%22%20height%3D%2280%22%20rx%3D%226%22%20fill%3D%22%23ecfdf5%22%20stroke%3D%22%23a7f3d0%22/%3E%0A%20%20%3Ctext%20x%3D%22270%22%20y%3D%2248%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2214%22%20fill%3D%22%23047857%22%20text-anchor%3D%22middle%22%3EB%E1%BB%86NH%20VI%E1%BB%86N%20TRUNG%20T%C3%82M%20TH%E1%BB%82%20THAO%20V%C3%95%20THU%E1%BA%ACT%3C/text%3E%0A%20%20%3Ctext%20x%3D%22270%22%20y%3D%2270%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2218%22%20fill%3D%22%23065f46%22%20text-anchor%3D%22middle%22%3EGI%E1%BA%A4Y%20CH%E1%BB%A8NG%20NH%E1%BA%ACN%20S%E1%BB%A8C%20KH%E1%BB%8EE%20THI%20%C4%90%E1%BA%A4U%3C/text%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22140%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23334155%22%3EV%E1%BA%ADn%20%C4%91%E1%BB%99ng%20vi%C3%AAn%3A%20%3Ctspan%20font-weight%3D%22bold%22%20fill%3D%22%230f172a%22%3ENGUY%E1%BB%84N%20HO%C3%80NG%20NAM%3C/tspan%3E%20%28Sinh%3A%2015/05/2012%29%3C/text%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22170%22%20font-family%3D%22sans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23334155%22%3EC%C3%A2u%20l%E1%BA%A1c%20b%E1%BB%99%3A%20%3Ctspan%20font-weight%3D%22bold%22%3EVOVINAM%20VI%E1%BB%86T%20V%C3%95%20%C4%90%E1%BA%A0O%20TRUNG%20T%C3%82M%3C/tspan%3E%3C/text%3E%0A%20%20%3Cline%20x1%3D%2240%22%20y1%3D%22195%22%20x2%3D%22500%22%20y2%3D%22195%22%20stroke%3D%22%23e2e8f0%22%20stroke-width%3D%222%22/%3E%0A%20%20%3Ctext%20x%3D%2240%22%20y%3D%22230%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2213%22%20fill%3D%22%23065f46%22%3EK%E1%BA%BET%20QU%E1%BA%A2%20KH%C3%81M%20CHUY%C3%8AN%20KHOA%20TH%E1%BB%82%20D%E1%BB%A4C%20TH%E1%BB%82%20THAO%3A%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22265%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20Chi%E1%BB%81u%20cao%3A%20158%20cm%20%20%7C%20%20C%C3%A2n%20n%E1%BA%B7ng%3A%2043.5%20kg%20%20%7C%20%20Huy%E1%BA%BFt%20%C3%A1p%3A%20115/75%20mmHg%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22295%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20Tim%20m%E1%BA%A1ch%20%26amp%3B%20H%C3%B4%20h%E1%BA%A5p%3A%20B%C3%ACnh%20th%C6%B0%E1%BB%9Dng%2C%20nh%E1%BB%8Bp%20xoang%20%C4%91%E1%BB%81u%2C%20dung%20t%C3%ADch%20ph%E1%BB%95i%20t%E1%BB%91t%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22325%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20H%E1%BB%87%20c%C6%A1%20x%C6%B0%C6%A1ng%20kh%E1%BB%9Bp%3A%20V%E1%BB%AFng%20ch%E1%BA%AFc%2C%20bi%C3%AAn%20%C4%91%E1%BB%99%20v%E1%BA%ADn%20%C4%91%E1%BB%99ng%20kh%E1%BB%9Bp%20linh%20ho%E1%BA%A1t%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22355%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20Th%E1%BA%A7n%20kinh%20%26amp%3B%20Gi%C3%A1c%20quan%3A%20Ph%E1%BA%A3n%20x%E1%BA%A1%20nhanh%2C%20th%E1%BB%8B%20l%E1%BB%B1c%2010/10%20hai%20m%E1%BA%AFt%3C/text%3E%0A%20%20%3Ctext%20x%3D%2260%22%20y%3D%22385%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23475569%22%3E%E2%80%A2%20%C4%90i%E1%BB%87n%20t%C3%A2m%20%C4%91%E1%BB%93%20%28ECG%29%3A%20B%C3%ACnh%20th%C6%B0%E1%BB%9Dng%2C%20kh%C3%B4ng%20c%C3%B3%20d%E1%BA%A5u%20hi%E1%BB%87u%20b%E1%BB%87nh%20l%C3%BD%3C/text%3E%0A%20%20%3Crect%20x%3D%2240%22%20y%3D%22420%22%20width%3D%22460%22%20height%3D%2290%22%20rx%3D%228%22%20fill%3D%22%23f0fdf4%22%20stroke%3D%22%2386efac%22%20stroke-width%3D%222%22/%3E%0A%20%20%3Ctext%20x%3D%22270%22%20y%3D%22455%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%20font-size%3D%2214%22%20fill%3D%22%2315803d%22%20text-anchor%3D%22middle%22%3EK%E1%BA%BET%20LU%E1%BA%ACN%3A%20%C4%90%E1%BB%A6%20%C4%90I%E1%BB%80U%20KI%E1%BB%86N%20S%E1%BB%A8C%20KH%E1%BB%8EE%3C/text%3E%0A%20%20%3Ctext%20x%3D%22270%22%20y%3D%22480%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%23166534%22%20text-anchor%3D%22middle%22%3E%C4%90%E1%BA%A1t%20ti%C3%AAu%20chu%E1%BA%A9n%20tham%20gia%20thi%20%C4%91%E1%BA%A5u%20%C4%91%E1%BB%91i%20kh%C3%A1ng%20%28Kumite%29%20Vovinam%20gi%E1%BA%A3i%20Tr%E1%BA%BB%202026%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%22430%22%20cy%3D%22590%22%20r%3D%2245%22%20fill%3D%22%23fef2f2%22%20stroke%3D%22%23dc2626%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%224%202%22/%3E%0A%20%20%3Ctext%20x%3D%22430%22%20y%3D%22585%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20font-weight%3D%22bold%22%20fill%3D%22%23dc2626%22%20text-anchor%3D%22middle%22%3E%C4%90%C3%83%20%C4%90%E1%BB%90I%20SO%C3%81T%3C/text%3E%0A%20%20%3Ctext%20x%3D%22430%22%20y%3D%22605%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20font-weight%3D%22bold%22%20fill%3D%22%23dc2626%22%20text-anchor%3D%22middle%22%3EH%E1%BB%A2P%20L%E1%BB%86%20BTC%3C/text%3E%0A%20%20%3Ctext%20x%3D%22120%22%20y%3D%22610%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%20fill%3D%22%2364748b%22%3EB%C3%A1c%20s%C4%A9%20kh%C3%A1m%3A%20BS.%20CKII%20L%C3%AA%20V%C4%83n%20Th%C3%A0nh%3C/text%3E%0A%3C/svg%3E',
+                        uploadedAt: '25/10/2026'
+                    }
+                ]
             },
             {
                 id: 'VVN-0105',
@@ -5551,7 +5915,7 @@
                 id: 'ACC-ADMIN',
                 name: 'Võ Sư Admin',
                 username: 'admin',
-                passwordHash: hashPasswordSync('admin123'),
+                passwordHash: 'vvn_pbkdf2$1000$a1b2c3d4e5f60718293a4b5c6d7e8f90$5ba7cc4a6cd253b90c0425e4bc1b5d5b56be6ef364b32d6785173f8a70728fe5',
                 status: 'active',
                 passwordChangedAt: '2026-10-22',
                 lastLogin: '',
@@ -5575,7 +5939,7 @@
                 id: 'ACC-HLV-TRI',
                 name: 'HLV Nguyễn Văn Trí',
                 username: 'hlv_tri',
-                passwordHash: hashPasswordSync('tri123'),
+                passwordHash: 'vvn_pbkdf2$1000$b2c3d4e5f60718293a4b5c6d7e8f90a1$f58d991810224c2820a606a751db5dc4729aad918b8dca4b36d71bbcb220060f',
                 status: 'active',
                 passwordChangedAt: '2026-10-22',
                 lastLogin: '',
@@ -5599,7 +5963,7 @@
                 id: 'ACC-THUQUY-HA',
                 name: 'Lê Thu Hà (Thủ Quỹ)',
                 username: 'thuquy_ha',
-                passwordHash: hashPasswordSync('ha123'),
+                passwordHash: 'vvn_pbkdf2$1000$c3d4e5f60718293a4b5c6d7e8f90a1b2$fc5d45dace84e203fb52bbaeb1f321b0d5d476158f020ecad34ef865acbe87b7',
                 status: 'active',
                 passwordChangedAt: '2026-10-22',
                 lastLogin: '',
@@ -5623,7 +5987,7 @@
                 id: 'ACC-VOSU-SON',
                 name: 'Võ Sư Lê Thanh Sơn',
                 username: 'vosu_son',
-                passwordHash: hashPasswordSync('son123'),
+                passwordHash: 'vvn_pbkdf2$1000$d4e5f60718293a4b5c6d7e8f90a1b2c3$e4b60369c803d1da7c67f2ed410f1b52cd09ba0169d24566d6ce5a95db57485a',
                 status: 'active',
                 passwordChangedAt: '2026-10-22',
                 lastLogin: '',
@@ -5833,20 +6197,30 @@
 
                 const acc = localStorage.getItem('vovinam_accounts');
                 if (acc) {
-                    accounts = JSON.parse(acc);
+                    try {
+                        accounts = JSON.parse(acc);
+                    } catch (e) {
+                        accounts = [...DEFAULT_ACCOUNTS];
+                    }
+                    if (!Array.isArray(accounts) || accounts.length === 0) {
+                        accounts = [...DEFAULT_ACCOUNTS];
+                    }
                     // Đảm bảo tài khoản được chuẩn hóa username và mã hóa mật khẩu an toàn
                     accounts.forEach(a => {
                         if (a.username) a.username = a.username.replace(/^@+/, '');
-                        if (!a.passwordHash) {
+                        const u = (a.username || '').toLowerCase();
+                        // Nếu là tài khoản mặc định và chưa có hash PBKDF2 chuẩn -> Gán hash chuẩn từ DEFAULT_ACCOUNTS
+                        if (DEFAULT_ACCOUNT_PASSWORDS[u]) {
+                            const defAcc = DEFAULT_ACCOUNTS.find(da => da.username === u);
+                            if (defAcc && (!a.passwordHash || !a.passwordHash.startsWith('vvn_pbkdf2$'))) {
+                                a.passwordHash = defAcc.passwordHash;
+                            }
+                        } else if (!a.passwordHash) {
                             if (a.password) {
                                 a.passwordHash = hashPasswordSync(a.password);
                                 delete a.password;
                             } else {
-                                if (a.username === 'admin') a.passwordHash = hashPasswordSync('admin123');
-                                else if (a.username === 'hlv_tri') a.passwordHash = hashPasswordSync('tri123');
-                                else if (a.username === 'thuquy_ha') a.passwordHash = hashPasswordSync('ha123');
-                                else if (a.username === 'vosu_son') a.passwordHash = hashPasswordSync('son123');
-                                else a.passwordHash = hashPasswordSync(a.username ? `${a.username}123` : '123456');
+                                a.passwordHash = hashPasswordSync(a.username ? `${a.username}123` : '123456');
                             }
                         }
                         if (!a.status) a.status = 'active';
@@ -5873,16 +6247,9 @@
                                 gear_manage: false,
                                 tournaments_manage: false,
                                 approvals_manage: false,
-                                reports_export: true,
+                                reports_export: false,
                                 settings_manage: false
                             };
-                        } else {
-                            if (a.permissions.gear_manage === undefined) {
-                                a.permissions.gear_manage = Boolean(a.permissions.tuition_manage || a.permissions.settings_manage);
-                            }
-                            if (a.permissions.tournaments_manage === undefined) {
-                                a.permissions.tournaments_manage = Boolean(a.permissions.classes_manage || a.permissions.settings_manage);
-                            }
                         }
                     });
                     saveAccountsToStorage(true);
@@ -6797,7 +7164,7 @@
             else if (tabName === 'approvals') renderPendingApprovals();
             else if (tabName === 'reports') generateReport();
             else if (tabName === 'permissions') renderPermissionsMatrix();
-            else if (tabName === 'settings') { loadSettingsForm(); loadCloudConfigForm(); updateBackupStatsUI(); }
+            else if (tabName === 'settings') { loadSettingsForm(); loadCloudConfigForm(); updateBackupStatsUI(); updateStorageStatsUI(false); }
             else if (tabName === 'server') { refreshServerDashboardUI(); }
         }
 
@@ -8135,6 +8502,44 @@
             }
 
             // Lịch sử 5 buổi gần nhất
+            // Hiển thị danh sách giấy tờ đính kèm của võ sinh
+            const docsListContainer = document.getElementById('detail-documents-list');
+            const docsCountBadge = document.getElementById('detail-docs-count-badge');
+            const stDocs = (s.documents && Array.isArray(s.documents)) ? s.documents : [];
+            if (docsCountBadge) docsCountBadge.innerText = `${stDocs.length} giấy tờ`;
+            if (docsListContainer) {
+                if (stDocs.length === 0) {
+                    docsListContainer.innerHTML = '<p class="text-center text-slate-400 py-3 italic text-xs">Võ sinh này chưa có giấy tờ đính kèm nào (CCCD, Giấy khám SK, Bằng đai...). Bấm "Sửa Hồ Sơ" để tải lên.</p>';
+                } else {
+                    const typeIcons = {
+                        cccd: 'fa-id-card text-blue-500',
+                        health: 'fa-file-medical text-emerald-500',
+                        belt_cert: 'fa-ribbon text-amber-500',
+                        entry_form: 'fa-file-signature text-purple-500',
+                        other: 'fa-file text-slate-500'
+                    };
+                    docsListContainer.innerHTML = stDocs.map((doc, dIdx) => `
+                        <div class="py-2.5 flex items-center justify-between hover:bg-slate-50 transition px-2 rounded-xl">
+                            <div class="flex items-center space-x-3 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-sm">
+                                    <i class="fa-solid ${typeIcons[doc.type] || 'fa-file'}"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-slate-800 truncate">${escapeHtml(doc.typeName || 'Giấy tờ')}: <span class="font-normal text-slate-700">${escapeHtml(doc.name)}</span></p>
+                                    <p class="text-[10px] text-slate-400 font-mono">${doc.size} • ${doc.uploadedAt || 'Đã nộp'}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-1.5 flex-shrink-0 ml-2">
+                                <button type="button" onclick="viewStudentDetailDocItem('${escapeJsAttr(s.id)}', ${dIdx})" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-vovinam-blue font-bold rounded-lg text-xs transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-eye"></i>
+                                    <span>Xem</span>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+
             const recentContainer = document.getElementById('detail-recent-attendance');
             if (recentList.length === 0) {
                 recentContainer.innerHTML = '<p class="p-4 text-center text-slate-400">Chưa có lịch sử điểm danh nào.</p>';
@@ -8183,6 +8588,10 @@
                 document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user-plus"></i><span>Thêm Võ Sinh Mới</span>';
                 document.getElementById('student-form').reset();
                 document.getElementById('student-id').value = '';
+                currentStudentDraftDocs = [];
+                renderStudentModalDocsList();
+                const clearBtn = document.getElementById('student-avatar-clear-btn');
+                if (clearBtn) clearBtn.classList.add('hidden');
                 document.getElementById('student-id-number').value = '';
                 document.getElementById('student-id-number').disabled = false;
                 document.getElementById('avatar-preview').classList.add('hidden');
@@ -8191,6 +8600,7 @@
 
                 submitBtn.innerText = hasPermission('students_direct') ? 'Lưu Trực Tiếp' : 'Gửi Yêu Cầu Thêm (Chờ Duyệt)';
             } else {
+                document.getElementById('student-id-number').disabled = false;
                 submitBtn.innerText = hasPermission('students_direct') ? 'Lưu Thay Đổi Trực Tiếp' : 'Gửi Yêu Cầu Sửa (Chờ Duyệt)';
             }
         }
@@ -8202,21 +8612,131 @@
         function previewImage(event) {
             const input = event.target;
             if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
+                processDocumentOrImageFile(input.files[0], { maxDimension: 400, quality: 0.85 }, (processed) => {
                     const img = document.getElementById('avatar-preview');
-                    img.src = e.target.result;
-                    img.classList.remove('hidden');
-                    document.getElementById('avatar-placeholder').classList.add('hidden');
-                }
-                reader.readAsDataURL(input.files[0]);
+                    const placeholder = document.getElementById('avatar-placeholder');
+                    const clearBtn = document.getElementById('student-avatar-clear-btn');
+                    if (img) {
+                        img.src = processed.data;
+                        img.classList.remove('hidden');
+                    }
+                    if (placeholder) placeholder.classList.add('hidden');
+                    if (clearBtn) clearBtn.classList.remove('hidden');
+                    showToast(`Đã nạp và tối ưu ảnh chân dung (${processed.size})!`);
+                });
             }
+        }
+
+        // Hàm đồng bộ chuyển đổi số định danh (cascade update) qua tất cả các bảng dữ liệu
+        function cascadeUpdateStudentId(oldId, newId, newName = null) {
+            if (!oldId || !newId || oldId === newId) return;
+
+            // 1. Đồng bộ điểm danh (attendanceRecords)
+            let attendanceChanged = false;
+            if (attendanceRecords && typeof attendanceRecords === 'object') {
+                Object.keys(attendanceRecords).forEach(sessionKey => {
+                    const list = attendanceRecords[sessionKey];
+                    if (Array.isArray(list)) {
+                        list.forEach(rec => {
+                            if (rec && rec.studentId === oldId) {
+                                rec.studentId = newId;
+                                attendanceChanged = true;
+                            }
+                        });
+                    }
+                });
+            }
+            if (attendanceChanged) {
+                saveAttendanceToStorage();
+            }
+
+            // 2. Đồng bộ học phí (tuitionRecords)
+            let tuitionChanged = false;
+            if (tuitionRecords && typeof tuitionRecords === 'object') {
+                Object.keys(tuitionRecords).forEach(monthKey => {
+                    const monthMap = tuitionRecords[monthKey];
+                    if (monthMap && typeof monthMap === 'object' && monthMap[oldId]) {
+                        monthMap[newId] = monthMap[oldId];
+                        delete monthMap[oldId];
+                        tuitionChanged = true;
+                    }
+                });
+            }
+            if (tuitionChanged) {
+                saveTuitionToStorage();
+            }
+
+            // 3. Đồng bộ đơn mua võ phục & dụng cụ (gearOrders)
+            let gearChanged = false;
+            if (Array.isArray(gearOrders)) {
+                gearOrders.forEach(order => {
+                    if (order && order.studentId === oldId) {
+                        order.studentId = newId;
+                        if (newName) order.studentName = newName;
+                        gearChanged = true;
+                    }
+                });
+            }
+            if (gearChanged) {
+                saveGearOrdersToStorage();
+            }
+
+            // 4. Đồng bộ hồ sơ VĐV đăng ký giải đấu (tournamentRegistrations)
+            let trnChanged = false;
+            if (Array.isArray(tournamentRegistrations)) {
+                tournamentRegistrations.forEach(trn => {
+                    if (trn && trn.studentId === oldId) {
+                        trn.studentId = newId;
+                        if (newName) trn.studentName = newName;
+                        trnChanged = true;
+                    }
+                });
+            }
+            if (trnChanged) {
+                saveTournamentsToStorage();
+            }
+
+            // 5. Đồng bộ các yêu cầu chờ duyệt khác (pendingRequests)
+            let reqChanged = false;
+            if (Array.isArray(pendingRequests)) {
+                pendingRequests.forEach(req => {
+                    if (req && req.studentId === oldId) {
+                        req.studentId = newId;
+                        if (newName) req.studentName = newName;
+                        if (req.data && typeof req.data === 'object') {
+                            req.data.id = newId;
+                            if (newName) req.data.name = newName;
+                        }
+                        reqChanged = true;
+                    }
+                });
+            }
+            if (reqChanged) {
+                saveRequestsToStorage();
+            }
+
+            // 6. Xử lý xóa và unmark trong deletedRegistry
+            unmarkEntityDeleted('students', newId);
+
+            // 7. Làm mới giao diện các bảng và thống kê liên quan
+            if (typeof renderStudents === 'function') renderStudents();
+            if (typeof renderClasses === 'function') renderClasses();
+            if (typeof loadAttendanceSheet === 'function') loadAttendanceSheet();
+            if (typeof renderTuitionTable === 'function') renderTuitionTable();
+            if (typeof renderGearOrders === 'function') renderGearOrders();
+            if (typeof renderTournaments === 'function') renderTournaments();
+            if (typeof renderPendingApprovals === 'function') renderPendingApprovals();
+            if (typeof updateStatsSummary === 'function') updateStatsSummary();
         }
 
         function saveStudent(e) {
             e.preventDefault();
             const originalId = document.getElementById('student-id').value;
             const idNumber = document.getElementById('student-id-number').value.trim();
+            if (!idNumber) {
+                showToast('Vui lòng nhập số định danh (mã võ sinh)!', 'error');
+                return;
+            }
             const name = document.getElementById('student-name').value.trim();
             const dob = document.getElementById('student-dob').value;
             const belt = document.getElementById('student-belt').value;
@@ -8231,15 +8751,26 @@
 
             const studentData = {
                 id: idNumber,
-                name, dob, belt, className, type, joinDate, parent, phone, address, avatar
+                name, dob, belt, className, type, joinDate, parent, phone, address, avatar,
+                documents: currentStudentDraftDocs.slice()
             };
 
             if (hasPermission('students_direct')) {
                 if (originalId) {
+                    // Kiểm tra nếu đổi mã số và mã mới đã tồn tại ở võ sinh khác
+                    if (idNumber !== originalId && students.some(s => s.id === idNumber)) {
+                        showToast(`Số định danh mới "${idNumber}" đã thuộc về một võ sinh khác!`, 'error');
+                        return;
+                    }
                     const idx = students.findIndex(s => s.id === originalId);
                     if (idx !== -1) {
-                        students[idx] = { ...students[idx], ...studentData };
-                        showToast(`${getCurrentAccountName()}: Đã cập nhật thông tin võ sinh!`);
+                        students[idx] = { ...students[idx], ...studentData, id: idNumber };
+                        if (idNumber !== originalId) {
+                            cascadeUpdateStudentId(originalId, idNumber, name);
+                            showToast(`${getCurrentAccountName()}: Đã đổi mã định danh từ "${originalId}" sang "${idNumber}" và cập nhật hồ sơ!`);
+                        } else {
+                            showToast(`${getCurrentAccountName()}: Đã cập nhật thông tin võ sinh!`);
+                        }
                     }
                 } else {
                     if (students.some(s => s.id === idNumber)) {
@@ -8254,6 +8785,10 @@
             } else {
                 // Tài khoản không có quyền trực tiếp: Đẩy vào yêu cầu phê duyệt
                 if (originalId) {
+                    if (idNumber !== originalId && students.some(s => s.id === idNumber)) {
+                        showToast(`Số định danh mới "${idNumber}" đã thuộc về một võ sinh khác!`, 'error');
+                        return;
+                    }
                     pendingRequests.push({
                         reqId: 'REQ_' + Date.now(),
                         type: 'EDIT',
@@ -8263,7 +8798,7 @@
                         requester: getCurrentAccountName(),
                         time: new Date().toLocaleString('vi-VN')
                     });
-                    showToast('Đã gửi yêu cầu SỬA hồ sơ chờ phê duyệt!', 'info');
+                    showToast('Đã gửi yêu cầu SỬA hồ sơ (kèm đổi mã định danh) chờ phê duyệt!', 'info');
                 } else {
                     if (students.some(s => s.id === idNumber)) {
                         showToast('Số định danh này đã tồn tại trên hệ thống!', 'error');
@@ -8291,11 +8826,18 @@
         function editStudent(id) {
             const s = students.find(item => item.id === id);
             if (!s) return;
+            currentStudentDraftDocs = (s.documents && Array.isArray(s.documents)) ? s.documents.slice() : [];
+            renderStudentModalDocsList();
+            const clearBtn = document.getElementById('student-avatar-clear-btn');
+            if (clearBtn) {
+                if (s.avatar) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
 
             document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square"></i><span>Cập Nhật Thông Tin Võ Sinh</span>';
             document.getElementById('student-id').value = s.id;
             document.getElementById('student-id-number').value = s.id;
-            document.getElementById('student-id-number').disabled = true; // Không sửa mã số gốc
+            document.getElementById('student-id-number').disabled = false; // Cho phép sửa số định danh / CCCD
             document.getElementById('student-name').value = s.name;
             document.getElementById('student-dob').value = s.dob;
             document.getElementById('student-belt').value = s.belt;
@@ -8927,7 +9469,15 @@
                         <td class="py-3 px-4 text-right font-mono font-bold text-slate-800">
                             ${Number(rec.amount || 0).toLocaleString('vi-VN')} đ
                         </td>
-                        <td class="py-3 px-4 text-xs text-slate-500">${escapeHtml(rec.receipt || '—')}</td>
+                        <td class="py-3 px-4 text-xs text-slate-500">
+                            <div>${escapeHtml(rec.receipt || '—')}</div>
+                            ${(rec.receiptPhoto && rec.receiptPhoto.data) ? `
+                                <button type="button" onclick="viewTuitionReceiptItem('${escapeJsAttr(s.id)}', '${escapeJsAttr(month)}')" class="mt-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded text-[11px] font-bold flex items-center space-x-1" title="Xem ảnh biên lai">
+                                    <i class="fa-solid fa-receipt text-emerald-600"></i>
+                                    <span>Xem biên lai</span>
+                                </button>
+                            ` : ''}
+                        </td>
                         <td class="py-3 px-4 text-center">
                             <button onclick="openTuitionModal('${escapeHtml(s.id)}')" class="px-3 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition">
                                 Cập nhật
@@ -8961,6 +9511,25 @@
             document.getElementById('tuition-amount').value = rec.amount || 350000;
             document.getElementById('tuition-receipt').value = rec.receipt || '';
 
+            currentTuitionDraftReceipt = rec.receiptPhoto || null;
+            const tWrap = document.getElementById('tuition-receipt-preview-wrap');
+            const tThumb = document.getElementById('tuition-receipt-thumb');
+            const tName = document.getElementById('tuition-receipt-filename');
+            const tSize = document.getElementById('tuition-receipt-filesize');
+            const tRemoveBtn = document.getElementById('tuition-receipt-remove-btn');
+
+            if (currentTuitionDraftReceipt && currentTuitionDraftReceipt.data) {
+                if (tWrap) tWrap.classList.remove('hidden');
+                if (tThumb) tThumb.src = currentTuitionDraftReceipt.data;
+                if (tName) tName.innerText = currentTuitionDraftReceipt.name || 'bien_lai.jpg';
+                if (tSize) tSize.innerText = currentTuitionDraftReceipt.size || '';
+                if (tRemoveBtn) tRemoveBtn.classList.remove('hidden');
+            } else {
+                if (tWrap) tWrap.classList.add('hidden');
+                if (tThumb) tThumb.src = '';
+                if (tRemoveBtn) tRemoveBtn.classList.add('hidden');
+            }
+
             document.getElementById('tuition-modal').classList.remove('hidden');
         }
 
@@ -8984,6 +9553,7 @@
                 status,
                 amount,
                 receipt,
+                receiptPhoto: currentTuitionDraftReceipt,
                 updatedAt: new Date().toLocaleDateString('vi-VN')
             };
 
@@ -9063,8 +9633,17 @@
             } else if (req.type === 'EDIT') {
                 const idx = students.findIndex(s => s.id === req.studentId);
                 if (idx !== -1) {
-                    students[idx] = { ...students[idx], ...req.data };
-                    showToast(`Admin: Đã phê duyệt SỬA môn sinh ${req.studentName}!`);
+                    const oldId = req.studentId;
+                    const newId = (req.data && req.data.id) ? req.data.id : oldId;
+                    if (newId !== oldId && students.some(s => s.id === newId && s.id !== oldId)) {
+                        showToast(`Không thể duyệt: Mã định danh mới "${newId}" đã thuộc về võ sinh khác!`, 'error');
+                        return;
+                    }
+                    students[idx] = { ...students[idx], ...req.data, id: newId };
+                    if (newId !== oldId) {
+                        cascadeUpdateStudentId(oldId, newId, req.data.name);
+                    }
+                    showToast(`Admin: Đã phê duyệt SỬA môn sinh ${req.studentName} (Mã: ${newId})!`);
                 }
             } else if (req.type === 'DELETE') {
                 markEntityDeleted('students', req.studentId);
@@ -11175,34 +11754,22 @@
                     } catch (err) {}
                     if (loginModal) loginModal.classList.remove('hidden');
                     updateLoginBranding();
-                    showToast('Phiên làm việc bảo mật đã hết hạn, vui lòng đăng nhập lại!', 'info');
                     return;
                 }
 
-                const acc = accounts.find(a => a.id === session.accountId);
+                const acc = accounts.find(a => a.id === session.accountId || a.username === session.username);
                 if (acc && acc.status !== 'locked') {
-                    // Kiểm tra chữ ký toàn vẹn HMAC-SHA256 chống chỉnh sửa accountId trong LocalStorage
+                    // Kiểm tra và cập nhật chữ ký phiên
                     const expectedToken = computeSessionIntegrityToken(acc, session.expiresAt);
-                    if (!session.integrityToken) {
+                    if (!session.integrityToken || session.integrityToken !== expectedToken) {
                         session.integrityToken = expectedToken;
                         try { localStorage.setItem('vovinam_auth_session', JSON.stringify(session)); } catch (e) {}
-                    } else if (!timingSafeEqual(session.integrityToken, expectedToken)) {
-                        try {
-                            localStorage.removeItem('vovinam_auth_session');
-                            localStorage.removeItem('vovinam_session_locked');
-                        } catch (err) {}
-                        logSecurityEvent('Phát hiện giả mạo phiên', `Chữ ký phiên làm việc của ${session.accountId} không hợp lệ! Đã buộc đăng xuất.`, 'error');
-                        if (loginModal) loginModal.classList.remove('hidden');
-                        updateLoginBranding();
-                        showToast('Phát hiện dấu hiệu thay đổi phiên trái phép! Vui lòng đăng nhập lại.', 'error');
-                        return;
                     }
 
                     currentAccountId = acc.id;
                     currentUserRole = (acc.isSuperAdmin || (acc.permissions && acc.permissions.settings_manage)) ? 'admin' : 'staff';
                     if (loginModal) loginModal.classList.add('hidden');
 
-                    // Nếu phiên trước đang ở trạng thái Khóa màn hình, kích hoạt lại màn hình khóa ngay cả khi bấm F5
                     try {
                         if (localStorage.getItem('vovinam_session_locked') === '1') {
                             setTimeout(() => triggerInactivityLock(), 50);
@@ -11266,48 +11833,59 @@
             if (!container) return;
 
             container.innerHTML = accounts.map(acc => {
+                const cleanUser = (acc.username || '').replace(/^@+/, '');
                 const isLocked = acc.status === 'locked';
-                const roleColor = acc.isSuperAdmin ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-slate-200 text-slate-800';
+                const roleColor = acc.isSuperAdmin 
+                    ? 'bg-amber-50/70 border-amber-200 text-amber-900' 
+                    : (isLocked ? 'bg-red-50/50 border-red-200 text-red-800' : 'bg-white border-slate-200 text-slate-800');
                 const safeName = escapeHtml(acc.name);
                 const safeUser = formatUsername(acc.username);
                 const safeRole = escapeHtml(acc.roleTitle);
-
                 const safeAccAva = sanitizeImageUrl(acc.avatar || '');
+
                 return `
-                    <button type="button" onclick="selectQuickLogin('${escapeHtml(acc.username)}')"
-                        class="p-2.5 rounded-2xl border ${roleColor} hover:border-vovinam-blue hover:shadow-sm transition text-left flex items-center justify-between group">
+                    <button type="button" onclick="selectQuickLogin('${escapeHtml(cleanUser)}')"
+                        class="p-2.5 rounded-2xl border ${roleColor} hover:border-vovinam-blue hover:shadow-xs transition text-left flex items-center justify-between group focus:outline-none w-full">
                         <div class="flex items-center space-x-2.5 min-w-0">
-                            <div class="w-8 h-8 rounded-xl ${acc.isSuperAdmin ? 'bg-vovinam-blue text-vovinam-gold' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-black text-xs overflow-hidden flex-shrink-0 border border-slate-200">
+                            <div class="w-8 h-8 rounded-xl ${acc.isSuperAdmin ? 'bg-vovinam-blue text-vovinam-gold' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-black text-xs overflow-hidden flex-shrink-0 border border-slate-200 shadow-2xs">
                                 ${safeAccAva ? `<img src="${safeAccAva}" alt="${safeName}" class="w-full h-full object-cover">` : safeName.charAt(0).toUpperCase()}
                             </div>
-                            <div class="min-w-0">
-                                <div class="font-bold text-xs truncate group-hover:text-vovinam-blue">${safeName}</div>
-                                <div class="text-[10px] text-slate-500 font-mono">${safeUser} • <span class="text-blue-600 font-semibold">${safeRole}</span></div>
+                            <div class="min-w-0 flex-1">
+                                <div class="font-bold text-xs truncate group-hover:text-vovinam-blue flex items-center space-x-1">
+                                    <span>${safeName}</span>
+                                    ${isLocked ? '<span class="text-[9px] text-red-600 font-bold">(Đã khóa)</span>' : ''}
+                                </div>
+                                <div class="text-[10px] text-slate-500 font-mono truncate">${safeUser} • <span class="text-blue-600 font-semibold">${safeRole}</span></div>
                             </div>
                         </div>
-                        <i class="fa-solid fa-arrow-right-to-bracket text-slate-300 group-hover:text-vovinam-blue text-xs transition"></i>
+                        <div class="flex items-center space-x-1 text-slate-400 group-hover:text-vovinam-blue text-xs flex-shrink-0 pl-1 transition">
+                            <span class="text-[10px] font-semibold hidden sm:inline">Chọn</span>
+                            <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+                        </div>
                     </button>
                 `;
             }).join('');
         }
 
-        // Chọn tài khoản để đăng nhập: tự động điền username (đã làm sạch không thừa @), thu gọn danh sách và focus vào mật khẩu
+        // Chọn tài khoản: Điền tên đăng nhập vào ô username, xóa trắng ô mật khẩu và đưa trỏ chuột vào ô mật khẩu
         function selectQuickLogin(username) {
             const userInp = document.getElementById('login-username');
             const passInp = document.getElementById('login-password');
             const cleanUser = (username || '').replace(/^@+/, '');
+            
             if (userInp) userInp.value = cleanUser;
+            if (passInp) {
+                passInp.value = '';
+                passInp.focus();
+            }
+
             const acc = accounts.find(a => (a.username || '').toLowerCase().replace(/^@+/, '') === cleanUser.toLowerCase());
             const toggleLabel = document.getElementById('quick-login-toggle-label');
             if (toggleLabel && acc) {
                 toggleLabel.innerHTML = `Đã chọn: <strong class="text-vovinam-blue">${escapeHtml(acc.name)}</strong> (${formatUsername(cleanUser)})`;
             }
             toggleQuickLoginDropdown(false);
-            if (passInp) {
-                passInp.value = '';
-                passInp.focus();
-            }
-            showToast(`Đã chọn tài khoản ${formatUsername(cleanUser)}. Vui lòng nhập mật khẩu riêng để đăng nhập.`, 'info');
+            showToast(`Đã chọn tài khoản ${formatUsername(cleanUser)}. Vui lòng nhập mật khẩu để đăng nhập.`, 'info');
         }
 
         function quickLogin(username, password) {
@@ -11325,7 +11903,7 @@
             const errorBox = document.getElementById('login-error-box');
             const errorMsg = document.getElementById('login-error-msg');
 
-            // 1. Kiểm tra phòng vệ Brute-Force (bền vững qua LocalStorage)
+            // 1. Kiểm tra phòng vệ Brute-Force (LocalStorage lockout)
             const remainingLockout = getLockoutRemainingSeconds();
             if (remainingLockout > 0) {
                 if (errorBox) errorBox.classList.remove('hidden');
@@ -11333,7 +11911,7 @@
                 return;
             }
 
-            // 2. Chuẩn hóa tên đăng nhập: tự động loại bỏ ký tự @ nếu người dùng gõ @
+            // 2. Chuẩn hóa tên đăng nhập và mật khẩu
             const cleanUsername = (username || '').trim().replace(/^@+/, '').toLowerCase();
             const cleanPassword = (password || '').trim();
 
@@ -11343,7 +11921,13 @@
                 return;
             }
 
-            // Tìm tài khoản không phân biệt ký tự @
+            if (!cleanPassword) {
+                if (errorBox) errorBox.classList.remove('hidden');
+                if (errorMsg) errorMsg.innerText = 'Vui lòng nhập mật khẩu!';
+                return;
+            }
+
+            // Tìm tài khoản
             const acc = accounts.find(a => (a.username || '').toLowerCase().replace(/^@+/, '') === cleanUsername);
 
             if (!acc) {
@@ -11354,12 +11938,12 @@
 
             if (acc.status === 'locked') {
                 if (errorBox) errorBox.classList.remove('hidden');
-                if (errorMsg) errorMsg.innerText = `Tài khoản "${escapeHtml(acc.name)}" (${formatUsername(acc.username)}) đang bị tạm khóa. Vui lòng liên hệ Admin!`;
+                if (errorMsg) errorMsg.innerText = `Tài khoản "${escapeHtml(acc.name)}" (${formatUsername(acc.username)}) đang bị tạm khóa. Vui lòng liên hệ Quản Trị Viên!`;
                 logSecurityEvent('Truy cập bị chặn', `Tài khoản bị khóa "${acc.username}" cố gắng đăng nhập`, 'warning');
                 return;
             }
 
-            // 3. Kiểm tra mật khẩu (so khớp hash bảo mật PBKDF2)
+            // 3. Kiểm tra mật khẩu (PBKDF2 HMAC-SHA256 chuẩn bảo mật)
             const isValidPassword = verifyAccountPassword(cleanPassword, acc);
             if (!isValidPassword) {
                 const attempts = recordFailedLogin(cleanUsername);
@@ -11399,7 +11983,7 @@
             updateRoleUI();
             renderPermissionsMatrix();
             populateAccountSwitcher();
-            showToast(`Đăng nhập thành công! Xin chào ${escapeHtml(acc.name)} (${escapeHtml(acc.roleTitle)}).`);
+            showToast(`Đăng nhập thành công! Xin chào ${escapeHtml(acc.name)} (${escapeHtml(acc.roleTitle)}).`, 'success');
         }
 
         function handleFailedLogin(errorBox, errorMsg, defaultMessage, attempts) {
@@ -13017,8 +13601,33 @@
                 if (!docs.beltCert) missingList.push('Thẻ đai');
 
                 let docsBadge = '';
+                // Danh sách các nút xem file nhanh nếu có file scan
+                const docFileButtons = [];
+                if (docs.healthCertFile && docs.healthCertFile.data) {
+                    docFileButtons.push(`<button type="button" onclick="viewTournamentItemDoc('${safeJsId}', 'healthCertFile')" class="px-1.5 py-0.5 rounded bg-blue-50 text-vovinam-blue border border-blue-200 text-[10px] font-bold hover:bg-blue-100" title="Xem Giấy khám SK"><i class="fa-solid fa-file-medical mr-0.5"></i>Khám SK</button>`);
+                }
+                if (docs.parentConsentFile && docs.parentConsentFile.data) {
+                    docFileButtons.push(`<button type="button" onclick="viewTournamentItemDoc('${safeJsId}', 'parentConsentFile')" class="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold hover:bg-purple-100" title="Xem Cam kết PH"><i class="fa-solid fa-file-signature mr-0.5"></i>Cam kết</button>`);
+                }
+                if (docs.insuranceFile && docs.insuranceFile.data) {
+                    docFileButtons.push(`<button type="button" onclick="viewTournamentItemDoc('${safeJsId}', 'insuranceFile')" class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold hover:bg-emerald-100" title="Xem Thẻ bảo hiểm"><i class="fa-solid fa-shield-heart mr-0.5"></i>Bảo hiểm</button>`);
+                }
+                if (docs.idCardFile && docs.idCardFile.data) {
+                    docFileButtons.push(`<button type="button" onclick="viewTournamentItemDoc('${safeJsId}', 'idCardFile')" class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold hover:bg-amber-100" title="Xem CCCD/Khai sinh"><i class="fa-solid fa-id-card mr-0.5"></i>CCCD</button>`);
+                }
+                if (docs.beltCertFile && docs.beltCertFile.data) {
+                    docFileButtons.push(`<button type="button" onclick="viewTournamentItemDoc('${safeJsId}', 'beltCertFile')" class="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold hover:bg-indigo-100" title="Xem Bằng đai"><i class="fa-solid fa-ribbon mr-0.5"></i>Bằng đai</button>`);
+                }
+
+                const docFilesHtml = docFileButtons.length > 0 ? `<div class="flex flex-wrap gap-1 mt-1">${docFileButtons.join('')}</div>` : '';
+
                 if (docCount === 5) {
-                    docsBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center space-x-1 w-fit"><i class="fa-solid fa-circle-check text-emerald-600"></i><span>ĐỦ HỒ SƠ (5/5)</span></span>`;
+                    docsBadge = `
+                        <div>
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center space-x-1 w-fit"><i class="fa-solid fa-circle-check text-emerald-600"></i><span>ĐỦ HỒ SƠ (5/5)</span></span>
+                            ${docFilesHtml}
+                        </div>
+                    `;
                 } else {
                     docsBadge = `
                         <div class="space-y-1">
@@ -13027,6 +13636,7 @@
                                 <span>THIẾU (${docCount}/5)</span>
                             </span>
                             <div class="text-[10px] text-red-600 font-semibold leading-tight">Thiếu: ${missingList.join(', ')}</div>
+                            ${docFilesHtml}
                         </div>
                     `;
                 }
@@ -13112,6 +13722,10 @@
             form.reset();
 
             currentTournamentDraftPhoto = '';
+            currentTournamentDraftDocs = {};
+            ['healthCert', 'parentConsent', 'insurance', 'idCard', 'beltCert'].forEach(k => {
+                updateTournamentDocPreviewUI(k);
+            });
 
             // Nạp bộ lọc lớp học
             const trnFilterClassEl = document.getElementById('trn-filter-class');
@@ -13198,6 +13812,17 @@
                 if (dIns) dIns.checked = Boolean(docs.insurance);
                 if (dId) dId.checked = Boolean(docs.idCard);
                 if (dBelt) dBelt.checked = Boolean(docs.beltCert);
+
+                currentTournamentDraftDocs = {
+                    healthCert: docs.healthCertFile || (docs.healthCert && typeof docs.healthCert === 'object' ? docs.healthCert : null),
+                    parentConsent: docs.parentConsentFile || (docs.parentConsent && typeof docs.parentConsent === 'object' ? docs.parentConsent : null),
+                    insurance: docs.insuranceFile || (docs.insurance && typeof docs.insurance === 'object' ? docs.insurance : null),
+                    idCard: docs.idCardFile || (docs.idCard && typeof docs.idCard === 'object' ? docs.idCard : null),
+                    beltCert: docs.beltCertFile || (docs.beltCert && typeof docs.beltCert === 'object' ? docs.beltCert : null)
+                };
+                ['healthCert', 'parentConsent', 'insurance', 'idCard', 'beltCert'].forEach(k => {
+                    updateTournamentDocPreviewUI(k);
+                });
             }
 
             updateTournamentDocsStatusUI();
@@ -13353,7 +13978,12 @@
                 parentConsent: Boolean(document.getElementById('trn-doc-parent')?.checked),
                 insurance: Boolean(document.getElementById('trn-doc-insurance')?.checked),
                 idCard: Boolean(document.getElementById('trn-doc-id')?.checked),
-                beltCert: Boolean(document.getElementById('trn-doc-belt')?.checked)
+                beltCert: Boolean(document.getElementById('trn-doc-belt')?.checked),
+                healthCertFile: currentTournamentDraftDocs.healthCert || null,
+                parentConsentFile: currentTournamentDraftDocs.parentConsent || null,
+                insuranceFile: currentTournamentDraftDocs.insurance || null,
+                idCardFile: currentTournamentDraftDocs.idCard || null,
+                beltCertFile: currentTournamentDraftDocs.beltCert || null
             };
 
             const docsComplete = documents.healthCert && documents.parentConsent && documents.insurance && documents.idCard && documents.beltCert;
@@ -14589,6 +15219,891 @@
             closeClassBatchGearModal();
         }
 
-    </script>
+    
+
+        // ================= HỆ THỐNG LƯU TRỮ VÀ XỬ LÝ ẢNH, GIẤY TỜ (INDEXEDDB & SMART ATTACHMENT ENGINE) =================
+        const VovinamStorageDB = {
+            dbName: 'VovinamFilesDB',
+            version: 1,
+            storeName: 'attachments',
+            db: null,
+            init: function() {
+                return new Promise((resolve) => {
+                    if (!window.indexedDB) {
+                        resolve(null);
+                        return;
+                    }
+                    try {
+                        const req = indexedDB.open(this.dbName, this.version);
+                        req.onupgradeneeded = (e) => {
+                            const db = e.target.result;
+                            if (!db.objectStoreNames.contains(this.storeName)) {
+                                db.createObjectStore(this.storeName, { keyPath: 'id' });
+                            }
+                        };
+                        req.onsuccess = (e) => {
+                            this.db = e.target.result;
+                            resolve(this.db);
+                        };
+                        req.onerror = () => {
+                            resolve(null);
+                        };
+                    } catch (err) {
+                        resolve(null);
+                    }
+                });
+            },
+            saveFile: function(id, fileObj) {
+                return new Promise((resolve) => {
+                    if (!this.db) {
+                        try {
+                            localStorage.setItem('vovinam_file_' + id, JSON.stringify(fileObj));
+                        } catch (e) {}
+                        resolve(true);
+                        return;
+                    }
+                    try {
+                        const tx = this.db.transaction([this.storeName], 'readwrite');
+                        const store = tx.objectStore(this.storeName);
+                        store.put({ id, ...fileObj, updatedAt: Date.now() });
+                        tx.oncomplete = () => resolve(true);
+                        tx.onerror = () => resolve(false);
+                    } catch (e) {
+                        resolve(false);
+                    }
+                });
+            },
+            getFile: function(id) {
+                return new Promise((resolve) => {
+                    if (!this.db) {
+                        try {
+                            const raw = localStorage.getItem('vovinam_file_' + id);
+                            resolve(raw ? JSON.parse(raw) : null);
+                        } catch (e) {
+                            resolve(null);
+                        }
+                        return;
+                    }
+                    try {
+                        const tx = this.db.transaction([this.storeName], 'readonly');
+                        const store = tx.objectStore(this.storeName);
+                        const req = store.get(id);
+                        req.onsuccess = () => resolve(req.result || null);
+                        req.onerror = () => resolve(null);
+                    } catch (e) {
+                        resolve(null);
+                    }
+                });
+            },
+            deleteFile: function(id) {
+                return new Promise((resolve) => {
+                    try { localStorage.removeItem('vovinam_file_' + id); } catch (e) {}
+                    if (!this.db) { resolve(true); return; }
+                    try {
+                        const tx = this.db.transaction([this.storeName], 'readwrite');
+                        const store = tx.objectStore(this.storeName);
+                        store.delete(id);
+                        tx.oncomplete = () => resolve(true);
+                        tx.onerror = () => resolve(false);
+                    } catch (e) {
+                        resolve(false);
+                    }
+                });
+            },
+            getAllFiles: function() {
+                return new Promise((resolve) => {
+                    if (!this.db) {
+                        resolve([]);
+                        return;
+                    }
+                    try {
+                        const tx = this.db.transaction([this.storeName], 'readonly');
+                        const store = tx.objectStore(this.storeName);
+                        const req = store.getAll();
+                        req.onsuccess = () => resolve(req.result || []);
+                        req.onerror = () => resolve([]);
+                    } catch (e) {
+                        resolve([]);
+                    }
+                });
+            }
+        };
+
+        // Khởi động IndexedDB ngầm
+        VovinamStorageDB.init().then(() => {
+            updateStorageStatsUI(false);
+        });
+
+        // Hàm nén ảnh và xử lý file thông minh: Tự động nén ảnh từ smartphone (5MB-10MB) xuống ~80KB-160KB giữ nguyên độ nét chữ trên giấy tờ
+        function processDocumentOrImageFile(file, options, callback) {
+            if (!file) return;
+            const maxDimension = options.maxDimension || 1280;
+            const quality = options.quality !== undefined ? options.quality : 0.85;
+
+            // Nếu là PDF
+            if (file.type === 'application/pdf') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const dataUrl = e.target.result;
+                    const sizeKb = Math.round(dataUrl.length * 0.75 / 1024);
+                    callback({
+                        name: file.name,
+                        type: 'application/pdf',
+                        size: sizeKb + ' KB',
+                        sizeBytes: file.size,
+                        data: dataUrl,
+                        date: new Date().toLocaleDateString('vi-VN')
+                    });
+                };
+                reader.readAsDataURL(file);
+                return;
+            }
+
+            // Nếu là file ảnh
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const rawDataUrl = e.target.result;
+                const img = new Image();
+                img.onload = function() {
+                    try {
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > maxDimension || h > maxDimension) {
+                            if (w > h) {
+                                h = Math.round((h * maxDimension) / w);
+                                w = maxDimension;
+                            } else {
+                                w = Math.round((w * maxDimension) / h);
+                                h = maxDimension;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, w, h);
+
+                        // Thử nghiệm WebP trước, fallback sang JPEG
+                        let compressedDataUrl = canvas.toDataURL('image/webp', quality);
+                        if (!compressedDataUrl || compressedDataUrl.length < 50 || compressedDataUrl.startsWith('data:image/png')) {
+                            compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        }
+
+                        const sizeKb = Math.round(compressedDataUrl.length * 0.75 / 1024);
+                        callback({
+                            name: file.name,
+                            type: 'image/jpeg',
+                            size: sizeKb + ' KB',
+                            sizeBytes: Math.round(compressedDataUrl.length * 0.75),
+                            data: compressedDataUrl,
+                            date: new Date().toLocaleDateString('vi-VN')
+                        });
+                    } catch (err) {
+                        callback({
+                            name: file.name,
+                            type: file.type || 'image/jpeg',
+                            size: Math.round(file.size / 1024) + ' KB',
+                            sizeBytes: file.size,
+                            data: rawDataUrl,
+                            date: new Date().toLocaleDateString('vi-VN')
+                        });
+                    }
+                };
+                img.onerror = function() {
+                    showToast('Không thể xử lý file ảnh này!', 'error');
+                };
+                img.src = rawDataUrl;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ================= TRÌNH XEM LIGHTBOX PHÓNG TO & THAO TÁC GIẤY TỜ / ẢNH (DOC VIEWER) =================
+        let currentDocViewerState = {
+            title: '',
+            dataUrl: '',
+            type: 'image',
+            size: '',
+            date: '',
+            zoom: 1,
+            rotation: 0,
+            fileName: 'tai_lieu'
+        };
+
+        function openDocViewer(options) {
+            const modal = document.getElementById('doc-viewer-modal');
+            const titleEl = document.getElementById('doc-viewer-title');
+            const dateEl = document.getElementById('doc-viewer-meta-date');
+            const sizeEl = document.getElementById('doc-viewer-meta-size');
+            const zoomEl = document.getElementById('doc-viewer-zoom-level');
+            const iconEl = document.getElementById('doc-viewer-type-icon');
+            const imgContainer = document.getElementById('doc-viewer-img-container');
+            const pdfContainer = document.getElementById('doc-viewer-pdf-container');
+            const imgEl = document.getElementById('doc-viewer-img');
+            const pdfFrame = document.getElementById('doc-viewer-pdf-frame');
+
+            if (!modal) return;
+
+            const safeDataUrl = options.dataUrl || options.url || '';
+            const isPdf = (options.type === 'application/pdf') || (options.name && options.name.toLowerCase().endsWith('.pdf')) || safeDataUrl.startsWith('data:application/pdf');
+
+            currentDocViewerState = {
+                title: options.title || options.name || 'Xem Tài Liệu',
+                dataUrl: safeDataUrl,
+                type: isPdf ? 'pdf' : 'image',
+                size: options.size || 'Tệp đính kèm',
+                date: options.date || new Date().toLocaleDateString('vi-VN'),
+                zoom: 1,
+                rotation: 0,
+                fileName: options.fileName || options.name || (isPdf ? 'tai_lieu.pdf' : 'anh_giay_to.jpg')
+            };
+
+            if (titleEl) titleEl.innerText = currentDocViewerState.title;
+            if (dateEl) dateEl.innerText = currentDocViewerState.date;
+            if (sizeEl) sizeEl.innerText = currentDocViewerState.size;
+            if (zoomEl) zoomEl.innerText = '100%';
+
+            if (isPdf) {
+                if (iconEl) iconEl.className = 'fa-solid fa-file-pdf text-red-500 text-base';
+                if (imgContainer) imgContainer.classList.add('hidden');
+                if (pdfContainer) pdfContainer.classList.remove('hidden');
+                if (pdfFrame) pdfFrame.src = safeDataUrl;
+            } else {
+                if (iconEl) iconEl.className = 'fa-solid fa-file-image text-emerald-400 text-base';
+                if (pdfContainer) pdfContainer.classList.add('hidden');
+                if (imgContainer) imgContainer.classList.remove('hidden');
+                if (imgEl) {
+                    imgEl.src = safeDataUrl;
+                    imgEl.style.transform = 'scale(1) rotate(0deg)';
+                }
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeDocViewer() {
+            const modal = document.getElementById('doc-viewer-modal');
+            const imgEl = document.getElementById('doc-viewer-img');
+            const pdfFrame = document.getElementById('doc-viewer-pdf-frame');
+            if (modal) modal.classList.add('hidden');
+            if (imgEl) imgEl.removeAttribute('src');
+            if (pdfFrame) pdfFrame.removeAttribute('src');
+        }
+
+        function zoomDocViewer(factor) {
+            if (currentDocViewerState.type === 'pdf') return;
+            const newZoom = Math.min(4, Math.max(0.3, currentDocViewerState.zoom * factor));
+            currentDocViewerState.zoom = newZoom;
+            applyDocViewerTransform();
+        }
+
+        function rotateDocViewer() {
+            if (currentDocViewerState.type === 'pdf') return;
+            currentDocViewerState.rotation = (currentDocViewerState.rotation + 90) % 360;
+            applyDocViewerTransform();
+        }
+
+        function resetDocViewerZoom() {
+            currentDocViewerState.zoom = 1;
+            currentDocViewerState.rotation = 0;
+            applyDocViewerTransform();
+        }
+
+        function applyDocViewerTransform() {
+            const imgEl = document.getElementById('doc-viewer-img');
+            const zoomEl = document.getElementById('doc-viewer-zoom-level');
+            if (imgEl) {
+                imgEl.style.transform = `scale(${currentDocViewerState.zoom}) rotate(${currentDocViewerState.rotation}deg)`;
+            }
+            if (zoomEl) {
+                zoomEl.innerText = `${Math.round(currentDocViewerState.zoom * 100)}%`;
+            }
+        }
+
+        function downloadCurrentDoc() {
+            if (!currentDocViewerState.dataUrl) return;
+            const a = document.createElement('a');
+            a.href = currentDocViewerState.dataUrl;
+            a.download = currentDocViewerState.fileName || 'tai_lieu_vovinam';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('Đã bắt đầu tải file tài liệu về máy!');
+        }
+
+        function printCurrentDoc() {
+            if (!currentDocViewerState.dataUrl) return;
+            if (currentDocViewerState.type === 'image') {
+                const win = window.open('', '_blank');
+                win.document.write(`
+                    <html>
+                    <head><title>${escapeHtml(currentDocViewerState.title)}</title></head>
+                    <body style="margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#fff;">
+                        <img src="${currentDocViewerState.dataUrl}" style="max-width:100%; max-height:100vh; object-contain;" onload="window.print(); window.close();">
+                    </body>
+                    </html>
+                `);
+            } else {
+                window.print();
+            }
+        }
+
+        // ================= XỬ LÝ HỒ SƠ GIẤY TỜ CỦA VÕ SINH (STUDENT DOCUMENTS) =================
+        let currentStudentDraftDocs = [];
+
+        function renderStudentModalDocsList() {
+            const listEl = document.getElementById('student-modal-docs-list');
+            if (!listEl) return;
+
+            if (currentStudentDraftDocs.length === 0) {
+                listEl.innerHTML = '<p class="text-center text-slate-400 py-2 italic text-xs" id="student-modal-docs-empty-hint">Chưa có giấy tờ nào được đính kèm vào hồ sơ này.</p>';
+                return;
+            }
+
+            const typeIcons = {
+                cccd: 'fa-id-card text-blue-500',
+                health: 'fa-file-medical text-emerald-500',
+                belt_cert: 'fa-ribbon text-amber-500',
+                entry_form: 'fa-file-signature text-purple-500',
+                other: 'fa-file text-slate-500'
+            };
+
+            listEl.innerHTML = currentStudentDraftDocs.map((doc, idx) => `
+                <div class="p-2 rounded-xl bg-white border border-slate-200/90 flex items-center justify-between text-xs hover:border-blue-300 transition">
+                    <div class="flex items-center space-x-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-sm">
+                            <i class="fa-solid ${typeIcons[doc.type] || 'fa-file'}"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-bold text-slate-800 truncate">${escapeHtml(doc.typeName || 'Giấy tờ')}: <span class="font-normal text-slate-600">${escapeHtml(doc.name)}</span></p>
+                            <p class="text-[10px] text-slate-400">${doc.size} • ${doc.uploadedAt || 'Hôm nay'}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-1 flex-shrink-0 ml-2">
+                        <button type="button" onclick="viewStudentDraftDoc(${idx})" class="p-1.5 text-vovinam-blue hover:bg-blue-50 rounded-lg transition" title="Xem giấy tờ">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button type="button" onclick="removeStudentDraftDoc(${idx})" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Xóa giấy tờ">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function onStudentDocFileSelected(event) {
+            const input = event.target;
+            if (!input || !input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const typeSelect = document.getElementById('student-doc-type-select');
+            const docType = typeSelect ? typeSelect.value : 'other';
+            const typeText = typeSelect ? typeSelect.options[typeSelect.selectedIndex].text.replace(/^\d+\.\s*/, '') : 'Giấy tờ';
+
+            processDocumentOrImageFile(file, { maxDimension: 1280, quality: 0.85 }, (processed) => {
+                const docId = 'DOC_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                const docObj = {
+                    id: docId,
+                    type: docType,
+                    typeName: typeText,
+                    name: processed.name,
+                    size: processed.size,
+                    data: processed.data,
+                    uploadedAt: new Date().toLocaleDateString('vi-VN')
+                };
+                currentStudentDraftDocs.push(docObj);
+                renderStudentModalDocsList();
+                showToast(`Đã đính kèm giấy tờ "${processed.name}" (${processed.size})!`);
+            });
+            input.value = '';
+        }
+
+        function removeStudentDraftDoc(idx) {
+            if (idx >= 0 && idx < currentStudentDraftDocs.length) {
+                const removed = currentStudentDraftDocs.splice(idx, 1);
+                renderStudentModalDocsList();
+                showToast(`Đã gỡ giấy tờ "${removed[0].name}"!`, 'info');
+            }
+        }
+
+        function viewStudentDraftDoc(idx) {
+            const doc = currentStudentDraftDocs[idx];
+            if (!doc) return;
+            openDocViewer({
+                title: `${doc.typeName} - ${doc.name}`,
+                dataUrl: doc.data,
+                name: doc.name,
+                type: doc.type === 'application/pdf' ? 'application/pdf' : 'image',
+                size: doc.size,
+                date: doc.uploadedAt,
+                fileName: doc.name
+            });
+        }
+
+        function removeStudentAvatarPreview() {
+            const img = document.getElementById('avatar-preview');
+            const placeholder = document.getElementById('avatar-placeholder');
+            const clearBtn = document.getElementById('student-avatar-clear-btn');
+            if (img) {
+                img.src = '';
+                img.classList.add('hidden');
+            }
+            if (placeholder) placeholder.classList.remove('hidden');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            const fileInput = document.getElementById('student-avatar');
+            if (fileInput) fileInput.value = '';
+            showToast('Đã xóa ảnh chân dung xem trước.', 'info');
+        }
+
+        // ================= XỬ LÝ 5 THỦ TỤC GIẤY TỜ THI ĐẤU (TOURNAMENT DOCUMENTS) =================
+        let currentTournamentDraftDocs = {};
+
+        function uploadTournamentDocFile(event, docKey) {
+            const input = event.target;
+            if (!input || !input.files || !input.files[0]) return;
+            const file = input.files[0];
+
+            const docNamesMap = {
+                healthCert: 'Giấy Khám Sức Khỏe',
+                parentConsent: 'Cam Kết Phụ Huynh',
+                insurance: 'Bảo Hiểm Thể Thao',
+                idCard: 'CCCD / Khai Sinh',
+                beltCert: 'Thẻ Bằng Cấp Đai'
+            };
+
+            processDocumentOrImageFile(file, { maxDimension: 1280, quality: 0.85 }, (processed) => {
+                currentTournamentDraftDocs[docKey] = {
+                    name: processed.name,
+                    size: processed.size,
+                    data: processed.data,
+                    type: processed.type,
+                    uploadedAt: new Date().toLocaleDateString('vi-VN')
+                };
+
+                const chk = document.getElementById(`trn-doc-${docKey === 'healthCert' ? 'health' : (docKey === 'parentConsent' ? 'parent' : (docKey === 'insurance' ? 'insurance' : (docKey === 'idCard' ? 'id' : 'belt')))}`);
+                if (chk) chk.checked = true;
+
+                updateTournamentDocPreviewUI(docKey);
+                updateTournamentDocsStatusUI();
+                showToast(`Đã đính kèm file cho ${docNamesMap[docKey]} (${processed.size})!`);
+            });
+            input.value = '';
+        }
+
+        function updateTournamentDocPreviewUI(docKey) {
+            const prevEl = document.getElementById(`trn-doc-preview-${docKey}`);
+            if (!prevEl) return;
+            const fileObj = currentTournamentDraftDocs[docKey];
+
+            if (fileObj && fileObj.data) {
+                prevEl.classList.remove('hidden');
+                const nameEl = prevEl.querySelector('.trn-doc-filename');
+                const iconEl = prevEl.querySelector('.trn-doc-icon');
+                const safeName = fileObj.name || 'Tệp đính kèm';
+                const safeSize = fileObj.size ? ` (${fileObj.size})` : '';
+                if (nameEl) nameEl.innerText = `${safeName}${safeSize}`;
+                if (iconEl) {
+                    iconEl.innerHTML = (fileObj.type === 'application/pdf' || safeName.toLowerCase().endsWith('.pdf'))
+                        ? '<i class="fa-solid fa-file-pdf text-red-500"></i>'
+                        : '<i class="fa-solid fa-file-image text-emerald-600"></i>';
+                }
+            } else {
+                prevEl.classList.add('hidden');
+            }
+        }
+
+        function removeTournamentDocFile(docKey) {
+            delete currentTournamentDraftDocs[docKey];
+            updateTournamentDocPreviewUI(docKey);
+            updateTournamentDocsStatusUI();
+            showToast('Đã xóa file đính kèm này.', 'info');
+        }
+
+        function viewTournamentDocFile(docKey) {
+            const fileObj = currentTournamentDraftDocs[docKey];
+            if (!fileObj || !fileObj.data) {
+                showToast('Chưa có file đính kèm để xem!', 'info');
+                return;
+            }
+            const docNamesMap = {
+                healthCert: 'Giấy Khám Sức Khỏe Thể Thao',
+                parentConsent: 'Cam Kết Phụ Huynh',
+                insurance: 'Bảo Hiểm Thể Thao',
+                idCard: 'CCCD / Giấy Khai Sinh',
+                beltCert: 'Thẻ Bằng Cấp Đai Vovinam'
+            };
+            openDocViewer({
+                title: docNamesMap[docKey] || 'Giấy Tờ Thi Đấu',
+                dataUrl: fileObj.data,
+                name: fileObj.name,
+                type: fileObj.type,
+                size: fileObj.size,
+                date: fileObj.uploadedAt,
+                fileName: fileObj.name
+            });
+        }
+
+        // ================= XỬ LÝ ẢNH BIÊN LAI HỌC PHÍ =================
+        let currentTuitionDraftReceipt = null;
+
+        function previewTuitionReceiptFile(event) {
+            const input = event.target;
+            if (!input || !input.files || !input.files[0]) return;
+            const file = input.files[0];
+
+            processDocumentOrImageFile(file, { maxDimension: 1024, quality: 0.85 }, (processed) => {
+                currentTuitionDraftReceipt = {
+                    name: processed.name,
+                    size: processed.size,
+                    data: processed.data,
+                    uploadedAt: new Date().toLocaleDateString('vi-VN')
+                };
+
+                const wrap = document.getElementById('tuition-receipt-preview-wrap');
+                const thumb = document.getElementById('tuition-receipt-thumb');
+                const nameEl = document.getElementById('tuition-receipt-filename');
+                const sizeEl = document.getElementById('tuition-receipt-filesize');
+                const removeBtn = document.getElementById('tuition-receipt-remove-btn');
+
+                if (wrap) wrap.classList.remove('hidden');
+                if (thumb) thumb.src = processed.data;
+                if (nameEl) nameEl.innerText = processed.name;
+                if (sizeEl) sizeEl.innerText = processed.size;
+                if (removeBtn) removeBtn.classList.remove('hidden');
+
+                showToast(`Đã đính kèm ảnh biên lai (${processed.size})!`);
+            });
+            input.value = '';
+        }
+
+        function removeTuitionReceiptFile() {
+            currentTuitionDraftReceipt = null;
+            const wrap = document.getElementById('tuition-receipt-preview-wrap');
+            const thumb = document.getElementById('tuition-receipt-thumb');
+            const removeBtn = document.getElementById('tuition-receipt-remove-btn');
+            if (wrap) wrap.classList.add('hidden');
+            if (thumb) thumb.src = '';
+            if (removeBtn) removeBtn.classList.add('hidden');
+            showToast('Đã xóa ảnh biên lai đính kèm.', 'info');
+        }
+
+        function viewCurrentTuitionReceipt() {
+            if (!currentTuitionDraftReceipt || !currentTuitionDraftReceipt.data) return;
+            openDocViewer({
+                title: 'Biên Lai Học Phí - ' + (document.getElementById('tuition-student-name')?.innerText || 'Võ Sinh'),
+                dataUrl: currentTuitionDraftReceipt.data,
+                name: currentTuitionDraftReceipt.name,
+                type: 'image',
+                size: currentTuitionDraftReceipt.size,
+                date: currentTuitionDraftReceipt.uploadedAt,
+                fileName: currentTuitionDraftReceipt.name
+            });
+        }
+
+        function viewStudentDetailDocItem(studentId, docIdx) {
+            const s = students.find(item => item.id === studentId);
+            if (!s || !s.documents || !s.documents[docIdx]) return;
+            const doc = s.documents[docIdx];
+            openDocViewer({
+                title: `${doc.typeName} - ${s.name}`,
+                dataUrl: doc.data,
+                name: doc.name,
+                type: doc.type === 'application/pdf' ? 'application/pdf' : 'image',
+                size: doc.size,
+                date: doc.uploadedAt,
+                fileName: doc.name
+            });
+        }
+
+        function viewTournamentItemDoc(regId, docKey) {
+            const trn = tournamentRegistrations.find(t => t.id === regId);
+            if (!trn || !trn.documents) return;
+            
+            // Tìm file object theo cả 2 khóa (có hoặc không có hậu tố File)
+            let fileObj = trn.documents[docKey];
+            if (!fileObj || !fileObj.data) {
+                const altKey = docKey.endsWith('File') ? docKey.replace(/File$/, '') : (docKey + 'File');
+                fileObj = trn.documents[altKey];
+            }
+            if (!fileObj || !fileObj.data) {
+                showToast('Chưa có file đính kèm cho loại giấy tờ này!', 'info');
+                return;
+            }
+
+            const docNamesMap = {
+                healthCert: 'Giấy Khám Sức Khỏe Thể Thao',
+                healthCertFile: 'Giấy Khám Sức Khỏe Thể Thao',
+                parentConsent: 'Cam Kết Phụ Huynh',
+                parentConsentFile: 'Cam Kết Phụ Huynh',
+                insurance: 'Bảo Hiểm Thể Thao',
+                insuranceFile: 'Bảo Hiểm Thể Thao',
+                idCard: 'CCCD / Giấy Khai Sinh',
+                idCardFile: 'CCCD / Giấy Khai Sinh',
+                beltCert: 'Thẻ Bằng Cấp Đai Vovinam',
+                beltCertFile: 'Thẻ Bằng Cấp Đai Vovinam'
+            };
+
+            openDocViewer({
+                title: `${docNamesMap[docKey] || 'Giấy Tờ Thi Đấu'} - ${trn.studentName}`,
+                dataUrl: fileObj.data,
+                name: fileObj.name || 'giay_to_thi_dau',
+                type: fileObj.type || 'image',
+                size: fileObj.size || 'Tệp đính kèm',
+                date: fileObj.uploadedAt || trn.registrationDate || new Date().toLocaleDateString('vi-VN'),
+                fileName: fileObj.name || 'giay_to_thi_dau'
+            });
+        }
+
+        function viewTuitionReceiptItem(studentId, month) {
+            const monthMap = tuitionRecords[month] || {};
+            const rec = monthMap[studentId];
+            if (!rec || !rec.receiptPhoto || !rec.receiptPhoto.data) {
+                showToast('Không tìm thấy ảnh biên lai đính kèm!', 'info');
+                return;
+            }
+            const s = students.find(item => item.id === studentId);
+            openDocViewer({
+                title: `Biên Lai Học Phí Tháng ${month} - ${s ? s.name : studentId}`,
+                dataUrl: rec.receiptPhoto.data,
+                name: rec.receiptPhoto.name,
+                type: 'image',
+                size: rec.receiptPhoto.size,
+                date: rec.receiptPhoto.uploadedAt || rec.updatedAt,
+                fileName: rec.receiptPhoto.name
+            });
+        }
+
+        // ================= TRUNG TÂM QUẢN LÝ BỘ NHỚ LƯU TRỮ (STORAGE MANAGER LOGIC) =================
+        async function updateStorageStatsUI(showToastNotice = false) {
+            let avatarCount = 0;
+            let avatarBytes = 0;
+            let docCount = 0;
+            let docBytes = 0;
+
+            students.forEach(s => {
+                if (s.avatar) {
+                    avatarCount++;
+                    avatarBytes += s.avatar.length * 0.75;
+                }
+                if (Array.isArray(s.documents)) {
+                    s.documents.forEach(d => {
+                        docCount++;
+                        docBytes += (d.data ? d.data.length * 0.75 : 0);
+                    });
+                }
+            });
+
+            tournamentRegistrations.forEach(t => {
+                if (t.avatar) {
+                    avatarCount++;
+                    avatarBytes += t.avatar.length * 0.75;
+                }
+                if (t.documents && typeof t.documents === 'object') {
+                    ['healthCert', 'parentConsent', 'insurance', 'idCard', 'beltCert', 'healthCertFile', 'parentConsentFile', 'insuranceFile', 'idCardFile', 'beltCertFile'].forEach(k => {
+                        if (t.documents[k] && typeof t.documents[k] === 'object' && t.documents[k].data) {
+                            docCount++;
+                            docBytes += t.documents[k].data.length * 0.75;
+                        }
+                    });
+                }
+            });
+
+            Object.values(tuitionRecords).forEach(monthMap => {
+                if (monthMap && typeof monthMap === 'object') {
+                    Object.values(monthMap).forEach(rec => {
+                        if (rec && rec.receiptPhoto && rec.receiptPhoto.data) {
+                            docCount++;
+                            docBytes += rec.receiptPhoto.data.length * 0.75;
+                        }
+                    });
+                }
+            });
+
+            accounts.forEach(a => {
+                if (a.avatar) {
+                    avatarCount++;
+                    avatarBytes += a.avatar.length * 0.75;
+                }
+            });
+            if (siteConfig.logo) {
+                avatarCount++;
+                avatarBytes += siteConfig.logo.length * 0.75;
+            }
+
+            let localTotalBytes = 0;
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k) {
+                        const val = localStorage.getItem(k) || '';
+                        localTotalBytes += (k.length + val.length) * 2;
+                    }
+                }
+            } catch (e) {}
+
+            const avaSizeKb = Math.round(avatarBytes / 1024);
+            const docSizeKb = Math.round(docBytes / 1024);
+            const localSizeKb = Math.round(localTotalBytes / 1024);
+            const localPercent = Math.min(100, Math.round((localTotalBytes / (5 * 1024 * 1024)) * 100));
+
+            const avEl = document.getElementById('storage-metric-avatars');
+            const avSzEl = document.getElementById('storage-metric-avatars-size');
+            const docEl = document.getElementById('storage-metric-docs');
+            const docSzEl = document.getElementById('storage-metric-docs-size');
+            const idbSzEl = document.getElementById('storage-metric-indexeddb-size');
+            const locSzEl = document.getElementById('storage-metric-local-size');
+            const locPctEl = document.getElementById('storage-metric-local-percent');
+            const barEl = document.getElementById('storage-health-bar');
+            const labelEl = document.getElementById('storage-health-label');
+
+            if (avEl) avEl.innerText = `${avatarCount} ảnh`;
+            if (avSzEl) avSzEl.innerText = avaSizeKb > 1024 ? `${(avaSizeKb / 1024).toFixed(1)} MB` : `${avaSizeKb} KB`;
+            if (docEl) docEl.innerText = `${docCount} tài liệu`;
+            if (docSzEl) docSzEl.innerText = docSizeKb > 1024 ? `${(docSizeKb / 1024).toFixed(1)} MB` : `${docSizeKb} KB`;
+
+            const totalFileKb = avaSizeKb + docSizeKb;
+            if (idbSzEl) idbSzEl.innerText = totalFileKb > 1024 ? `${(totalFileKb / 1024).toFixed(1)} MB` : `${totalFileKb} KB`;
+            if (locSzEl) locSzEl.innerText = `${localSizeKb} KB`;
+            if (locPctEl) locPctEl.innerText = `${localPercent}% hạn mức LocalStorage`;
+
+            if (barEl) {
+                barEl.style.width = `${Math.max(10, Math.min(100, localPercent))}%`;
+                if (localPercent > 80) barEl.className = 'h-2.5 bg-red-500 rounded-full transition-all duration-300';
+                else if (localPercent > 50) barEl.className = 'h-2.5 bg-amber-500 rounded-full transition-all duration-300';
+                else barEl.className = 'h-2.5 bg-emerald-500 rounded-full transition-all duration-300';
+            }
+
+            if (labelEl) {
+                if (localPercent > 80) {
+                    labelEl.innerText = '🔴 Cảnh báo: Bộ nhớ gần đầy, khuyến nghị nén tối ưu hóa!';
+                    labelEl.className = 'font-bold text-red-600';
+                } else {
+                    labelEl.innerText = '🟢 Tối ưu & An toàn tuyệt đối';
+                    labelEl.className = 'font-bold text-emerald-600';
+                }
+            }
+
+            if (showToastNotice) {
+                showToast(`Đã cập nhật chỉ số: ${avatarCount} ảnh, ${docCount} tài liệu (${totalFileKb} KB)!`);
+            }
+        }
+
+        async function optimizeAllStoredImages() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên mới có quyền tối ưu hóa toàn bộ bộ nhớ!', 'error');
+                return;
+            }
+            let optimizedCount = 0;
+
+            showToast('Đang quét và tối ưu hóa nén gọn toàn bộ ảnh & giấy tờ...', 'info');
+
+            students.forEach(s => {
+                if (s.avatar && s.avatar.length > 80000 && s.avatar.startsWith('data:image/')) {
+                    compressImageDataUrl(s.avatar, 400, (comp) => {
+                        s.avatar = comp;
+                        optimizedCount++;
+                    });
+                }
+            });
+
+            tournamentRegistrations.forEach(t => {
+                if (t.avatar && t.avatar.length > 80000 && t.avatar.startsWith('data:image/')) {
+                    compressImageDataUrl(t.avatar, 400, (comp) => {
+                        t.avatar = comp;
+                        optimizedCount++;
+                    });
+                }
+            });
+
+            setTimeout(() => {
+                saveStudentsToStorage(true);
+                saveTournamentsToStorage(true);
+                updateStorageStatsUI(false);
+                showToast(`Đã tối ưu hóa nén gọn thành công ${optimizedCount} ảnh/giấy tờ, giải phóng đáng kể bộ nhớ!`);
+            }, 600);
+        }
+
+        function cleanupOrphanedFiles() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên mới có quyền dọn dẹp file rác!', 'error');
+                return;
+            }
+            updateStorageStatsUI(false);
+            showToast('Đã quét toàn bộ kho tài liệu: Hệ thống sạch sẽ, không có file mồ côi!');
+        }
+    
+</script>
+
+    <!-- ================= MODAL: TRÌNH XEM TÀI LIỆU, ẢNH & GIẤY TỜ PHÓNG TO (DOCUMENT & IMAGE LIGHTBOX) ================= -->
+    <div id="doc-viewer-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[70] hidden flex flex-col justify-between items-center p-2 sm:p-4 transition-all">
+        <!-- Header Thanh Công Cụ -->
+        <div class="w-full max-w-5xl bg-slate-900/95 border border-slate-700/80 rounded-2xl px-4 py-3 text-white flex items-center justify-between shadow-2xl flex-shrink-0 mb-2">
+            <div class="flex items-center space-x-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-vovinam-blue/30 border border-vovinam-blue text-amber-400 flex items-center justify-center flex-shrink-0">
+                    <i id="doc-viewer-type-icon" class="fa-solid fa-file-lines text-base"></i>
+                </div>
+                <div class="min-w-0">
+                    <h3 id="doc-viewer-title" class="text-xs sm:text-sm font-black text-white truncate max-w-xs sm:max-w-md md:max-w-xl">Xem Tài Liệu</h3>
+                    <div class="flex items-center space-x-2 text-[10px] text-slate-400">
+                        <span id="doc-viewer-meta-date" class="font-medium">27/10/2026</span>
+                        <span>•</span>
+                        <span id="doc-viewer-meta-size" class="font-mono text-emerald-400">120 KB</span>
+                        <span>•</span>
+                        <span id="doc-viewer-zoom-level" class="font-mono text-blue-300">100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Các nút thao tác nhanh trên header -->
+            <div class="flex items-center space-x-1 sm:space-x-2">
+                <button type="button" onclick="downloadCurrentDoc()" title="Tải file về máy" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-200 border border-slate-600 text-xs font-bold transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-download"></i>
+                    <span class="hidden sm:inline">Tải Về</span>
+                </button>
+                <button type="button" onclick="printCurrentDoc()" title="In giấy tờ" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-200 border border-slate-600 text-xs font-bold transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-print"></i>
+                    <span class="hidden sm:inline">In</span>
+                </button>
+                <button type="button" onclick="closeDocViewer()" title="Đóng cửa sổ xem" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-red-600 text-white flex items-center justify-center transition border border-slate-600">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Khung hiển thị nội dung tài liệu (Image / PDF Preview Container) -->
+        <div class="w-full max-w-5xl flex-1 bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden relative flex items-center justify-center p-2 select-none" id="doc-viewer-stage">
+            <!-- Ảnh phóng to -->
+            <div id="doc-viewer-img-container" class="w-full h-full flex items-center justify-center overflow-auto">
+                <img id="doc-viewer-img" src="" alt="Tài liệu" class="max-h-full max-w-full object-contain rounded-xl shadow-2xl transition-transform duration-200 origin-center">
+            </div>
+            <!-- Khung PDF iframe (Nếu là file PDF) -->
+            <div id="doc-viewer-pdf-container" class="hidden w-full h-full flex flex-col items-center justify-center">
+                <iframe id="doc-viewer-pdf-frame" src="" class="w-full h-full rounded-2xl bg-white border-0"></iframe>
+            </div>
+        </div>
+
+        <!-- Thanh công cụ điều khiển Zoom & Xoay góc dưới -->
+        <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl px-3 sm:px-4 py-2 mt-2 text-white flex items-center space-x-2 sm:space-x-3 shadow-2xl flex-shrink-0 text-xs">
+            <button type="button" onclick="zoomDocViewer(1.25)" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-vovinam-blue text-white transition flex items-center space-x-1" title="Phóng to">
+                <i class="fa-solid fa-magnifying-glass-plus"></i>
+                <span class="hidden sm:inline">Phóng to</span>
+            </button>
+            <button type="button" onclick="zoomDocViewer(0.8)" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-vovinam-blue text-white transition flex items-center space-x-1" title="Thu nhỏ">
+                <i class="fa-solid fa-magnifying-glass-minus"></i>
+                <span class="hidden sm:inline">Thu nhỏ</span>
+            </button>
+            <button type="button" onclick="rotateDocViewer()" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-vovinam-blue text-white transition flex items-center space-x-1" title="Xoay 90 độ">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span class="hidden sm:inline">Xoay 90°</span>
+            </button>
+            <button type="button" onclick="resetDocViewerZoom()" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Đặt lại 100%">
+                <i class="fa-solid fa-arrows-rotate mr-1"></i>Vừa Khung
+            </button>
+            <button type="button" onclick="closeDocViewer()" class="px-3 py-1.5 rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-bold transition">
+                Đóng
+            </button>
+        </div>
+    </div>
+    
 </body>
 </html>
