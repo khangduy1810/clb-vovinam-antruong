@@ -427,7 +427,13 @@
                         <i class="fa-solid fa-layer-group text-vovinam-blue"></i>
                         <span>Chỉ Số Nghiệp Vụ Hoạt Động (Bấm vào thẻ để chuyển nhanh)</span>
                     </h3>
-                    <span class="text-[11px] text-slate-500 font-semibold">Thời gian thực</span>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" onclick="setOverviewCloudCardVisibility(true)" id="btn-restore-overview-cloud" class="hidden text-[11px] font-bold text-vovinam-blue hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-xl border border-blue-200 transition items-center space-x-1 cursor-pointer">
+                            <i class="fa-solid fa-shield-halved text-emerald-600"></i>
+                            <span>Hiện Thẻ Kết Nối</span>
+                        </button>
+                        <span class="text-[11px] text-slate-500 font-semibold">Thời gian thực</span>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -560,14 +566,17 @@
             </div>
 
             <!-- Bảng Thao Tác Nghiệp Vụ Nhanh (1 Chạm) & Trạng Thái Hệ Thống -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <!-- Cột 1 & 2: Phím Tắt Tác Vụ Thường Dùng -->
-                <div class="lg:col-span-2 bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-3.5">
-                    <h3 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider flex items-center space-x-2">
-                        <i class="fa-solid fa-wand-magic-sparkles text-vovinam-blue"></i>
-                        <span>Thao Tác Nghiệp Vụ Nhanh (1 Chạm)</span>
-                    </h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+            <div id="overview-actions-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- Cột 1 & 2: Phím Tắt Tác Vụ Thường Dùng (Tự động mở rộng full width khi thẻ Cloud ẩn) -->
+                <div id="overview-quick-actions-col" class="lg:col-span-2 bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-3.5 transition-all">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-vovinam-blue"></i>
+                            <span>Thao Tác Nghiệp Vụ Nhanh (1 Chạm)</span>
+                        </h3>
+                        <span class="text-[11px] text-slate-400 font-medium">8 phím tắt nghiệp vụ</span>
+                    </div>
+                    <div id="overview-quick-buttons-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                         <button type="button" onclick="openStudentModal()" class="p-3 rounded-2xl bg-slate-50 hover:bg-blue-50/80 border border-slate-200 hover:border-blue-300 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
                             <i class="fa-solid fa-user-plus text-base text-vovinam-blue group-hover:scale-110 transition"></i>
                             <span class="font-bold text-slate-800 leading-tight">Thêm Võ Sinh Mới</span>
@@ -603,15 +612,22 @@
                     </div>
                 </div>
 
-                <!-- Cột 3: Tình Trạng Kết Nối & An Ninh -->
-                <div class="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-3.5 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider flex items-center space-x-2">
-                            <i class="fa-solid fa-cloud-arrow-up text-emerald-600"></i>
-                            <span>Kết Nối Đám Mây & Máy Chủ</span>
-                        </h3>
-                        <p class="text-[11px] text-slate-500 mt-1">Đồng bộ trực tiếp giữa điện thoại của HLV và máy tính Admin.</p>
+                <!-- Cột 3: Tình Trạng Kết Nối & An Ninh (ĐÃ KHÓA BẢO VỆ CHỐNG SỬA ĐỔI GÂY LỖI TRANG) -->
+                <div id="overview-cloud-card" class="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-3.5 flex flex-col justify-between relative overflow-hidden transition-all">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between gap-1">
+                            <h3 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                                <i class="fa-solid fa-shield-halved text-emerald-600"></i>
+                                <span>Kết Nối Đám Mây & Máy Chủ</span>
+                            </h3>
+                            <span id="overview-cloud-lock-badge" class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 flex-shrink-0">
+                                <i class="fa-solid fa-lock text-[9px]"></i>
+                                <span>ĐÃ KHÓA</span>
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">Đồng bộ tự động an toàn. Đã khóa chống sửa đổi thông số kỹ thuật gây lỗi trang.</p>
                     </div>
+
                     <div class="space-y-2 text-xs">
                         <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                             <div class="flex items-center space-x-2">
@@ -628,14 +644,23 @@
                             <span id="overview-server-text" class="text-[11px] font-mono text-blue-700 font-bold">Online (2ms)</span>
                         </div>
                     </div>
-                    <div class="pt-1 flex gap-2">
-                        <button type="button" onclick="pushToCloud(true)" class="flex-1 py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs transition flex items-center justify-center space-x-1.5 cursor-pointer">
-                            <i class="fa-solid fa-cloud-arrow-up"></i>
-                            <span>Đẩy Cloud</span>
-                        </button>
-                        <button type="button" onclick="openCloudSyncSettingsSection()" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer" title="Cấu hình">
-                            <i class="fa-solid fa-gear"></i>
-                        </button>
+
+                    <!-- Khung Khóa Bảo Vệ & Tác Vụ Quản Trị Có Kiểm Soát -->
+                    <div class="pt-1 space-y-2">
+                        <div class="p-2.5 rounded-2xl bg-amber-50/80 border border-amber-200/90 text-[11px] text-amber-900 flex items-start space-x-2">
+                            <i class="fa-solid fa-lock text-amber-600 mt-0.5 flex-shrink-0"></i>
+                            <p class="leading-relaxed" id="overview-cloud-lock-note"><strong>Đã khóa an toàn:</strong> Nút mở cấu hình chỉ dành riêng cho Super Admin hoặc tài khoản được cấp quyền.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="setOverviewCloudCardVisibility(false)" class="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center space-x-1.5 cursor-pointer border border-slate-200" title="Ẩn thẻ này khỏi trang Tổng quan">
+                                <i class="fa-solid fa-eye-slash text-slate-500"></i>
+                                <span>Ẩn Thẻ Này</span>
+                            </button>
+                            <button type="button" onclick="openProtectedCloudSync()" id="btn-admin-manage-cloud" class="flex-1 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-vovinam-blue font-bold text-xs transition flex items-center justify-center space-x-1.5 cursor-pointer border border-blue-200" title="Chỉ Super Admin hoặc tài khoản được cấp quyền mới có thể mở">
+                                <i class="fa-solid fa-key text-blue-600"></i>
+                                <span>Mở Cấu Hình</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1929,6 +1954,37 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Tùy chọn Ẩn / Hiện Thẻ Kết Nối trên Tổng Quan (Tránh sửa đổi gây lỗi trang) -->
+                    <div class="sm:col-span-2 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <label for="setting-hide-overview-cloud" class="flex items-center space-x-2.5 text-xs font-bold text-slate-800 cursor-pointer">
+                            <input type="checkbox" id="setting-hide-overview-cloud" onchange="setOverviewCloudCardVisibility(!this.checked)" class="w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue cursor-pointer">
+                            <span>Ẩn thẻ "Kết Nối Đám Mây & Máy Chủ" trên trang Tổng quan (Tránh sửa đổi gây lỗi trang)</span>
+                        </label>
+                        <span class="text-[11px] text-slate-400 font-medium">Khuyên dùng cho thiết bị di động</span>
+                    </div>
+
+                    <!-- Khung Khóa Bảo Vệ Toàn Diện Cấu Hình Cloud & Máy Chủ -->
+                    <div id="cloud-sync-lock-banner" class="sm:col-span-2 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-950">
+                        <div class="flex items-start space-x-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-amber-200/80 text-amber-900 flex items-center justify-center font-bold flex-shrink-0 mt-0.5">
+                                <i id="cloud-settings-lock-icon" class="fa-solid fa-lock text-sm"></i>
+                            </div>
+                            <div class="space-y-0.5">
+                                <p class="font-black text-amber-950 flex items-center space-x-1.5">
+                                    <span>Thông Số Máy Chủ Đang Được Khóa Bảo Vệ</span>
+                                    <span class="px-2 py-0.2 rounded-md bg-amber-200 text-amber-900 text-[10px] font-bold">AN TOÀN</span>
+                                </p>
+                                <p class="text-[11px] text-amber-800 leading-relaxed" id="cloud-settings-lock-desc">
+                                    Các trường cấu hình đã được khóa chống sửa đổi ngoài ý muốn để tránh gián đoạn đường truyền hoặc lỗi hệ thống.
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="toggleCloudSettingsLock()" id="btn-toggle-cloud-settings-lock" class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition flex items-center justify-center space-x-1.5 flex-shrink-0 cursor-pointer shadow-xs">
+                            <i class="fa-solid fa-lock-open text-[11px]"></i>
+                            <span id="btn-toggle-cloud-settings-lock-text">Mở Khóa Chỉnh Sửa</span>
+                        </button>
+                    </div>
+
                     <div class="sm:col-span-2 p-3.5 bg-emerald-50/90 border border-emerald-200 rounded-2xl text-xs text-emerald-900 flex items-start space-x-2.5">
                         <i class="fa-solid fa-satellite-dish text-emerald-600 text-base mt-0.5"></i>
                         <div class="space-y-1">
@@ -6231,6 +6287,8 @@
             }
 
             updatePendingBadge();
+            initOverviewCloudCardVisibility();
+            updateCloudSettingsLockUI();
         }
 
         function updatePendingBadge() {
@@ -9307,15 +9365,258 @@
         }
 
         function openCloudSyncSettingsSection() {
+            if (!canModifyCloudConfig()) {
+                showToast('Chỉ Super Admin hoặc tài khoản được cấp quyền mới có quyền mở và thay đổi cấu hình!', 'error');
+                return;
+            }
             switchTab('settings');
             const el = document.getElementById('cloud-db-url');
             if (el) {
                 setTimeout(() => {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.focus();
                 }, 100);
             }
         }
+
+        // ================= BẢO VỆ & KHÓA AN TOÀN KẾT NỐI ĐÁM MÂY & MÁY CHỦ (CHỐNG SỬA ĐỔI GÂY LỖI TRANG) =================
+        let isCloudSettingsLocked = true; // Mặc định khóa bảo vệ để chống sửa đổi ngoài ý muốn
+
+        // Hàm kiểm tra đặc quyền thay đổi cấu hình: Chỉ Super Admin HOẶC tài khoản được cấp quyền Hệ thống & Cài đặt (settings_manage)
+        function canModifyCloudConfig() {
+            const acc = getCurrentAccount();
+            if (!acc) return false;
+            return Boolean(acc.isSuperAdmin || (acc.permissions && acc.permissions.settings_manage));
+        }
+
+        // Cập nhật trạng thái nút "Mở Cấu Hình" trên trang Tổng quan theo đúng phân quyền
+        function updateOverviewCloudButtonUI() {
+            const btn = document.getElementById('btn-admin-manage-cloud');
+            const noteEl = document.getElementById('overview-cloud-lock-note');
+            const badgeEl = document.getElementById('overview-cloud-lock-badge');
+            const hasRight = canModifyCloudConfig();
+
+            if (btn) {
+                btn.disabled = !hasRight;
+                if (hasRight) {
+                    btn.className = 'flex-1 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-vovinam-blue font-bold text-xs transition flex items-center justify-center space-x-1.5 cursor-pointer border border-blue-200 shadow-2xs';
+                    btn.innerHTML = '<i class="fa-solid fa-key text-blue-600"></i> <span>Mở Cấu Hình</span>';
+                    btn.title = 'Super Admin / Tài khoản có quyền: Bấm để mở cấu hình';
+                } else {
+                    btn.className = 'flex-1 py-2 px-3 rounded-xl bg-slate-100 text-slate-400 font-bold text-xs border border-slate-200 opacity-60 cursor-not-allowed flex items-center justify-center space-x-1.5';
+                    btn.innerHTML = '<i class="fa-solid fa-lock text-slate-400"></i> <span>Mở Cấu Hình (Đã Khóa)</span>';
+                    btn.title = 'Chỉ Super Admin hoặc tài khoản được cấp quyền mới có quyền thay đổi';
+                }
+            }
+
+            if (noteEl) {
+                if (hasRight) {
+                    noteEl.innerHTML = '<strong>Đã khóa an toàn:</strong> Bạn có quyền mở cấu hình. Bấm "Mở Cấu Hình" và xác nhận an toàn để tiến hành thay đổi.';
+                } else {
+                    noteEl.innerHTML = '<strong>Đã khóa bảo vệ:</strong> Nút mở cấu hình chỉ dành riêng cho Super Admin hoặc tài khoản được cấp quyền Hệ thống.';
+                }
+            }
+
+            if (badgeEl) {
+                if (hasRight) {
+                    badgeEl.className = 'inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-vovinam-blue border border-blue-300 flex-shrink-0';
+                    badgeEl.innerHTML = '<i class="fa-solid fa-shield-halved text-[9px]"></i> <span>BẢO VỆ (CÓ QUYỀN)</span>';
+                } else {
+                    badgeEl.className = 'inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 flex-shrink-0';
+                    badgeEl.innerHTML = '<i class="fa-solid fa-lock text-[9px]"></i> <span>ĐÃ KHÓA</span>';
+                }
+            }
+        }
+
+        function updateCloudSettingsLockUI() {
+            const banner = document.getElementById('cloud-sync-lock-banner');
+            const lockIcon = document.getElementById('cloud-settings-lock-icon');
+            const lockDesc = document.getElementById('cloud-settings-lock-desc');
+            const toggleBtn = document.getElementById('btn-toggle-cloud-settings-lock');
+
+            const clubKeyInput = document.getElementById('cloud-club-key');
+            const secretKeyInput = document.getElementById('cloud-secret-key');
+            const dbUrlInput = document.getElementById('cloud-db-url');
+            const encKeyInput = document.getElementById('cloud-encryption-key');
+            const autoSyncInput = document.getElementById('cloud-auto-sync');
+            const syncIntervalInput = document.getElementById('cloud-sync-interval');
+
+            const hasRight = canModifyCloudConfig();
+            const canEdit = hasRight && !isCloudSettingsLocked;
+
+            [clubKeyInput, secretKeyInput, dbUrlInput, encKeyInput].forEach(el => {
+                if (el) {
+                    el.readOnly = !canEdit;
+                    if (!canEdit) {
+                        el.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                    } else {
+                        el.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                    }
+                }
+            });
+
+            [autoSyncInput, syncIntervalInput].forEach(el => {
+                if (el) el.disabled = !canEdit;
+            });
+
+            if (toggleBtn && lockIcon && lockDesc) {
+                if (!hasRight) {
+                    lockIcon.className = 'fa-solid fa-lock text-sm text-slate-500';
+                    lockDesc.innerText = 'Chế độ bảo vệ: Chỉ Super Admin hoặc tài khoản được cấp quyền Cài đặt & Hệ thống mới có quyền mở khóa và thay đổi thông số này.';
+                    toggleBtn.disabled = true;
+                    toggleBtn.className = 'px-3.5 py-2 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs border border-slate-300 opacity-60 cursor-not-allowed flex items-center justify-center space-x-1.5 flex-shrink-0';
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-lock text-slate-400"></i> <span>Cần Super Admin / Cấp Quyền</span>';
+                    toggleBtn.title = 'Chỉ Super Admin hoặc tài khoản được cấp quyền mới có quyền thay đổi cấu hình';
+                } else if (isCloudSettingsLocked) {
+                    lockIcon.className = 'fa-solid fa-lock text-sm text-amber-700';
+                    lockDesc.innerText = 'Các trường cấu hình đã được khóa chống sửa đổi ngoài ý muốn để tránh gián đoạn đường truyền hoặc lỗi hệ thống.';
+                    toggleBtn.disabled = false;
+                    toggleBtn.className = 'px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition flex items-center justify-center space-x-1.5 flex-shrink-0 cursor-pointer shadow-xs';
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-lock-open text-[11px]"></i> <span>Mở Khóa Chỉnh Sửa</span>';
+                    toggleBtn.title = 'Bấm để mở khóa chỉnh sửa thông số Cloud & Máy chủ';
+                } else {
+                    lockIcon.className = 'fa-solid fa-lock-open text-sm text-emerald-700';
+                    lockDesc.innerText = 'Đang ở chế độ chỉnh sửa. Hãy bấm Khóa Lại ngay sau khi hoàn tất thiết lập để bảo vệ trang.';
+                    toggleBtn.disabled = false;
+                    toggleBtn.className = 'px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center space-x-1.5 flex-shrink-0 cursor-pointer shadow-xs';
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-lock text-[11px]"></i> <span>Khóa Lại (Khuyên Dùng)</span>';
+                    toggleBtn.title = 'Bấm để khóa an toàn lại thông số';
+                }
+            }
+
+            updateOverviewCloudButtonUI();
+        }
+
+        function toggleCloudSettingsLock() {
+            if (!canModifyCloudConfig()) {
+                showToast('Chỉ Super Admin hoặc tài khoản được cấp quyền mới có quyền mở khóa và thay đổi cấu hình!', 'error');
+                return;
+            }
+
+            if (isCloudSettingsLocked) {
+                showConfirm(
+                    'Mở Khóa Cấu Hình Đám Mây & Máy Chủ',
+                    'Cảnh báo an toàn: Việc sửa đổi các thông số Cloud Database, Mã định danh CLB hoặc Mã bảo mật có thể làm mất kết nối hoặc gây lỗi trang. Bạn có chắc chắn muốn mở khóa chỉnh sửa?',
+                    () => {
+                        isCloudSettingsLocked = false;
+                        updateCloudSettingsLockUI();
+                        showToast('Đã mở khóa cấu hình Đám Mây. Vui lòng cẩn trọng khi chỉnh sửa thông số!');
+                    }
+                );
+            } else {
+                isCloudSettingsLocked = true;
+                updateCloudSettingsLockUI();
+                showToast('Đã khóa an toàn thông số Đám Mây & Máy Chủ!');
+            }
+        }
+
+        function setOverviewCloudCardVisibility(visible) {
+            const card = document.getElementById('overview-cloud-card');
+            const actionsCol = document.getElementById('overview-quick-actions-col');
+            const restoreBtn = document.getElementById('btn-restore-overview-cloud');
+            const settingCheckbox = document.getElementById('setting-hide-overview-cloud');
+
+            const shouldHide = !visible;
+            try {
+                localStorage.setItem('vovinam_hide_overview_cloud_card', shouldHide ? 'true' : 'false');
+            } catch (e) {}
+
+            if (settingCheckbox) {
+                settingCheckbox.checked = shouldHide;
+            }
+
+            if (card) {
+                if (shouldHide) {
+                    card.classList.add('hidden');
+                } else {
+                    card.classList.remove('hidden');
+                }
+            }
+
+            if (actionsCol) {
+                if (shouldHide || (card && card.classList.contains('hidden'))) {
+                    actionsCol.classList.remove('lg:col-span-2');
+                    actionsCol.classList.add('lg:col-span-3');
+                } else {
+                    actionsCol.classList.remove('lg:col-span-3');
+                    actionsCol.classList.add('lg:col-span-2');
+                }
+            }
+
+            if (restoreBtn) {
+                if (shouldHide) {
+                    restoreBtn.classList.remove('hidden');
+                    restoreBtn.classList.add('inline-flex');
+                } else {
+                    restoreBtn.classList.add('hidden');
+                    restoreBtn.classList.remove('inline-flex');
+                }
+            }
+
+            if (shouldHide) {
+                showToast('Đã ẩn thẻ Kết Nối Đám Mây & Máy Chủ trên trang Tổng quan để tránh sửa đổi!', 'info');
+            } else {
+                showToast('Đã hiện lại thẻ Kết Nối Đám Mây & Máy Chủ trên trang Tổng quan.');
+            }
+        }
+
+        function initOverviewCloudCardVisibility() {
+            let hideStored = false;
+            try {
+                hideStored = localStorage.getItem('vovinam_hide_overview_cloud_card') === 'true';
+            } catch (e) {}
+
+            const card = document.getElementById('overview-cloud-card');
+            const actionsCol = document.getElementById('overview-quick-actions-col');
+            const restoreBtn = document.getElementById('btn-restore-overview-cloud');
+            const settingCheckbox = document.getElementById('setting-hide-overview-cloud');
+
+            if (settingCheckbox) settingCheckbox.checked = hideStored;
+
+            if (card) {
+                if (hideStored) {
+                    card.classList.add('hidden');
+                } else {
+                    card.classList.remove('hidden');
+                }
+            }
+
+            if (actionsCol) {
+                if (hideStored || (card && card.classList.contains('hidden'))) {
+                    actionsCol.classList.remove('lg:col-span-2');
+                    actionsCol.classList.add('lg:col-span-3');
+                } else {
+                    actionsCol.classList.remove('lg:col-span-3');
+                    actionsCol.classList.add('lg:col-span-2');
+                }
+            }
+
+            if (restoreBtn) {
+                if (hideStored) {
+                    restoreBtn.classList.remove('hidden');
+                    restoreBtn.classList.add('inline-flex');
+                } else {
+                    restoreBtn.classList.add('hidden');
+                    restoreBtn.classList.remove('inline-flex');
+                }
+            }
+
+            updateOverviewCloudButtonUI();
+        }
+
+        function openProtectedCloudSync() {
+            if (!canModifyCloudConfig()) {
+                showToast('Chỉ Super Admin hoặc tài khoản được cấp quyền mới có quyền mở và thay đổi cấu hình!', 'error');
+                return;
+            }
+            showConfirm(
+                'Mở Cấu Hình Đám Mây & Máy Chủ',
+                'Cảnh báo an toàn: Việc thay đổi thông số Cloud, Mã phòng hoặc Database có thể làm gián đoạn kết nối hoặc gây lỗi trang. Bạn có muốn chuyển đến mục cấu hình?',
+                () => {
+                    openCloudSyncSettingsSection();
+                }
+            );
+        }
+
 
         function showCloudDiagnostic(type, message) {
             const box = document.getElementById('cloud-diagnostic-box');
@@ -9653,8 +9954,8 @@
         }
 
         function saveAndTestCloudConfig() {
-            if (!hasPermission('settings_manage')) {
-                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được thay đổi cấu hình Cloud!', 'error');
+            if (!canModifyCloudConfig()) {
+                showToast('Chỉ Super Admin hoặc tài khoản được cấp quyền mới có quyền thay đổi cấu hình Cloud!', 'error');
                 return;
             }
             const urlEl = document.getElementById('cloud-db-url');
@@ -9701,8 +10002,8 @@
         }
 
         function disconnectCloudConfig() {
-            if (!hasPermission('settings_manage')) {
-                showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được ngắt kết nối Cloud!', 'error');
+            if (!canModifyCloudConfig()) {
+                showToast('Chỉ Super Admin hoặc tài khoản được cấp quyền mới có quyền ngắt kết nối Cloud!', 'error');
                 return;
             }
             stopCloudRealtimeSync();
