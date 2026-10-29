@@ -1038,6 +1038,64 @@
                 </div>
             </div>
 
+            <!-- Thanh Tìm Kiếm Theo Tên Để Bổ Sung Võ Sinh Học Bù Nhanh -->
+            <div id="attendance-makeup-quick-panel" class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-purple-200/90 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="text-xs sm:text-sm font-bold text-slate-800 flex items-center space-x-2">
+                            <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i>
+                            </span>
+                            <span>Tìm Kiếm Theo Tên Bổ Sung Võ Sinh Học Bù</span>
+                        </h3>
+                        <span id="attendance-makeup-count-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                            Đang học bù: 0 võ sinh
+                        </span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" id="btn-add-checked-inline-makeup" onclick="addCheckedInlineMakeupStudents()" class="hidden px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition items-center space-x-1.5 cursor-pointer">
+                            <i class="fa-solid fa-user-check"></i>
+                            <span id="btn-add-checked-inline-makeup-text">+ Bổ sung đã chọn (0)</span>
+                        </button>
+                        <button type="button" id="btn-toggle-inline-makeup-list" onclick="toggleInlineMakeupBrowser()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition flex items-center space-x-1.5 cursor-pointer">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span id="btn-toggle-inline-makeup-list-text">Xem DS võ sinh lớp khác</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="md:col-span-2 relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-500 text-xs sm:text-sm"></i>
+                        <input type="text" id="attendance-makeup-search-input"
+                            oninput="onAttendanceMakeupSearchInput(this.value)"
+                            onfocus="onAttendanceMakeupSearchFocus()"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();quickAddFirstMatchedMakeupStudent();}"
+                            placeholder="Nhập tên võ sinh (có dấu/không dấu), mã định danh hoặc SĐT để tìm & bổ sung học bù..."
+                            class="w-full pl-9 pr-20 py-2.5 text-xs sm:text-sm border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 focus:outline-none bg-purple-50/20">
+                        <button type="button" id="attendance-makeup-clear-btn" onclick="clearAttendanceMakeupSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-600 bg-slate-100 hover:bg-red-50 rounded-lg transition">
+                            Xoá
+                        </button>
+                    </div>
+                    <div>
+                        <select id="attendance-makeup-class-filter" onchange="renderAttendanceMakeupSearchResults()" class="w-full px-3 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none bg-white">
+                            <option value="">-- Tìm trong tất cả lớp khác --</option>
+                            <option value="Sáng T2-T4-T6">Lớp Sáng T2-T4-T6</option>
+                            <option value="Chiều T2-T4-T6">Lớp Chiều T2-T4-T6</option>
+                            <option value="Tối T3-T5-T7">Lớp Tối T3-T5-T7</option>
+                            <option value="Cuối tuần T7-CN">Lớp Cuối Tuần (T7-CN)</option>
+                            <option value="ALL_CLASSES">Toàn bộ võ sinh CLB (kể cả lớp chính)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Danh sách võ sinh đang học bù trong buổi học hiện tại -->
+                <div id="attendance-active-makeup-bar" class="hidden pt-1 flex flex-wrap items-center gap-1.5"></div>
+
+                <!-- Kết quả tìm kiếm võ sinh học bù trực tiếp -->
+                <div id="attendance-makeup-search-results" class="hidden border border-purple-200 rounded-2xl bg-slate-50/70 overflow-hidden"></div>
+            </div>
+
             <!-- Attendance Stats Cards -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
@@ -1086,6 +1144,13 @@
                         <span>Bảng Điểm Danh: <span id="current-class-display" class="text-vovinam-blue"></span></span>
                     </h3>
                     <div class="flex flex-wrap items-center gap-2">
+                        <div class="relative min-w-[200px] sm:min-w-[230px]">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="attendance-table-search-input" oninput="filterCurrentAttendanceTable(this.value)" placeholder="Lọc nhanh tên trong bảng..." class="w-full pl-8 pr-7 py-1.5 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
+                            <button type="button" id="attendance-table-search-clear" onclick="filterCurrentAttendanceTable('')" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 text-xs">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                         <button onclick="openSessionReportModal()" class="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
                             <i class="fa-solid fa-file-lines"></i>
                             <span>Xem Báo Cáo Buổi Học</span>
@@ -3158,8 +3223,8 @@
 
     <!-- ================= MODAL: THÊM HS HỌC BÙ ================= -->
     <div id="guest-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
-            <div class="bg-purple-700 px-6 py-4 text-white flex justify-between items-center">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+            <div class="bg-purple-700 px-6 py-4 text-white flex justify-between items-center flex-shrink-0">
                 <h3 class="text-base font-bold flex items-center space-x-2">
                     <i class="fa-solid fa-user-plus"></i>
                     <span>Thêm HS Học Ghép / Bù</span>
@@ -3168,16 +3233,61 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <div class="p-6 space-y-4">
-                <p class="text-xs text-slate-500">Chọn võ sinh từ lớp khác hoặc học viên tăng cường để đưa vào buổi học hôm nay:</p>
+            <div class="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                <p class="text-xs text-slate-500">Tìm kiếm theo tên võ sinh từ lớp khác hoặc học viên tăng cường để bổ sung vào buổi học hôm nay:</p>
+
+                <!-- Ô tìm kiếm theo tên võ sinh & lọc lớp trong Modal -->
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+                    <div class="sm:col-span-3 relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-purple-500 text-xs"></i>
+                        <input type="text" id="guest-modal-search-input"
+                            oninput="renderGuestModalStudentList()"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();addGuestToCurrentAttendance();}"
+                            placeholder="Tìm theo tên võ sinh, mã số, SĐT..."
+                            class="w-full pl-8 pr-7 py-2 text-xs sm:text-sm border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none bg-purple-50/20">
+                        <button type="button" id="guest-modal-search-clear" onclick="clearGuestModalSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 text-xs">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <select id="guest-modal-class-filter" onchange="renderGuestModalStudentList()" class="w-full px-2.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none">
+                            <option value="">-- Tất cả lớp khác --</option>
+                            <option value="Sáng T2-T4-T6">Lớp Sáng T2-T4-T6</option>
+                            <option value="Chiều T2-T4-T6">Lớp Chiều T2-T4-T6</option>
+                            <option value="Tối T3-T5-T7">Lớp Tối T3-T5-T7</option>
+                            <option value="Cuối tuần T7-CN">Lớp Cuối Tuần (T7-CN)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Danh sách kết quả tìm kiếm trực quan có tích chọn nhiều võ sinh -->
+                <div class="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50">
+                    <div class="px-3.5 py-2 bg-slate-100/80 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="guest-modal-select-all-cb" onchange="toggleSelectAllGuestModal(this.checked)" class="w-3.5 h-3.5 rounded text-purple-600 focus:ring-purple-600 cursor-pointer">
+                            <span id="guest-modal-match-count">Danh sách võ sinh (0)</span>
+                        </label>
+                        <span class="text-purple-700" id="guest-modal-selected-count-label">Đã chọn: 0</span>
+                    </div>
+                    <div id="guest-modal-results-list" class="max-h-56 overflow-y-auto divide-y divide-slate-100 bg-white">
+                    </div>
+                </div>
+
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Chọn Võ Sinh</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Chọn Võ Sinh (Danh sách rút gọn)</label>
                     <select id="guest-select-student" class="w-full px-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none">
                     </select>
                 </div>
-                <div class="pt-3 flex justify-end space-x-2 border-t border-slate-100">
-                    <button type="button" onclick="closeGuestModal()" class="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-semibold">Hủy</button>
-                    <button type="button" onclick="addGuestToCurrentAttendance()" class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shadow-md">Thêm Vào Lớp</button>
+
+                <div class="pt-3 flex items-center justify-between gap-2 border-t border-slate-100">
+                    <button type="button" onclick="quickCreateNewMakeupFromModal()" class="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition flex items-center space-x-1">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Thêm tên mới ngoài DS</span>
+                    </button>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="closeGuestModal()" class="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-semibold">Hủy</button>
+                        <button type="button" onclick="addGuestToCurrentAttendance()" class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shadow-md">Thêm Vào Lớp</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -10103,66 +10213,153 @@
         }
         
         // ================= TAB 2: ĐIỂM DANH HÀNG NGÀY =================
+        let inlineMakeupBrowserOpen = false;
+        let inlineMakeupCheckedIds = new Set();
+        let guestModalCheckedIds = new Set();
+        let removedSavedGuestIdsByKey = {};
+        let lastLoadedAttendanceKey = '';
+
+        function normalizeVietnameseSearch(str) {
+            return String(str || '')
+                .normalize('NFD')
+                .replace(/[̀-ͯ]/g, '')
+                .replace(/đ/g, 'd')
+                .replace(/Đ/g, 'd')
+                .toLowerCase()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function matchesStudentSearchQuery(student, rawQuery) {
+            if (!rawQuery || !rawQuery.trim()) return true;
+            if (!student) return false;
+            const qRaw = rawQuery.trim().toLowerCase();
+            const qNorm = normalizeVietnameseSearch(rawQuery);
+            const nameRaw = String(student.name || '').toLowerCase();
+            const nameNorm = normalizeVietnameseSearch(student.name || '');
+            const idRaw = String(student.id || '').toLowerCase();
+            const phoneRaw = String(student.phone || '').toLowerCase();
+            const classNorm = normalizeVietnameseSearch(student.className || '');
+
+            if (nameRaw.includes(qRaw) || nameNorm.includes(qNorm)) return true;
+            if (idRaw.includes(qRaw) || phoneRaw.includes(qRaw)) return true;
+            if (classNorm.includes(qNorm)) return true;
+
+            // Hỗ trợ tìm theo từng từ rời (VD: "nguyen an" khớp "Nguyễn Văn An")
+            const tokens = qNorm.split(' ').filter(Boolean);
+            if (tokens.length > 1 && tokens.every(tok => nameNorm.includes(tok) || idRaw.includes(tok))) {
+                return true;
+            }
+            return false;
+        }
+
+        function captureCurrentAttendanceDomMap() {
+            const map = {};
+            const rows = document.querySelectorAll('#attendance-table-body tr[data-id]');
+            rows.forEach(row => {
+                const id = row.getAttribute('data-id');
+                if (!id) return;
+                const noteEl = document.getElementById(`note-${id}`);
+                const btnAbsent = document.getElementById(`btn-${id}-absent`);
+                const btnExcused = document.getElementById(`btn-${id}-excused`);
+                let status = 'present';
+                if (btnAbsent && btnAbsent.classList.contains('bg-red-600')) status = 'absent';
+                else if (btnExcused && btnExcused.classList.contains('bg-amber-500')) status = 'excused';
+                map[id] = {
+                    status,
+                    note: noteEl ? noteEl.value : ''
+                };
+            });
+            return map;
+        }
+
         function getAttendanceKey() {
             const date = document.getElementById('attendance-date').value;
             const className = document.getElementById('attendance-class').value;
             return `${date}_${className}`;
         }
 
-        function loadAttendanceSheet() {
+        function loadAttendanceSheet(preserveDomEdits = false) {
             const date = document.getElementById('attendance-date').value;
             const className = document.getElementById('attendance-class').value;
             const key = getAttendanceKey();
 
-            document.getElementById('current-class-display').innerText = `${className} - Ngày ${new Date(date).toLocaleDateString('vi-VN')}`;
+            if (key !== lastLoadedAttendanceKey) {
+                currentGuestList = [];
+                inlineMakeupCheckedIds.clear();
+                lastLoadedAttendanceKey = key;
+            }
+
+            const domStateMap = preserveDomEdits ? captureCurrentAttendanceDomMap() : {};
+
+            document.getElementById('current-class-display').innerText = `${className} - Ngày ${date ? new Date(date).toLocaleDateString('vi-VN') : ''}`;
 
             const officialStudents = sortStudentsArray(students.filter(s => s.className === className));
             const existingSession = attendanceRecords[key] || [];
+            const removedSet = removedSavedGuestIdsByKey[key] || new Set();
 
             let fullList = [];
 
             officialStudents.forEach(s => {
+                const domRec = domStateMap[s.id];
                 const rec = existingSession.find(r => r.studentId === s.id);
                 fullList.push({
                     studentId: s.id,
                     studentObj: s,
-                    status: rec ? rec.status : 'present',
-                    note: rec ? rec.note : '',
+                    status: domRec ? domRec.status : (rec ? rec.status : 'present'),
+                    note: domRec ? domRec.note : (rec ? rec.note : ''),
                     isGuestInSession: false
                 });
             });
 
-            // Môn sinh từ ca khác học bù đã lưu
+            // Tập hợp môn sinh từ ca khác học bù (đã lưu hoặc vừa bấm thêm trong phiên) và sắp xếp A-Z
+            let makeupItems = [];
+
             existingSession.forEach(rec => {
+                if (removedSet.has(rec.studentId)) return;
                 if (!officialStudents.some(s => s.id === rec.studentId)) {
                     const guestObj = students.find(s => s.id === rec.studentId);
                     if (guestObj) {
-                        fullList.push({
+                        const domRec = domStateMap[guestObj.id];
+                        makeupItems.push({
                             studentId: guestObj.id,
                             studentObj: guestObj,
-                            status: rec.status,
-                            note: rec.note || 'Học ghép/bù',
+                            status: domRec ? domRec.status : rec.status,
+                            note: domRec ? domRec.note : (rec.note || 'Học ghép/bù'),
                             isGuestInSession: true
                         });
                     }
                 }
             });
 
-            // Môn sinh vừa bấm thêm trong phiên hiện tại
             currentGuestList.forEach(g => {
-                if (!fullList.some(item => item.studentId === g.id)) {
-                    fullList.push({
+                if (!officialStudents.some(s => s.id === g.id) && !makeupItems.some(item => item.studentId === g.id)) {
+                    const domRec = domStateMap[g.id];
+                    makeupItems.push({
                         studentId: g.id,
                         studentObj: g,
-                        status: 'present',
-                        note: 'Học ghép/bù mới thêm',
+                        status: domRec ? domRec.status : 'present',
+                        note: domRec ? domRec.note : 'Học ghép/bù mới thêm',
                         isGuestInSession: true
                     });
                 }
             });
 
+            // Sắp xếp danh sách học bù theo tên A -> Z
+            const sortedMakeupObjs = sortStudentsArray(makeupItems.map(m => m.studentObj));
+            const sortedMakeupItems = sortedMakeupObjs.map(obj => makeupItems.find(m => m.studentId === obj.id)).filter(Boolean);
+
+            fullList = fullList.concat(sortedMakeupItems);
+
             renderAttendanceTable(fullList);
             updateAttendanceStats(fullList);
+            renderActiveMakeupBar(fullList);
+            renderAttendanceMakeupSearchResults();
+
+            const tableSearchInput = document.getElementById('attendance-table-search-input');
+            if (tableSearchInput && tableSearchInput.value.trim()) {
+                filterCurrentAttendanceTable(tableSearchInput.value);
+            }
         }
 
         function renderAttendanceTable(list) {
@@ -10179,11 +10376,12 @@
                 const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 100);
                 const isExtraStudent = item.isGuestInSession || s.type === 'guest' || s.className !== currentClass;
                 const safeJsId = escapeJsAttr(s._uid || s.id);
+                const safeStudentId = escapeJsAttr(s.id);
                 const dupInfo = (s._uid && dupAnalysis.byUid[s._uid]) || { isUnconfirmed: false };
                 const isUnconf = dupInfo.isUnconfirmed;
 
                 return `
-                    <tr class="${isUnconf ? 'bg-red-50/70 hover:bg-red-100/60 border-l-4 border-l-red-600' : 'hover:bg-slate-50'} transition border-b border-slate-100" data-id="${escapeHtml(s.id)}" data-extra="${isExtraStudent ? 'true' : 'false'}">
+                    <tr class="${isUnconf ? 'bg-red-50/70 hover:bg-red-100/60 border-l-4 border-l-red-600' : (isExtraStudent ? 'bg-purple-50/35 hover:bg-purple-50/70' : 'hover:bg-slate-50')} transition border-b border-slate-100" data-id="${escapeHtml(s.id)}" data-extra="${isExtraStudent ? 'true' : 'false'}">
                         <td class="py-3 px-4 font-bold text-slate-400 text-xs text-center">${idx + 1}</td>
                         <td class="py-3 px-4">
                             <div class="flex items-center space-x-3">
@@ -10201,10 +10399,15 @@
                             ${getBeltBadge(s.belt)}
                         </td>
                         <td class="py-3 px-4">
-                            ${isExtraStudent ?
-                                `<span class="px-2.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-lg font-bold border border-purple-200">Học thêm / Học bù</span>` :
-                                `<span class="px-2.5 py-0.5 text-xs bg-blue-50 text-vovinam-blue rounded-lg font-bold border border-blue-200">Lớp chính</span>`
-                            }
+                            ${isExtraStudent ? `
+                                <div class="flex flex-col items-start gap-1">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="px-2.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-lg font-bold border border-purple-200">Học thêm / Học bù</span>
+                                        ${item.isGuestInSession ? `<button type="button" onclick="removeMakeupStudentFromSession('${safeStudentId}')" title="Gỡ võ sinh học bù này khỏi buổi học" class="px-1.5 py-0.5 text-[10px] font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-md transition cursor-pointer"><i class="fa-solid fa-xmark mr-0.5"></i>Gỡ</button>` : ''}
+                                    </div>
+                                    ${s.className && s.className !== currentClass ? `<span class="text-[10px] text-slate-500 font-medium">Lớp gốc: ${escapeHtml(s.className)}</span>` : ''}
+                                </div>
+                            ` : `<span class="px-2.5 py-0.5 text-xs bg-blue-50 text-vovinam-blue rounded-lg font-bold border border-blue-200">Lớp chính</span>`}
                         </td>
                         <td class="py-3 px-4 text-center">
                             <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 space-x-1">
@@ -10419,6 +10622,7 @@
             attendanceRecords[key] = recordData;
             saveAttendanceToStorage();
             currentGuestList = [];
+            if (removedSavedGuestIdsByKey[key]) delete removedSavedGuestIdsByKey[key];
             showToast('Đã lưu điểm danh và tạo báo cáo buổi học!');
 
             if (openReport) {
@@ -10604,21 +10808,544 @@
             showToast('Đã xuất file Báo cáo điểm danh buổi học (CSV)!');
         }
 
-        function openAddGuestModal() {
-            const currentClass = document.getElementById('attendance-class').value;
-            const select = document.getElementById('guest-select-student');
-            const otherStudents = students.filter(s => s.className !== currentClass);
+        function getCurrentAttendanceSessionIds() {
+            const ids = new Set();
+            document.querySelectorAll('#attendance-table-body tr[data-id]').forEach(row => {
+                const id = row.getAttribute('data-id');
+                if (id) ids.add(id);
+            });
+            return ids;
+        }
 
-            if (otherStudents.length === 0) {
-                showToast('Không có võ sinh từ lớp khác!', 'info');
+        function renderActiveMakeupBar(fullList) {
+            const bar = document.getElementById('attendance-active-makeup-bar');
+            const badge = document.getElementById('attendance-makeup-count-badge');
+            const currentClass = document.getElementById('attendance-class') ? document.getElementById('attendance-class').value : '';
+            const makeupStudents = (fullList || []).filter(item => item.isGuestInSession || (item.studentObj && item.studentObj.className !== currentClass));
+
+            if (badge) {
+                badge.textContent = `Đang học bù: ${makeupStudents.length} võ sinh`;
+            }
+
+            if (!bar) return;
+            if (makeupStudents.length === 0) {
+                bar.classList.add('hidden');
+                bar.innerHTML = '';
                 return;
             }
 
-            select.innerHTML = otherStudents.map(s => `
-                <option value="${escapeHtml(s.id)}">${escapeHtml(s.name)} (${escapeHtml(s.className)} - ${escapeHtml(s.belt)})</option>
-            `).join('');
+            bar.classList.remove('hidden');
+            bar.innerHTML = `
+                <span class="text-[11px] font-bold text-purple-700 mr-1 flex items-center">
+                    <i class="fa-solid fa-user-clock mr-1"></i>DS học bù buổi này (${makeupStudents.length}):
+                </span>
+                ${makeupStudents.map(item => {
+                    const s = item.studentObj;
+                    const safeId = escapeJsAttr(s.id);
+                    return `
+                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200 shadow-2xs">
+                            <span>${escapeHtml(s.name)}</span>
+                            <span class="text-[10px] font-normal text-purple-600">(${escapeHtml(s.className || 'Học bù')})</span>
+                            <button type="button" onclick="removeMakeupStudentFromSession('${safeId}')" title="Gỡ khỏi danh sách học bù buổi này" class="ml-1 text-purple-500 hover:text-red-600 transition cursor-pointer">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </button>
+                        </span>
+                    `;
+                }).join('')}
+            `;
+        }
 
+        function onAttendanceMakeupSearchInput(val) {
+            const clearBtn = document.getElementById('attendance-makeup-clear-btn');
+            if (clearBtn) {
+                if (val && val.trim()) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+            renderAttendanceMakeupSearchResults();
+        }
+
+        function onAttendanceMakeupSearchFocus() {
+            const input = document.getElementById('attendance-makeup-search-input');
+            if (input && input.value.trim()) {
+                renderAttendanceMakeupSearchResults();
+            }
+        }
+
+        function clearAttendanceMakeupSearch() {
+            const input = document.getElementById('attendance-makeup-search-input');
+            const clearBtn = document.getElementById('attendance-makeup-clear-btn');
+            if (input) input.value = '';
+            if (clearBtn) clearBtn.classList.add('hidden');
+            inlineMakeupBrowserOpen = false;
+            updateInlineMakeupToggleBtn();
+            renderAttendanceMakeupSearchResults();
+        }
+
+        function toggleInlineMakeupBrowser() {
+            inlineMakeupBrowserOpen = !inlineMakeupBrowserOpen;
+            updateInlineMakeupToggleBtn();
+            renderAttendanceMakeupSearchResults();
+        }
+
+        function updateInlineMakeupToggleBtn() {
+            const btnText = document.getElementById('btn-toggle-inline-makeup-list-text');
+            if (btnText) {
+                btnText.textContent = inlineMakeupBrowserOpen ? 'Ẩn DS võ sinh lớp khác' : 'Xem DS võ sinh lớp khác';
+            }
+        }
+
+        function updateInlineMakeupCheckedBtn() {
+            const btn = document.getElementById('btn-add-checked-inline-makeup');
+            const txt = document.getElementById('btn-add-checked-inline-makeup-text');
+            if (!btn || !txt) return;
+            const count = inlineMakeupCheckedIds.size;
+            if (count > 0) {
+                btn.classList.remove('hidden');
+                btn.classList.add('inline-flex');
+                txt.textContent = `+ Bổ sung đã chọn (${count})`;
+            } else {
+                btn.classList.add('hidden');
+                btn.classList.remove('inline-flex');
+            }
+        }
+
+        function toggleInlineMakeupCheckbox(studentId, checked) {
+            if (checked) inlineMakeupCheckedIds.add(studentId);
+            else inlineMakeupCheckedIds.delete(studentId);
+            updateInlineMakeupCheckedBtn();
+        }
+
+        function addCheckedInlineMakeupStudents() {
+            if (inlineMakeupCheckedIds.size === 0) return;
+            const key = getAttendanceKey();
+            const removedSet = removedSavedGuestIdsByKey[key];
+            let addedCount = 0;
+
+            inlineMakeupCheckedIds.forEach(studentId => {
+                const studentObj = students.find(s => s.id === studentId);
+                if (!studentObj) return;
+                if (removedSet) removedSet.delete(studentId);
+                if (!currentGuestList.some(g => g.id === studentId)) {
+                    currentGuestList.push(studentObj);
+                    addedCount++;
+                }
+            });
+
+            inlineMakeupCheckedIds.clear();
+            updateInlineMakeupCheckedBtn();
+            loadAttendanceSheet(true);
+            if (addedCount > 0) {
+                showToast(`Đã bổ sung ${addedCount} võ sinh học bù vào buổi học!`);
+            }
+        }
+
+        function renderAttendanceMakeupSearchResults() {
+            const container = document.getElementById('attendance-makeup-search-results');
+            const input = document.getElementById('attendance-makeup-search-input');
+            const classFilterEl = document.getElementById('attendance-makeup-class-filter');
+            if (!container || !input) return;
+
+            const rawQuery = input.value.trim();
+            const classFilter = classFilterEl ? classFilterEl.value : '';
+            const currentClass = document.getElementById('attendance-class') ? document.getElementById('attendance-class').value : '';
+
+            if (!rawQuery && !inlineMakeupBrowserOpen && !classFilter) {
+                container.classList.add('hidden');
+                container.innerHTML = '';
+                return;
+            }
+
+            let candidatePool = [];
+            if (classFilter === 'ALL_CLASSES') {
+                candidatePool = students.slice();
+            } else if (classFilter) {
+                candidatePool = students.filter(s => s.className === classFilter);
+            } else {
+                // Mặc định khi gõ tên: ưu tiên tìm toàn bộ võ sinh lớp khác; nếu gõ tên trùng lớp chính cũng hiển thị rõ để đối chiếu
+                candidatePool = rawQuery ? students.slice() : students.filter(s => s.className !== currentClass);
+            }
+
+            let matched = sortStudentsArray(candidatePool.filter(s => matchesStudentSearchQuery(s, rawQuery)));
+
+            // Đưa võ sinh từ lớp khác lên trước, võ sinh thuộc lớp chính xuống dưới
+            matched.sort((a, b) => {
+                const aOther = a.className !== currentClass ? 0 : 1;
+                const bOther = b.className !== currentClass ? 0 : 1;
+                return aOther - bOther;
+            });
+
+            const inSessionIds = getCurrentAttendanceSessionIds();
+            const otherClassAvailableCount = matched.filter(s => !inSessionIds.has(s.id)).length;
+
+            container.classList.remove('hidden');
+
+            if (matched.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 text-center space-y-2.5">
+                        <p class="text-xs text-slate-500">Không tìm thấy võ sinh nào khớp với từ khoá <strong>"${escapeHtml(rawQuery)}"</strong>.</p>
+                        ${rawQuery ? `
+                            <button type="button" onclick="quickCreateAndAddMakeupStudent('${escapeJsAttr(rawQuery)}')" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-sm transition inline-flex items-center space-x-1.5 cursor-pointer">
+                                <i class="fa-solid fa-user-plus"></i>
+                                <span>+ Thêm nhanh "${escapeHtml(rawQuery)}" làm võ sinh học bù buổi này</span>
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="px-4 py-2 bg-purple-100/70 border-b border-purple-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span class="font-bold text-purple-900">
+                        <i class="fa-solid fa-users-viewfinder mr-1"></i>Kết quả tìm kiếm: <strong>${matched.length}</strong> võ sinh
+                        ${otherClassAvailableCount > 0 ? `<span class="text-purple-700 font-medium">(Có thể bổ sung học bù: ${otherClassAvailableCount})</span>` : ''}
+                    </span>
+                    <div class="flex items-center space-x-2">
+                        ${rawQuery ? `
+                            <button type="button" onclick="quickCreateAndAddMakeupStudent('${escapeJsAttr(rawQuery)}')" class="px-2.5 py-1 bg-white hover:bg-purple-50 text-purple-700 border border-purple-300 rounded-lg text-[11px] font-bold transition cursor-pointer">
+                                <i class="fa-solid fa-plus mr-1"></i>Thêm tên mới "${escapeHtml(rawQuery)}"
+                            </button>
+                        ` : ''}
+                        <button type="button" onclick="clearAttendanceMakeupSearch()" class="text-slate-500 hover:text-slate-800 text-xs font-bold px-2 py-0.5 rounded-lg">
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+                <div class="max-h-64 overflow-y-auto divide-y divide-slate-100 bg-white">
+                    ${matched.map(s => {
+                        const safeId = escapeJsAttr(s.id);
+                        const safeRef = escapeJsAttr(s._uid || s.id);
+                        const isMainClass = s.className === currentClass;
+                        const isAlreadyInSession = inSessionIds.has(s.id);
+                        const isChecked = inlineMakeupCheckedIds.has(s.id);
+                        const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 80);
+
+                        return `
+                            <div class="px-4 py-2.5 hover:bg-purple-50/40 transition flex items-center justify-between gap-3">
+                                <div class="flex items-center space-x-3 min-w-0">
+                                    ${!isAlreadyInSession ? `
+                                        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleInlineMakeupCheckbox('${safeId}', this.checked)" class="w-4 h-4 rounded text-purple-600 focus:ring-purple-600 cursor-pointer flex-shrink-0">
+                                    ` : `
+                                        <span class="w-4 h-4 flex items-center justify-center text-emerald-600 flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+                                    `}
+                                    <img src="${avatarSrc}" onclick="viewStudentDetail('${safeRef}')" class="w-8 h-8 rounded-xl object-cover border border-slate-200 flex-shrink-0 cursor-pointer">
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            <span class="font-bold text-slate-800 text-xs sm:text-sm truncate">${escapeHtml(s.name)}</span>
+                                            <span class="text-[11px] font-mono text-slate-400">(${escapeHtml(s.id)})</span>
+                                            ${getBeltBadge(s.belt)}
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 flex flex-wrap items-center gap-2 mt-0.5">
+                                            <span><i class="fa-solid fa-chalkboard-user mr-1 text-slate-400"></i>Lớp gốc: <strong class="${isMainClass ? 'text-vovinam-blue' : 'text-purple-700'}">${escapeHtml(s.className || 'Chưa phân lớp')}</strong></span>
+                                            ${s.phone ? `<span><i class="fa-solid fa-phone mr-1 text-slate-400"></i>${escapeHtml(s.phone)}</span>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2 flex-shrink-0">
+                                    ${!isAlreadyInSession ? `
+                                        <button type="button" onclick="quickAddMakeupStudentToAttendance('${safeId}')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center space-x-1 cursor-pointer">
+                                            <i class="fa-solid fa-user-plus"></i>
+                                            <span>+ Bổ sung học bù</span>
+                                        </button>
+                                    ` : (isMainClass ? `
+                                        <span class="px-2.5 py-1 bg-blue-50 text-vovinam-blue border border-blue-200 rounded-xl text-[11px] font-bold">Lớp chính</span>
+                                        <button type="button" onclick="focusAndMarkPresentInTable('${safeId}')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-[11px] font-bold transition cursor-pointer">
+                                            Có mặt
+                                        </button>
+                                    ` : `
+                                        <span class="px-2.5 py-1 bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-[11px] font-bold">Đã thêm học bù</span>
+                                        <button type="button" onclick="removeMakeupStudentFromSession('${safeId}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-[11px] font-bold transition cursor-pointer">
+                                            Gỡ
+                                        </button>
+                                    `)}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function quickAddMakeupStudentToAttendance(studentId, keepModalOpen = false) {
+            const studentObj = students.find(s => s.id === studentId);
+            if (!studentObj) return;
+
+            const key = getAttendanceKey();
+            if (removedSavedGuestIdsByKey[key]) {
+                removedSavedGuestIdsByKey[key].delete(studentId);
+            }
+
+            const inSessionIds = getCurrentAttendanceSessionIds();
+            if (inSessionIds.has(studentId)) {
+                focusAndMarkPresentInTable(studentId);
+                showToast(`Võ sinh ${studentObj.name} đã có trong danh sách buổi học (đã đánh dấu Có mặt)!`, 'info');
+                return;
+            }
+
+            if (!currentGuestList.some(g => g.id === studentId)) {
+                currentGuestList.push(studentObj);
+            }
+            inlineMakeupCheckedIds.delete(studentId);
+            updateInlineMakeupCheckedBtn();
+
+            loadAttendanceSheet(true);
+            showToast(`Đã bổ sung võ sinh ${studentObj.name} (${studentObj.className}) học bù!`);
+
+            if (keepModalOpen) {
+                renderGuestModalStudentList();
+            }
+        }
+
+        function quickAddFirstMatchedMakeupStudent() {
+            const input = document.getElementById('attendance-makeup-search-input');
+            if (!input || !input.value.trim()) return;
+            const rawQuery = input.value.trim();
+            const currentClass = document.getElementById('attendance-class').value;
+            const inSessionIds = getCurrentAttendanceSessionIds();
+
+            const candidates = sortStudentsArray(
+                students.filter(s => !inSessionIds.has(s.id) && matchesStudentSearchQuery(s, rawQuery))
+            );
+            // Ưu tiên võ sinh lớp khác
+            candidates.sort((a, b) => (a.className !== currentClass ? 0 : 1) - (b.className !== currentClass ? 0 : 1));
+
+            if (candidates.length > 0) {
+                quickAddMakeupStudentToAttendance(candidates[0].id);
+            } else {
+                quickCreateAndAddMakeupStudent(rawQuery);
+            }
+        }
+
+        function quickCreateAndAddMakeupStudent(rawName) {
+            const cleanName = String(rawName || '').trim().replace(/\s+/g, ' ');
+            if (!cleanName) {
+                showToast('Vui lòng nhập họ tên võ sinh học bù cần bổ sung!', 'error');
+                return;
+            }
+
+            const currentClass = document.getElementById('attendance-class').value;
+            const newId = 'HB' + Date.now().toString().slice(-5);
+            const newGuestStudent = {
+                id: newId,
+                name: cleanName,
+                dob: '',
+                gender: 'Nam',
+                phone: '',
+                parent: '',
+                belt: 'Lam đai',
+                className: 'Học bù / Tăng cường',
+                type: 'guest',
+                joinDate: new Date().toISOString().split('T')[0],
+                status: 'Đang học',
+                avatar: ''
+            };
+            newGuestStudent._uid = buildDeterministicStudentUid(newGuestStudent, 1);
+
+            students.push(newGuestStudent);
+            sortStudentsInPlace();
+            saveStudentsToStorage();
+
+            currentGuestList.push(newGuestStudent);
+            const input = document.getElementById('attendance-makeup-search-input');
+            if (input) input.value = '';
+            const clearBtn = document.getElementById('attendance-makeup-clear-btn');
+            if (clearBtn) clearBtn.classList.add('hidden');
+
+            loadAttendanceSheet(true);
+            renderStudents();
+            showToast(`Đã tạo & bổ sung võ sinh học bù "${cleanName}" (${newId}) vào buổi học!`);
+        }
+
+        function removeMakeupStudentFromSession(studentId) {
+            const key = getAttendanceKey();
+            if (!removedSavedGuestIdsByKey[key]) {
+                removedSavedGuestIdsByKey[key] = new Set();
+            }
+            removedSavedGuestIdsByKey[key].add(studentId);
+            currentGuestList = currentGuestList.filter(g => g.id !== studentId);
+
+            const s = students.find(item => item.id === studentId);
+            loadAttendanceSheet(true);
+            showToast(`Đã gỡ võ sinh ${s ? s.name : studentId} khỏi danh sách học bù buổi này!`, 'info');
+        }
+
+        function focusAndMarkPresentInTable(studentId) {
+            changeStatus(studentId, 'present');
+            const row = document.querySelector(`#attendance-table-body tr[data-id="${CSS.escape(studentId)}"]`);
+            if (row) {
+                row.classList.remove('hidden');
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.classList.add('ring-2', 'ring-purple-500');
+                setTimeout(() => row.classList.remove('ring-2', 'ring-purple-500'), 1800);
+            }
+        }
+
+        function filterCurrentAttendanceTable(query) {
+            const input = document.getElementById('attendance-table-search-input');
+            const clearBtn = document.getElementById('attendance-table-search-clear');
+            if (input && input.value !== query) input.value = query;
+            if (clearBtn) {
+                if (query && query.trim()) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+
+            const rows = document.querySelectorAll('#attendance-table-body tr[data-id]');
+            rows.forEach(row => {
+                const id = row.getAttribute('data-id');
+                const s = students.find(item => item.id === id);
+                if (!query || !query.trim() || matchesStudentSearchQuery(s, query)) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+        }
+
+        function openAddGuestModal() {
+            const currentClass = document.getElementById('attendance-class').value;
+            const otherStudents = sortStudentsArray(students.filter(s => s.className !== currentClass));
+
+            guestModalCheckedIds.clear();
+            const searchInput = document.getElementById('guest-modal-search-input');
+            const classFilter = document.getElementById('guest-modal-class-filter');
+            const selectAllCb = document.getElementById('guest-modal-select-all-cb');
+            if (searchInput) searchInput.value = '';
+            if (classFilter) classFilter.value = '';
+            if (selectAllCb) selectAllCb.checked = false;
+
+            renderGuestModalStudentList();
             document.getElementById('guest-modal').classList.remove('hidden');
+            if (searchInput) {
+                setTimeout(() => searchInput.focus(), 50);
+            }
+        }
+
+        function clearGuestModalSearch() {
+            const searchInput = document.getElementById('guest-modal-search-input');
+            if (searchInput) searchInput.value = '';
+            renderGuestModalStudentList();
+        }
+
+        function toggleGuestModalStudentCheck(studentId, checked) {
+            if (checked) guestModalCheckedIds.add(studentId);
+            else guestModalCheckedIds.delete(studentId);
+            const select = document.getElementById('guest-select-student');
+            if (checked && select) select.value = studentId;
+            const selectedLabel = document.getElementById('guest-modal-selected-count-label');
+            if (selectedLabel) selectedLabel.textContent = `Đã chọn: ${guestModalCheckedIds.size}`;
+        }
+
+        function toggleSelectAllGuestModal(checked) {
+            const checkboxes = document.querySelectorAll('#guest-modal-results-list input.guest-modal-cb:not(:disabled)');
+            checkboxes.forEach(cb => {
+                cb.checked = checked;
+                const id = cb.getAttribute('data-id');
+                if (id) {
+                    if (checked) guestModalCheckedIds.add(id);
+                    else guestModalCheckedIds.delete(id);
+                }
+            });
+            const selectedLabel = document.getElementById('guest-modal-selected-count-label');
+            if (selectedLabel) selectedLabel.textContent = `Đã chọn: ${guestModalCheckedIds.size}`;
+        }
+
+        function renderGuestModalStudentList() {
+            const currentClass = document.getElementById('attendance-class').value;
+            const select = document.getElementById('guest-select-student');
+            const listEl = document.getElementById('guest-modal-results-list');
+            const searchInput = document.getElementById('guest-modal-search-input');
+            const clearBtn = document.getElementById('guest-modal-search-clear');
+            const classFilterEl = document.getElementById('guest-modal-class-filter');
+            const matchCountLabel = document.getElementById('guest-modal-match-count');
+            const selectedLabel = document.getElementById('guest-modal-selected-count-label');
+
+            const rawQuery = searchInput ? searchInput.value.trim() : '';
+            const classFilter = classFilterEl ? classFilterEl.value : '';
+
+            if (clearBtn) {
+                if (rawQuery) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+
+            const otherStudents = sortStudentsArray(
+                students.filter(s => {
+                    if (s.className === currentClass) return false;
+                    if (classFilter && s.className !== classFilter) return false;
+                    return matchesStudentSearchQuery(s, rawQuery);
+                })
+            );
+
+            if (matchCountLabel) matchCountLabel.textContent = `Danh sách võ sinh (${otherStudents.length})`;
+            if (selectedLabel) selectedLabel.textContent = `Đã chọn: ${guestModalCheckedIds.size}`;
+
+            if (select) {
+                if (otherStudents.length === 0) {
+                    select.innerHTML = `<option value="">-- Không tìm thấy võ sinh phù hợp --</option>`;
+                } else {
+                    select.innerHTML = otherStudents.map(s => `
+                        <option value="${escapeHtml(s.id)}">${escapeHtml(s.name)} (${escapeHtml(s.className)} - ${escapeHtml(s.belt)})</option>
+                    `).join('');
+                }
+            }
+
+            if (!listEl) return;
+
+            const inSessionIds = getCurrentAttendanceSessionIds();
+
+            if (otherStudents.length === 0) {
+                listEl.innerHTML = `
+                    <div class="p-4 text-center space-y-2">
+                        <p class="text-xs text-slate-400">Không tìm thấy võ sinh lớp khác khớp với từ khoá.</p>
+                        ${rawQuery ? `
+                            <button type="button" onclick="quickCreateAndAddMakeupStudent('${escapeJsAttr(rawQuery)}');closeGuestModal();" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition inline-flex items-center space-x-1 cursor-pointer">
+                                <i class="fa-solid fa-user-plus"></i>
+                                <span>+ Thêm mới "${escapeHtml(rawQuery)}" học bù</span>
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = otherStudents.map(s => {
+                const safeId = escapeJsAttr(s.id);
+                const alreadyIn = inSessionIds.has(s.id);
+                const isChecked = guestModalCheckedIds.has(s.id);
+                return `
+                    <div class="px-3.5 py-2.5 hover:bg-purple-50/40 transition flex items-center justify-between gap-2">
+                        <label class="flex items-center space-x-2.5 min-w-0 flex-1 cursor-pointer">
+                            <input type="checkbox" data-id="${escapeHtml(s.id)}" ${alreadyIn ? 'disabled checked' : (isChecked ? 'checked' : '')}
+                                onchange="toggleGuestModalStudentCheck('${safeId}', this.checked)"
+                                class="guest-modal-cb w-4 h-4 rounded text-purple-600 focus:ring-purple-600 cursor-pointer flex-shrink-0">
+                            <div class="min-w-0">
+                                <div class="font-bold text-slate-800 text-xs sm:text-sm truncate">${escapeHtml(s.name)} <span class="text-[11px] font-mono text-slate-400">(${escapeHtml(s.id)})</span></div>
+                                <div class="text-[11px] text-slate-500">Lớp gốc: <strong class="text-purple-700">${escapeHtml(s.className)}</strong> • ${escapeHtml(s.belt)}</div>
+                            </div>
+                        </label>
+                        <div class="flex-shrink-0">
+                            ${alreadyIn ? `
+                                <span class="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold">Đã trong lớp</span>
+                            ` : `
+                                <button type="button" onclick="quickAddMakeupStudentToAttendance('${safeId}', true)" class="px-2.5 py-1 bg-purple-100 hover:bg-purple-600 text-purple-700 hover:text-white rounded-lg text-xs font-bold transition cursor-pointer">
+                                    + Học bù
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function quickCreateNewMakeupFromModal() {
+            const searchInput = document.getElementById('guest-modal-search-input');
+            const nameVal = searchInput ? searchInput.value.trim() : '';
+            if (!nameVal) {
+                showToast('Hãy nhập họ tên võ sinh mới vào ô tìm kiếm phía trên trước khi bấm Thêm tên mới!', 'info');
+                if (searchInput) searchInput.focus();
+                return;
+            }
+            quickCreateAndAddMakeupStudent(nameVal);
+            closeGuestModal();
         }
 
         function closeGuestModal() {
@@ -10626,12 +11353,40 @@
         }
 
         function addGuestToCurrentAttendance() {
+            const key = getAttendanceKey();
+            const removedSet = removedSavedGuestIdsByKey[key];
+            const inSessionIds = getCurrentAttendanceSessionIds();
+
+            if (guestModalCheckedIds.size > 0) {
+                let addedCount = 0;
+                guestModalCheckedIds.forEach(studentId => {
+                    const studentObj = students.find(s => s.id === studentId);
+                    if (studentObj && !inSessionIds.has(studentId)) {
+                        if (removedSet) removedSet.delete(studentId);
+                        if (!currentGuestList.some(g => g.id === studentId)) {
+                            currentGuestList.push(studentObj);
+                            addedCount++;
+                        }
+                    }
+                });
+                guestModalCheckedIds.clear();
+                closeGuestModal();
+                loadAttendanceSheet(true);
+                if (addedCount > 0) {
+                    showToast(`Đã bổ sung ${addedCount} võ sinh học bù vào buổi học!`);
+                } else {
+                    showToast('Các võ sinh đã chọn đều đã có trong danh sách buổi học!', 'info');
+                }
+                return;
+            }
+
             const select = document.getElementById('guest-select-student');
-            const studentId = select.value;
+            const studentId = select ? select.value : '';
             const studentObj = students.find(s => s.id === studentId);
 
             if (studentObj) {
-                if (!currentGuestList.some(g => g.id === studentId)) {
+                if (removedSet) removedSet.delete(studentId);
+                if (!currentGuestList.some(g => g.id === studentId) && !inSessionIds.has(studentId)) {
                     currentGuestList.push(studentObj);
                     showToast(`Đã thêm môn sinh ${studentObj.name} vào buổi học!`);
                 } else {
@@ -10639,7 +11394,7 @@
                 }
             }
             closeGuestModal();
-            loadAttendanceSheet();
+            loadAttendanceSheet(true);
         }
 
         // ================= TAB 3: QUẢN LÝ HỌC PHÍ =================
