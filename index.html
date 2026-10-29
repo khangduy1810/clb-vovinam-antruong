@@ -124,9 +124,10 @@
                         <i class="fa-solid fa-gauge-high"></i>
                         <span>Tổng Quan</span>
                     </button>
-                    <button onclick="switchTab('students')" id="tab-btn-students" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10">
+                    <button onclick="switchTab('students')" id="tab-btn-students" class="relative px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10">
                         <i class="fa-solid fa-users"></i>
                         <span>Võ Sinh</span>
+                        <span id="nav-dup-student-count" class="hidden -top-1 -right-1 px-1.5 py-0.5 text-[10px] bg-red-600 text-white rounded-full font-black animate-pulse shadow-sm"></span>
                     </button>
                     <button onclick="switchTab('classes')" id="tab-btn-classes" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 text-blue-100 hover:bg-white/10">
                         <i class="fa-solid fa-chalkboard-user"></i>
@@ -329,8 +330,9 @@
             <button onclick="switchTab('overview')" id="mobile-tab-overview" class="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-white bg-white/20 flex items-center space-x-2">
                 <i class="fa-solid fa-gauge-high w-6"></i><span>Bảng Tổng Quan CLB</span>
             </button>
-            <button onclick="switchTab('students')" id="mobile-tab-students" class="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-blue-100 hover:bg-white/10 flex items-center space-x-2">
-                <i class="fa-solid fa-users w-6"></i><span>Danh Sách Võ Sinh</span>
+            <button onclick="switchTab('students')" id="mobile-tab-students" class="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-blue-100 hover:bg-white/10 flex items-center justify-between">
+                <div class="flex items-center space-x-2"><i class="fa-solid fa-users w-6"></i><span>Danh Sách Võ Sinh</span></div>
+                <span id="mobile-dup-student-count" class="hidden px-2 py-0.5 text-xs bg-red-600 text-white rounded-full font-bold animate-pulse"></span>
             </button>
             <button onclick="switchTab('classes')" id="mobile-tab-classes" class="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-blue-100 hover:bg-white/10 flex items-center space-x-2">
                 <i class="fa-solid fa-chalkboard-user w-6"></i><span>Quản Lý Lớp Học & Lịch</span>
@@ -483,6 +485,9 @@
                 <!-- Họa tiết chìm trang trí -->
                 <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full pointer-events-none blur-xl"></div>
             </div>
+
+            <!-- Khung Cảnh Báo Nhanh Khi Có Võ Sinh Trùng Tên / Trùng Mã Định Danh -->
+            <div id="overview-duplicate-alert" class="hidden"></div>
 
             <!-- 6 Khối Chỉ Số Nghiệp Vụ Hoạt Động (Click để chuyển nhanh tới Tab) -->
             <div>
@@ -779,9 +784,12 @@
                 </div>
             </div>
 
+            <!-- Khung Cảnh Báo Đỏ Khi Phát Hiện Học Viên Trùng Tên Hoặc Trùng Mã Định Danh (Chỉ mất khi xác nhận) -->
+            <div id="student-duplicate-banner" class="hidden"></div>
+
             <!-- Filter Bar -->
-            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div class="relative">
                         <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
                         <input type="text" id="search-student" oninput="renderStudents()" placeholder="Tìm theo tên, số định danh, SĐT..." class="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none">
@@ -810,10 +818,18 @@
                             <option value="guest">Học sinh học thêm (Tăng cường)</option>
                         </select>
                     </div>
+                    <div>
+                        <select id="sort-student-order" onchange="onStudentSortOrderChange(this.value)" title="Sắp xếp thứ tự tên võ sinh từ A đến Z" class="w-full py-2 px-3 text-sm border border-blue-200 bg-blue-50/40 text-vovinam-blue font-bold rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none">
+                            <option value="name_az" selected>Thứ tự tên: A → Z (Theo Tên)</option>
+                            <option value="fullname_az">Thứ tự Họ &amp; Tên: A → Z</option>
+                            <option value="name_za">Thứ tự tên: Z → A</option>
+                            <option value="id_az">Mã định danh: A → Z</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="flex items-center space-x-3">
-                    <button onclick="openStudentModal()" class="w-full md:w-auto bg-vovinam-blue hover:bg-vovinam-darkblue text-white px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transition">
+                <div class="flex items-center space-x-3 flex-shrink-0">
+                    <button onclick="openStudentModal()" class="w-full lg:w-auto bg-vovinam-blue hover:bg-vovinam-darkblue text-white px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transition">
                         <i class="fa-solid fa-user-plus"></i>
                         <span id="add-student-btn-text">Thêm Võ Sinh Mới</span>
                     </button>
@@ -823,14 +839,29 @@
             <!-- Student Table & Card Grid Container -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/60">
-                    <h2 class="text-sm sm:text-base font-bold text-slate-800 flex items-center space-x-2">
-                        <i class="fa-solid fa-list text-vovinam-blue"></i>
-                        <span>Danh Sách Võ Sinh (<span id="student-count">0</span>)</span>
-                    </h2>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-sm sm:text-base font-bold text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-list text-vovinam-blue"></i>
+                            <span>Danh Sách Võ Sinh (<span id="student-count">0</span>)</span>
+                        </h2>
+                        <span id="student-sort-indicator-pill" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-vovinam-blue border border-blue-200 flex items-center space-x-1">
+                            <i class="fa-solid fa-arrow-down-a-z"></i>
+                            <span>Tên: A → Z</span>
+                        </span>
+                        <button type="button" id="btn-filter-duplicates-only" onclick="toggleFilterDuplicatesOnly()" class="hidden px-2.5 py-1 rounded-xl text-xs font-black bg-red-600 hover:bg-red-700 text-white shadow-xs transition items-center space-x-1.5 animate-pulse cursor-pointer">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span id="btn-filter-duplicates-text">Cảnh báo trùng (0)</span>
+                        </button>
+                        <button type="button" id="btn-reset-confirmed-duplicates" onclick="resetConfirmedDuplicates()" class="hidden px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200 hover:border-red-200 transition items-center space-x-1 cursor-pointer" title="Hiển thị lại cảnh báo đỏ cho các trường hợp trùng đã xác nhận">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span id="btn-reset-confirmed-text">Kiểm tra lại trùng</span>
+                        </button>
+                    </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="text-xs text-slate-500 hidden sm:flex items-center">
                             <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500 mr-1.5"></span> Chính thức
                             <span class="inline-block w-2.5 h-2.5 rounded-full bg-purple-500 ml-3 mr-1.5"></span> Học thêm
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-600 ml-3 mr-1.5"></span> Cảnh báo trùng
                         </div>
                         <div class="inline-flex rounded-xl bg-slate-200/70 p-1 border border-slate-200">
                             <button type="button" id="btn-student-view-table" onclick="setStudentViewMode('table')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-vovinam-blue shadow-xs transition flex items-center space-x-1">
@@ -2807,6 +2838,8 @@
 
             <!-- Body Hồ Sơ -->
             <div class="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+                <!-- Cảnh báo đỏ nếu võ sinh đang bị trùng Tên hoặc trùng Mã định danh chưa xác nhận -->
+                <div id="detail-duplicate-warning-box" class="hidden"></div>
                 <!-- Thống kê nhanh 4 ô -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                     <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
@@ -2963,16 +2996,20 @@
                     </div>
                 </div>
 
+                <!-- Khung Cảnh Báo Đỏ Trực Tiếp Khi Nhập Trùng Tên Hoặc Trùng Mã Định Danh -->
+                <div id="student-modal-duplicate-alert" class="hidden"></div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                     <div class="min-w-0 flex flex-col">
                         <label class="block text-xs font-bold text-slate-700 mb-1.5 truncate">Số Định Danh / Mã Số <span class="text-red-500">*</span></label>
-                        <input type="text" id="student-id-number" required placeholder="VD: VVN001 hoặc CCCD" class="w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
-                        <p class="text-[11px] text-slate-400 mt-1">Có thể chỉnh sửa mã số/CCCD; hệ thống sẽ tự động đồng bộ toàn bộ lịch sử điểm danh, học phí & giải đấu.</p>
+                        <input type="text" id="student-id-number" oninput="checkStudentFormDuplicate()" required placeholder="VD: VVN001 hoặc CCCD" class="w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white transition">
+                        <p id="student-id-dup-hint" class="text-[11px] text-slate-400 mt-1">Có thể chỉnh sửa mã số/CCCD; hệ thống sẽ tự động báo trùng nếu trùng mã định danh với học viên khác.</p>
                     </div>
 
                     <div class="min-w-0 flex flex-col">
                         <label class="block text-xs font-bold text-slate-700 mb-1.5 truncate">Họ và Tên Võ Sinh <span class="text-red-500">*</span></label>
-                        <input type="text" id="student-name" required placeholder="Nguyễn Văn A" class="w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
+                        <input type="text" id="student-name" oninput="checkStudentFormDuplicate()" required placeholder="Nguyễn Văn A" class="w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white transition">
+                        <p id="student-name-dup-hint" class="text-[11px] text-slate-400 mt-1">Hệ thống tự động sắp xếp tên từ A → Z và cảnh báo đỏ nếu trùng tên võ sinh.</p>
                     </div>
 
                     <div class="min-w-0 flex flex-col">
@@ -5466,6 +5503,10 @@
         let currentGuestList = [];
         let gearOrders = [];
         let tournamentEntries = [];
+        let confirmedDuplicates = { names: {}, ids: {}, uids: {} };
+        let filterDuplicatesOnly = false;
+        let currentStudentSortMode = 'name_az';
+        let currentEditingStudentUid = null;
 
         // Danh mục mẫu đồ tập & võ phục Vovinam
         const GEAR_CATALOG = [
@@ -6020,6 +6061,24 @@
                     if (st.className === 'Cuối tuần T7-CN') st.className = 'Lớp Cuối tuần (T7-CN)';
                 });
 
+                const rawConfDup = localStorage.getItem('vovinam_confirmed_duplicates');
+                if (rawConfDup) {
+                    const parsedConf = JSON.parse(rawConfDup);
+                    confirmedDuplicates = {
+                        names: (parsedConf && parsedConf.names) || {},
+                        ids: (parsedConf && parsedConf.ids) || {},
+                        uids: (parsedConf && parsedConf.uids) || {}
+                    };
+                }
+                const savedSortMode = localStorage.getItem('vovinam_student_sort_mode');
+                if (savedSortMode && ['name_az', 'fullname_az', 'name_za', 'id_az'].includes(savedSortMode)) {
+                    currentStudentSortMode = savedSortMode;
+                    const sortSel = document.getElementById('sort-student-order');
+                    if (sortSel) sortSel.value = currentStudentSortMode;
+                }
+                if (typeof ensureStudentUids === 'function') ensureStudentUids();
+                if (typeof sortStudentsInPlace === 'function') sortStudentsInPlace();
+
                 const a = localStorage.getItem('vovinam_attendance');
                 attendanceRecords = a ? JSON.parse(a) : {};
 
@@ -6166,7 +6225,14 @@
             if (!skipCloud) triggerAutoCloudSync();
         }
 
+        function saveConfirmedDuplicatesToStorage(skipCloud = false) {
+            safeSetStorageItem('vovinam_confirmed_duplicates', confirmedDuplicates);
+            if (!skipCloud) triggerAutoCloudSync();
+        }
+
         function saveStudentsToStorage(skipCloud = false) {
+            if (typeof ensureStudentUids === 'function') ensureStudentUids();
+            if (typeof sortStudentsInPlace === 'function') sortStudentsInPlace();
             safeSetStorageItem('vovinam_students', students);
             updateBackupStatsUI();
             if (!skipCloud) triggerAutoCloudSync();
@@ -7866,10 +7932,11 @@
             const tbody = document.getElementById('class-students-table-body');
             const noMsg = document.getElementById('class-no-students-msg');
 
-            const classStudents = students.filter(s => s.className === cls.name);
+            const classStudents = sortStudentsArray(students.filter(s => s.className === cls.name));
+            const dupAnalysis = analyzeStudentDuplicates();
 
             title.innerHTML = `<i class="fa-solid fa-users mr-1.5"></i><span>Danh Sách Võ Sinh: ${escapeHtml(cls.name)}</span>`;
-            subtitle.innerText = `Lịch học: ${cls.days} (${cls.time}) • Sĩ số: ${classStudents.length} võ sinh`;
+            subtitle.innerText = `Lịch học: ${cls.days} (${cls.time}) • Sĩ số: ${classStudents.length} võ sinh (Sắp xếp A → Z)`;
 
             if (classStudents.length === 0) {
                 tbody.innerHTML = '';
@@ -7877,18 +7944,27 @@
             } else {
                 noMsg.classList.add('hidden');
                 tbody.innerHTML = classStudents.map((s, idx) => {
+                    const dupInfo = (s._uid && dupAnalysis.byUid[s._uid]) || { isUnconfirmed: false };
+                    const isUnconf = dupInfo.isUnconfirmed;
+                    const safeRef = escapeJsAttr(s._uid || s.id);
                     return `
-                        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                        <tr class="${isUnconf ? 'bg-red-50/80 hover:bg-red-100/70 border-l-4 border-l-red-600' : 'hover:bg-slate-50'} transition border-b border-slate-100">
                             <td class="py-2.5 px-3 text-center font-bold text-slate-400">${idx + 1}</td>
-                            <td class="py-2.5 px-3 font-mono font-bold text-slate-700">${escapeHtml(s.id)}</td>
-                            <td class="py-2.5 px-3 font-bold text-slate-800">${escapeHtml(s.name)}</td>
+                            <td class="py-2.5 px-3 font-mono font-bold ${dupInfo.isDupIdUnconfirmed ? 'text-red-600 font-black' : 'text-slate-700'}">${escapeHtml(s.id)}</td>
+                            <td class="py-2.5 px-3 font-bold ${isUnconf ? 'text-red-600 font-black' : 'text-slate-800'}">
+                                <div class="flex items-center space-x-1.5">
+                                    ${isUnconf ? '<i class="fa-solid fa-triangle-exclamation text-red-600 animate-pulse"></i>' : ''}
+                                    <span>${escapeHtml(s.name)}</span>
+                                </div>
+                                ${isUnconf ? `<span class="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-600 text-white">${escapeHtml(dupInfo.shortReason)}</span>` : ''}
+                            </td>
                             <td class="py-2.5 px-3">${getBeltBadge(s.belt)}</td>
                             <td class="py-2.5 px-3">
                                 <div>${escapeHtml(s.parent || 'Chưa cập nhật')}</div>
                                 <div class="text-[11px] font-bold text-vovinam-blue">${escapeHtml(s.phone || 'N/A')}</div>
                             </td>
                             <td class="py-2.5 px-3 text-center">
-                                <button onclick="closeClassStudentsModal(); viewStudentDetail('${escapeJsAttr(s.id)}')" class="px-2.5 py-1 bg-blue-50 text-vovinam-blue hover:bg-blue-100 rounded-lg text-xs font-semibold transition">
+                                <button onclick="closeClassStudentsModal(); viewStudentDetail('${safeRef}')" class="px-2.5 py-1 bg-blue-50 text-vovinam-blue hover:bg-blue-100 rounded-lg text-xs font-semibold transition">
                                     Chi tiết
                                 </button>
                             </td>
@@ -7984,21 +8060,703 @@
                     </span>`;
         }
 
+        // ================= HỆ THỐNG SẮP XẾP TÊN A-Z & PHÁT HIỆN BÁO TRÙNG HỌC VIÊN =================
+        function ensureStudentUids() {
+            if (!Array.isArray(students)) return;
+            const seenUids = new Set();
+            students.forEach((s, idx) => {
+                if (!s) return;
+                if (!s._uid || seenUids.has(s._uid)) {
+                    const baseId = String(s.id || idx).replace(/[^a-zA-Z0-9_-]/g, '');
+                    s._uid = 'STU_' + baseId + '_' + idx + '_' + Math.random().toString(36).slice(2, 7);
+                }
+                seenUids.add(s._uid);
+            });
+        }
+
+        function findStudentByRef(ref) {
+            if (!ref) return null;
+            ensureStudentUids();
+            const cleanRef = String(ref).trim();
+            return students.find(s => s && (s._uid === cleanRef || String(s.id).trim() === cleanRef)) || null;
+        }
+
+        function normalizeDupName(name) {
+            return String(name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        }
+
+        function normalizeDupId(id) {
+            return String(id || '').trim().replace(/\s+/g, ' ').toUpperCase();
+        }
+
+        function extractVietnameseGivenName(fullName) {
+            if (!fullName) return '';
+            const parts = String(fullName).trim().split(/\s+/);
+            return parts[parts.length - 1] || '';
+        }
+
+        function compareStudentsAZ(a, b, sortMode = null) {
+            const mode = sortMode || currentStudentSortMode || 'name_az';
+            const objA = (a && a.studentObj) ? a.studentObj : a;
+            const objB = (b && b.studentObj) ? b.studentObj : b;
+            const nameA = String((objA && (objA.name || objA.studentName)) || '').trim();
+            const nameB = String((objB && (objB.name || objB.studentName)) || '').trim();
+            const idA = String((objA && (objA.id || objA.studentId)) || '').trim();
+            const idB = String((objB && (objB.id || objB.studentId)) || '').trim();
+
+            if (mode === 'id_az') {
+                const cmpId = idA.localeCompare(idB, 'vi', { numeric: true, sensitivity: 'base' });
+                if (cmpId !== 0) return cmpId;
+                return nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
+            }
+            if (mode === 'fullname_az') {
+                const cmpFull = nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
+                if (cmpFull !== 0) return cmpFull;
+                return idA.localeCompare(idB, 'vi', { numeric: true, sensitivity: 'base' });
+            }
+
+            const givenA = extractVietnameseGivenName(nameA);
+            const givenB = extractVietnameseGivenName(nameB);
+            const cmpGiven = givenA.localeCompare(givenB, 'vi', { sensitivity: 'base' });
+            if (cmpGiven !== 0) {
+                return mode === 'name_za' ? -cmpGiven : cmpGiven;
+            }
+            const cmpFull = nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
+            if (cmpFull !== 0) {
+                return mode === 'name_za' ? -cmpFull : cmpFull;
+            }
+            return idA.localeCompare(idB, 'vi', { numeric: true, sensitivity: 'base' });
+        }
+
+        function sortStudentsArray(arr, sortMode = null) {
+            if (!Array.isArray(arr)) return [];
+            return arr.slice().sort((a, b) => compareStudentsAZ(a, b, sortMode));
+        }
+
+        function sortStudentsInPlace() {
+            if (!Array.isArray(students)) return;
+            ensureStudentUids();
+            students.sort((a, b) => compareStudentsAZ(a, b, currentStudentSortMode));
+        }
+
+        function onStudentSortOrderChange(mode) {
+            currentStudentSortMode = mode || 'name_az';
+            try {
+                localStorage.setItem('vovinam_student_sort_mode', currentStudentSortMode);
+            } catch (e) {}
+            const pill = document.getElementById('student-sort-indicator-pill');
+            if (pill) {
+                const labels = {
+                    name_az: '<i class="fa-solid fa-arrow-down-a-z"></i><span>Tên: A → Z</span>',
+                    fullname_az: '<i class="fa-solid fa-arrow-down-a-z"></i><span>Họ &amp; Tên: A → Z</span>',
+                    name_za: '<i class="fa-solid fa-arrow-up-z-a"></i><span>Tên: Z → A</span>',
+                    id_az: '<i class="fa-solid fa-hashtag"></i><span>Mã số: A → Z</span>'
+                };
+                pill.innerHTML = labels[currentStudentSortMode] || labels.name_az;
+            }
+            sortStudentsInPlace();
+            renderStudents();
+            loadAttendanceSheet();
+            renderTuitionTable();
+        }
+
+        function analyzeStudentDuplicates() {
+            ensureStudentUids();
+            if (!confirmedDuplicates || typeof confirmedDuplicates !== 'object') {
+                confirmedDuplicates = { names: {}, ids: {}, uids: {} };
+            }
+            if (!confirmedDuplicates.names) confirmedDuplicates.names = {};
+            if (!confirmedDuplicates.ids) confirmedDuplicates.ids = {};
+            if (!confirmedDuplicates.uids) confirmedDuplicates.uids = {};
+
+            const nameGroups = {};
+            const idGroups = {};
+
+            students.forEach(s => {
+                if (!s) return;
+                const nKey = normalizeDupName(s.name);
+                const iKey = normalizeDupId(s.id);
+                if (nKey) {
+                    if (!nameGroups[nKey]) nameGroups[nKey] = [];
+                    nameGroups[nKey].push(s);
+                }
+                if (iKey) {
+                    if (!idGroups[iKey]) idGroups[iKey] = [];
+                    idGroups[iKey].push(s);
+                }
+            });
+
+            const nameGroupMeta = {};
+            Object.keys(nameGroups).forEach(nKey => {
+                const grp = nameGroups[nKey];
+                if (grp.length > 1) {
+                    const sig = 'NAME:' + nKey + ':' + grp.map(x => x._uid).sort().join('|');
+                    const isConfirmed = Boolean(
+                        confirmedDuplicates.names[nKey] === sig ||
+                        grp.every(x => confirmedDuplicates.uids[x._uid + ':name'] === sig)
+                    );
+                    nameGroupMeta[nKey] = {
+                        key: nKey,
+                        displayValue: grp[0].name,
+                        students: grp,
+                        count: grp.length,
+                        sig,
+                        isConfirmed
+                    };
+                }
+            });
+
+            const idGroupMeta = {};
+            Object.keys(idGroups).forEach(iKey => {
+                const grp = idGroups[iKey];
+                if (grp.length > 1) {
+                    const sig = 'ID:' + iKey + ':' + grp.map(x => x._uid).sort().join('|');
+                    const isConfirmed = Boolean(
+                        confirmedDuplicates.ids[iKey] === sig ||
+                        grp.every(x => confirmedDuplicates.uids[x._uid + ':id'] === sig)
+                    );
+                    idGroupMeta[iKey] = {
+                        key: iKey,
+                        displayValue: grp[0].id,
+                        students: grp,
+                        count: grp.length,
+                        sig,
+                        isConfirmed
+                    };
+                }
+            });
+
+            const byUid = {};
+            let unconfirmedStudentCount = 0;
+            let confirmedStudentCount = 0;
+
+            students.forEach(s => {
+                if (!s) return;
+                const nKey = normalizeDupName(s.name);
+                const iKey = normalizeDupId(s.id);
+                const nMeta = nameGroupMeta[nKey] || null;
+                const iMeta = idGroupMeta[iKey] || null;
+
+                const hasDupName = Boolean(nMeta);
+                const hasDupId = Boolean(iMeta);
+                const isDupNameUnconfirmed = Boolean(nMeta && !nMeta.isConfirmed);
+                const isDupIdUnconfirmed = Boolean(iMeta && !iMeta.isConfirmed);
+                const isUnconfirmed = isDupNameUnconfirmed || isDupIdUnconfirmed;
+                const isConfirmedDuplicate = (hasDupName || hasDupId) && !isUnconfirmed;
+
+                if (isUnconfirmed) unconfirmedStudentCount++;
+                else if (isConfirmedDuplicate) confirmedStudentCount++;
+
+                const namePeers = nMeta ? nMeta.students.filter(x => x._uid !== s._uid) : [];
+                const idPeers = iMeta ? iMeta.students.filter(x => x._uid !== s._uid) : [];
+
+                let shortReason = '';
+                if (isDupNameUnconfirmed && isDupIdUnconfirmed) shortReason = 'Trùng Tên & Mã ĐD';
+                else if (isDupNameUnconfirmed) shortReason = 'Trùng tên võ sinh';
+                else if (isDupIdUnconfirmed) shortReason = 'Trùng mã định danh';
+                else if (hasDupName && hasDupId) shortReason = 'Đã xác nhận trùng Tên & Mã';
+                else if (hasDupName) shortReason = 'Đã xác nhận trùng tên';
+                else if (hasDupId) shortReason = 'Đã xác nhận trùng mã ĐD';
+
+                const detailParts = [];
+                if (isDupNameUnconfirmed) {
+                    const peerDesc = namePeers.map(p => `${p.name} (Mã: ${p.id} - ${p.className})`).join(', ');
+                    detailParts.push(`Trùng họ tên với: ${peerDesc}`);
+                }
+                if (isDupIdUnconfirmed) {
+                    const peerDesc = idPeers.map(p => `${p.name} (Mã: ${p.id} - ${p.className})`).join(', ');
+                    detailParts.push(`Trùng mã định danh "${s.id}" với: ${peerDesc}`);
+                }
+
+                byUid[s._uid] = {
+                    hasDupName,
+                    hasDupId,
+                    isDupNameUnconfirmed,
+                    isDupIdUnconfirmed,
+                    isUnconfirmed,
+                    isConfirmedDuplicate,
+                    nameCount: nMeta ? nMeta.count : 1,
+                    idCount: iMeta ? iMeta.count : 1,
+                    nameSig: nMeta ? nMeta.sig : '',
+                    idSig: iMeta ? iMeta.sig : '',
+                    nameKey: nKey,
+                    idKey: iKey,
+                    namePeers,
+                    idPeers,
+                    shortReason,
+                    detailReason: detailParts.join(' • ')
+                };
+            });
+
+            const unconfirmedNameGroups = Object.values(nameGroupMeta).filter(g => !g.isConfirmed);
+            const unconfirmedIdGroups = Object.values(idGroupMeta).filter(g => !g.isConfirmed);
+
+            return {
+                byUid,
+                nameGroupMeta,
+                idGroupMeta,
+                unconfirmedNameGroups,
+                unconfirmedIdGroups,
+                unconfirmedStudentCount,
+                confirmedStudentCount,
+                totalUnconfirmedGroups: unconfirmedNameGroups.length + unconfirmedIdGroups.length
+            };
+        }
+
+        function invalidateDuplicateConfirmation(nameVal, idVal) {
+            if (!confirmedDuplicates) confirmedDuplicates = { names: {}, ids: {}, uids: {} };
+            const nKey = normalizeDupName(nameVal);
+            const iKey = normalizeDupId(idVal);
+            if (nKey && confirmedDuplicates.names && confirmedDuplicates.names[nKey]) {
+                delete confirmedDuplicates.names[nKey];
+            }
+            if (iKey && confirmedDuplicates.ids && confirmedDuplicates.ids[iKey]) {
+                delete confirmedDuplicates.ids[iKey];
+            }
+            saveConfirmedDuplicatesToStorage(true);
+        }
+
+        function confirmStudentDuplicate(ref, silent = false) {
+            const s = findStudentByRef(ref);
+            if (!s) return;
+            const analysis = analyzeStudentDuplicates();
+            const info = analysis.byUid[s._uid];
+            if (!info) return;
+
+            if (info.hasDupName && info.nameKey && info.nameSig) {
+                confirmedDuplicates.names[info.nameKey] = info.nameSig;
+                const grp = analysis.nameGroupMeta[info.nameKey];
+                if (grp && Array.isArray(grp.students)) {
+                    grp.students.forEach(peer => {
+                        confirmedDuplicates.uids[peer._uid + ':name'] = info.nameSig;
+                    });
+                }
+            }
+            if (info.hasDupId && info.idKey && info.idSig) {
+                confirmedDuplicates.ids[info.idKey] = info.idSig;
+                const grp = analysis.idGroupMeta[info.idKey];
+                if (grp && Array.isArray(grp.students)) {
+                    grp.students.forEach(peer => {
+                        confirmedDuplicates.uids[peer._uid + ':id'] = info.idSig;
+                    });
+                }
+            }
+
+            saveConfirmedDuplicatesToStorage();
+
+            const afterAnalysis = analyzeStudentDuplicates();
+            if (filterDuplicatesOnly && afterAnalysis.unconfirmedStudentCount === 0) {
+                filterDuplicatesOnly = false;
+            }
+
+            renderStudents();
+            if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
+            if (typeof loadAttendanceSheet === 'function') loadAttendanceSheet();
+            if (typeof renderTuitionTable === 'function') renderTuitionTable();
+
+            const detailModal = document.getElementById('detail-modal');
+            if (detailModal && !detailModal.classList.contains('hidden')) {
+                viewStudentDetail(s._uid);
+            }
+
+            if (!silent) {
+                showToast(`Đã xác nhận học viên "${s.name}" (${s.id})! Đã tắt cảnh báo đỏ.`);
+            }
+        }
+
+        function confirmDuplicateGroup(groupType, normKey) {
+            const analysis = analyzeStudentDuplicates();
+            if (groupType === 'name') {
+                const grp = analysis.nameGroupMeta[normKey];
+                if (grp) {
+                    confirmedDuplicates.names[normKey] = grp.sig;
+                    grp.students.forEach(peer => {
+                        confirmedDuplicates.uids[peer._uid + ':name'] = grp.sig;
+                    });
+                }
+            } else if (groupType === 'id') {
+                const grp = analysis.idGroupMeta[normKey];
+                if (grp) {
+                    confirmedDuplicates.ids[normKey] = grp.sig;
+                    grp.students.forEach(peer => {
+                        confirmedDuplicates.uids[peer._uid + ':id'] = grp.sig;
+                    });
+                }
+            }
+            saveConfirmedDuplicatesToStorage();
+            const afterAnalysis = analyzeStudentDuplicates();
+            if (filterDuplicatesOnly && afterAnalysis.unconfirmedStudentCount === 0) {
+                filterDuplicatesOnly = false;
+            }
+            renderStudents();
+            if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
+            if (typeof loadAttendanceSheet === 'function') loadAttendanceSheet();
+            if (typeof renderTuitionTable === 'function') renderTuitionTable();
+            showToast('Đã xác nhận nhóm thông tin trùng! Cảnh báo đỏ đã được gỡ bỏ.');
+        }
+
+        function confirmAllStudentDuplicates() {
+            const analysis = analyzeStudentDuplicates();
+            analysis.unconfirmedNameGroups.forEach(grp => {
+                confirmedDuplicates.names[grp.key] = grp.sig;
+                grp.students.forEach(peer => {
+                    confirmedDuplicates.uids[peer._uid + ':name'] = grp.sig;
+                });
+            });
+            analysis.unconfirmedIdGroups.forEach(grp => {
+                confirmedDuplicates.ids[grp.key] = grp.sig;
+                grp.students.forEach(peer => {
+                    confirmedDuplicates.uids[peer._uid + ':id'] = grp.sig;
+                });
+            });
+            filterDuplicatesOnly = false;
+            saveConfirmedDuplicatesToStorage();
+            renderStudents();
+            if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
+            if (typeof loadAttendanceSheet === 'function') loadAttendanceSheet();
+            if (typeof renderTuitionTable === 'function') renderTuitionTable();
+            showToast('Đã xác nhận toàn bộ các trường hợp trùng tên / trùng mã định danh!');
+        }
+
+        function resetConfirmedDuplicates() {
+            confirmedDuplicates = { names: {}, ids: {}, uids: {} };
+            saveConfirmedDuplicatesToStorage();
+            renderStudents();
+            if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
+            if (typeof loadAttendanceSheet === 'function') loadAttendanceSheet();
+            if (typeof renderTuitionTable === 'function') renderTuitionTable();
+            showToast('Đã bật lại chế độ kiểm tra và cảnh báo đỏ cho mọi trường hợp trùng!', 'info');
+        }
+
+        function toggleFilterDuplicatesOnly() {
+            filterDuplicatesOnly = !filterDuplicatesOnly;
+            renderStudents();
+            if (filterDuplicatesOnly) {
+                showToast('Đang lọc hiển thị riêng các học viên bị báo trùng chưa xác nhận!', 'info');
+            } else {
+                showToast('Đã hiển thị lại toàn bộ danh sách võ sinh A → Z.', 'info');
+            }
+        }
+
+        function updateDuplicateWarningBanners(analysis) {
+            const unconfCount = analysis ? analysis.unconfirmedStudentCount : 0;
+            const confCount = analysis ? analysis.confirmedStudentCount : 0;
+
+            // 1. Badges trên thanh điều hướng
+            const navBadge = document.getElementById('nav-dup-student-count');
+            const mobBadge = document.getElementById('mobile-dup-student-count');
+            if (navBadge) {
+                if (unconfCount > 0) {
+                    navBadge.innerText = unconfCount;
+                    navBadge.classList.remove('hidden');
+                } else {
+                    navBadge.classList.add('hidden');
+                }
+            }
+            if (mobBadge) {
+                if (unconfCount > 0) {
+                    mobBadge.innerText = unconfCount;
+                    mobBadge.classList.remove('hidden');
+                } else {
+                    mobBadge.classList.add('hidden');
+                }
+            }
+
+            // 2. Nút lọc trùng & nút kiểm tra lại trên thanh tiêu đề bảng Võ Sinh
+            const btnFilterDup = document.getElementById('btn-filter-duplicates-only');
+            const btnFilterDupText = document.getElementById('btn-filter-duplicates-text');
+            const btnResetConf = document.getElementById('btn-reset-confirmed-duplicates');
+            const btnResetConfText = document.getElementById('btn-reset-confirmed-text');
+
+            if (btnFilterDup) {
+                if (unconfCount > 0) {
+                    btnFilterDup.classList.remove('hidden');
+                    btnFilterDup.classList.add('inline-flex');
+                    if (btnFilterDupText) {
+                        btnFilterDupText.innerText = filterDuplicatesOnly
+                            ? `Đang lọc trùng (${unconfCount}) • Bấm xem tất cả`
+                            : `Cảnh báo đỏ: ${unconfCount} học viên trùng`;
+                    }
+                } else {
+                    btnFilterDup.classList.add('hidden');
+                    btnFilterDup.classList.remove('inline-flex');
+                }
+            }
+
+            if (btnResetConf) {
+                if (confCount > 0) {
+                    btnResetConf.classList.remove('hidden');
+                    btnResetConf.classList.add('inline-flex');
+                    if (btnResetConfText) {
+                        btnResetConfText.innerText = `Hiện lại cảnh báo trùng (${confCount} đã xác nhận)`;
+                    }
+                } else {
+                    btnResetConf.classList.add('hidden');
+                    btnResetConf.classList.remove('inline-flex');
+                }
+            }
+
+            // 3. Banner Cảnh Báo Đỏ trên Tab Võ Sinh (#student-duplicate-banner)
+            const banner = document.getElementById('student-duplicate-banner');
+            if (banner) {
+                if (unconfCount === 0) {
+                    banner.classList.add('hidden');
+                    banner.innerHTML = '';
+                } else {
+                    banner.classList.remove('hidden');
+                    const groupCardsHtml = [];
+
+                    analysis.unconfirmedNameGroups.forEach(grp => {
+                        const safeKey = escapeJsAttr(grp.key);
+                        const safeTitle = escapeHtml(grp.displayValue);
+                        const membersHtml = grp.students.map(st => {
+                            const safeRef = escapeJsAttr(st._uid || st.id);
+                            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white border border-red-300 text-xs text-slate-800 shadow-2xs">
+                                <strong class="text-red-600 font-black">${escapeHtml(st.name)}</strong>
+                                <span class="font-mono text-[11px] text-slate-500">(${escapeHtml(st.id)} • ${escapeHtml(st.className)})</span>
+                                <button type="button" onclick="editStudent('${safeRef}')" class="text-blue-600 hover:underline font-bold ml-1" title="Sửa thông tin học viên này"><i class="fa-solid fa-pen-to-square"></i></button>
+                            </span>`;
+                        }).join('');
+
+                        groupCardsHtml.push(`
+                            <div class="p-3 bg-white/95 rounded-2xl border-2 border-red-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xs">
+                                <div class="space-y-1.5">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="px-2 py-0.5 rounded-lg bg-red-600 text-white text-[10px] font-black uppercase tracking-wider">TRÙNG TÊN VÕ SINH (${grp.count} HỌC VIÊN)</span>
+                                        <span class="text-xs sm:text-sm font-black text-red-700">"${safeTitle}"</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5">${membersHtml}</div>
+                                </div>
+                                <div class="flex items-center space-x-2 flex-shrink-0">
+                                    <button type="button" onclick="confirmDuplicateGroup('name', '${safeKey}')" class="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
+                                        <i class="fa-solid fa-check-double"></i>
+                                        <span>Xác Nhận (Bỏ Cảnh Báo Đỏ)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    });
+
+                    analysis.unconfirmedIdGroups.forEach(grp => {
+                        const safeKey = escapeJsAttr(grp.key);
+                        const safeTitle = escapeHtml(grp.displayValue);
+                        const membersHtml = grp.students.map(st => {
+                            const safeRef = escapeJsAttr(st._uid || st.id);
+                            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white border border-red-300 text-xs text-slate-800 shadow-2xs">
+                                <strong class="text-red-600 font-black">${escapeHtml(st.name)}</strong>
+                                <span class="font-mono text-[11px] text-red-700 font-bold">(Mã ĐD: ${escapeHtml(st.id)} • ${escapeHtml(st.className)})</span>
+                                <button type="button" onclick="editStudent('${safeRef}')" class="text-blue-600 hover:underline font-bold ml-1" title="Sửa mã định danh học viên này"><i class="fa-solid fa-pen-to-square"></i></button>
+                            </span>`;
+                        }).join('');
+
+                        groupCardsHtml.push(`
+                            <div class="p-3 bg-white/95 rounded-2xl border-2 border-red-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xs">
+                                <div class="space-y-1.5">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="px-2 py-0.5 rounded-lg bg-red-700 text-white text-[10px] font-black uppercase tracking-wider">TRÙNG MÃ ĐỊNH DANH (${grp.count} HỌC VIÊN)</span>
+                                        <span class="text-xs sm:text-sm font-mono font-black text-red-700">Mã số: "${safeTitle}"</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5">${membersHtml}</div>
+                                </div>
+                                <div class="flex items-center space-x-2 flex-shrink-0">
+                                    <button type="button" onclick="confirmDuplicateGroup('id', '${safeKey}')" class="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
+                                        <i class="fa-solid fa-check-double"></i>
+                                        <span>Xác Nhận (Bỏ Cảnh Báo Đỏ)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    });
+
+                    banner.innerHTML = `
+                        <div class="bg-gradient-to-r from-red-50 via-rose-50 to-red-50 border-2 border-red-500 rounded-3xl p-4 sm:p-5 shadow-md space-y-3.5">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-red-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-11 h-11 rounded-2xl bg-red-600 text-white flex items-center justify-center text-xl flex-shrink-0 shadow-sm animate-pulse">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm sm:text-base font-black text-red-800 uppercase tracking-wide flex flex-wrap items-center gap-2">
+                                            <span>CẢNH BÁO ĐỎ: PHÁT HIỆN ${unconfCount} HỌC VIÊN TRÙNG TÊN / TRÙNG MÃ ĐỊNH DANH!</span>
+                                        </h3>
+                                        <p class="text-xs text-red-700 mt-0.5 leading-relaxed">
+                                            Các học viên có tên hoặc thông tin mã định danh bị trùng đang được <strong>tô đỏ cảnh báo</strong> trong danh sách. Cảnh báo đỏ này <strong>chỉ mất đi khi bạn bấm "Xác Nhận"</strong> (hoặc sửa lại thông tin không còn trùng).
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
+                                    <button type="button" onclick="toggleFilterDuplicatesOnly()" class="px-3 py-2 rounded-xl bg-white hover:bg-red-100 text-red-700 border border-red-300 text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer">
+                                        <i class="fa-solid fa-filter"></i>
+                                        <span>${filterDuplicatesOnly ? 'Hiện tất cả võ sinh' : 'Chỉ xem các tên trùng'}</span>
+                                    </button>
+                                    <button type="button" onclick="confirmAllStudentDuplicates()" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-md transition flex items-center space-x-1.5 cursor-pointer">
+                                        <i class="fa-solid fa-check-double"></i>
+                                        <span>Xác Nhận Tất Cả (${unconfCount})</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="space-y-2.5">
+                                ${groupCardsHtml.join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // 4. Banner Cảnh Báo Nhanh trên Bảng Tổng Quan (#overview-duplicate-alert)
+            const overviewAlert = document.getElementById('overview-duplicate-alert');
+            if (overviewAlert) {
+                if (unconfCount === 0) {
+                    overviewAlert.classList.add('hidden');
+                    overviewAlert.innerHTML = '';
+                } else {
+                    overviewAlert.classList.remove('hidden');
+                    overviewAlert.innerHTML = `
+                        <div class="bg-red-50 border-2 border-red-500 rounded-3xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center text-lg flex-shrink-0 animate-pulse">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs sm:text-sm font-black text-red-800 uppercase">Cảnh Báo Trùng Học Viên: Có ${unconfCount} võ sinh trùng tên hoặc trùng mã định danh chưa xác nhận!</h4>
+                                    <p class="text-xs text-red-700 mt-0.5">Các tên trùng đang được cảnh báo đỏ và chỉ mất khi được xác nhận.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                <button type="button" onclick="switchTab('students')" class="px-3.5 py-2 bg-white hover:bg-red-100 text-red-700 border border-red-300 rounded-xl text-xs font-bold transition cursor-pointer">
+                                    <i class="fa-solid fa-eye mr-1"></i>Xem Danh Sách Trùng
+                                </button>
+                                <button type="button" onclick="confirmAllStudentDuplicates()" class="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-sm transition cursor-pointer">
+                                    <i class="fa-solid fa-check-double mr-1"></i>Xác Nhận Tất Cả
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function checkStudentFormDuplicate() {
+            const idInput = document.getElementById('student-id-number');
+            const nameInput = document.getElementById('student-name');
+            const alertBox = document.getElementById('student-modal-duplicate-alert');
+            const idHint = document.getElementById('student-id-dup-hint');
+            const nameHint = document.getElementById('student-name-dup-hint');
+
+            if (!idInput || !nameInput || !alertBox) return { hasDup: false, dupIdPeers: [], dupNamePeers: [] };
+
+            const rawId = idInput.value.trim();
+            const rawName = nameInput.value.trim();
+            const normId = normalizeDupId(rawId);
+            const normName = normalizeDupName(rawName);
+
+            ensureStudentUids();
+
+            const dupIdPeers = normId
+                ? students.filter(s => s && s._uid !== currentEditingStudentUid && normalizeDupId(s.id) === normId)
+                : [];
+            const dupNamePeers = normName
+                ? students.filter(s => s && s._uid !== currentEditingStudentUid && normalizeDupName(s.name) === normName)
+                : [];
+
+            // Cập nhật giao diện ô nhập Mã định danh
+            if (dupIdPeers.length > 0) {
+                idInput.className = 'w-full box-border px-3.5 py-2 text-xs sm:text-sm border-2 border-red-500 bg-red-50/50 text-red-700 font-black rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none transition';
+                if (idHint) {
+                    idHint.className = 'text-[11px] text-red-600 font-bold mt-1';
+                    idHint.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i>Cảnh báo đỏ: Mã định danh "${escapeHtml(rawId)}" đang trùng với ${dupIdPeers.map(p => escapeHtml(p.name)).join(', ')}!`;
+                }
+            } else {
+                idInput.className = 'w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white transition';
+                if (idHint) {
+                    idHint.className = 'text-[11px] text-slate-400 mt-1';
+                    idHint.innerText = 'Có thể chỉnh sửa mã số/CCCD; hệ thống sẽ tự động báo trùng nếu trùng mã định danh với học viên khác.';
+                }
+            }
+
+            // Cập nhật giao diện ô nhập Họ và Tên
+            if (dupNamePeers.length > 0) {
+                nameInput.className = 'w-full box-border px-3.5 py-2 text-xs sm:text-sm border-2 border-red-500 bg-red-50/50 text-red-700 font-black rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none transition';
+                if (nameHint) {
+                    nameHint.className = 'text-[11px] text-red-600 font-bold mt-1';
+                    nameHint.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i>Cảnh báo đỏ: Tên "${escapeHtml(rawName)}" đang trùng với học viên mã ${dupNamePeers.map(p => escapeHtml(p.id)).join(', ')}!`;
+                }
+            } else {
+                nameInput.className = 'w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white transition';
+                if (nameHint) {
+                    nameHint.className = 'text-[11px] text-slate-400 mt-1';
+                    nameHint.innerText = 'Hệ thống tự động sắp xếp tên từ A → Z và cảnh báo đỏ nếu trùng tên võ sinh.';
+                }
+            }
+
+            if (dupIdPeers.length === 0 && dupNamePeers.length === 0) {
+                alertBox.classList.add('hidden');
+                alertBox.innerHTML = '';
+                return { hasDup: false, dupIdPeers: [], dupNamePeers: [] };
+            }
+
+            const messages = [];
+            if (dupIdPeers.length > 0) {
+                messages.push(`<li><strong>Trùng Mã Định Danh (${escapeHtml(rawId)}):</strong> Đang trùng với võ sinh <strong class="underline">${dupIdPeers.map(p => `${escapeHtml(p.name)} (${escapeHtml(p.className)})`).join(', ')}</strong>.</li>`);
+            }
+            if (dupNamePeers.length > 0) {
+                messages.push(`<li><strong>Trùng Tên Võ Sinh (${escapeHtml(rawName)}):</strong> Đang trùng với võ sinh <strong class="underline">${dupNamePeers.map(p => `Mã ${escapeHtml(p.id)} (${escapeHtml(p.className)})`).join(', ')}</strong>.</li>`);
+            }
+
+            alertBox.classList.remove('hidden');
+            alertBox.innerHTML = `
+                <div class="p-3.5 rounded-2xl bg-red-50 border-2 border-red-500 text-red-800 text-xs space-y-1.5 shadow-sm">
+                    <div class="font-black text-red-700 flex items-center space-x-2">
+                        <i class="fa-solid fa-triangle-exclamation text-red-600 text-sm animate-bounce"></i>
+                        <span>CẢNH BÁO ĐỎ: PHÁT HIỆN TRÙNG THÔNG TIN HỌC VIÊN!</span>
+                    </div>
+                    <ul class="list-disc list-inside space-y-1 text-red-700 font-medium">
+                        ${messages.join('')}
+                    </ul>
+                    <p class="text-[11px] text-red-600/90 italic pt-0.5">
+                        * Nếu bạn tiếp tục bấm Lưu, học viên trùng sẽ được đánh dấu <strong>CẢNH BÁO ĐỎ</strong> trong danh sách và chỉ mất đi khi bạn bấm <strong>"Xác nhận"</strong>.
+                    </p>
+                </div>
+            `;
+
+            return { hasDup: true, dupIdPeers, dupNamePeers };
+        }
+
         // ================= TAB 1: DANH SÁCH VÕ SINH =================
         function renderStudents() {
-            const search = document.getElementById('search-student').value.toLowerCase().trim();
-            const filterBelt = document.getElementById('filter-belt').value;
-            const filterClass = document.getElementById('filter-class').value;
+            ensureStudentUids();
+            sortStudentsInPlace();
 
-            const filtered = students.filter(s => {
-                const matchSearch = s.name.toLowerCase().includes(search) ||
+            const dupAnalysis = analyzeStudentDuplicates();
+            updateDuplicateWarningBanners(dupAnalysis);
+
+            const searchEl = document.getElementById('search-student');
+            const beltEl = document.getElementById('filter-belt');
+            const classEl = document.getElementById('filter-class');
+            const sortEl = document.getElementById('sort-student-order');
+
+            if (sortEl && sortEl.value !== currentStudentSortMode) {
+                sortEl.value = currentStudentSortMode;
+            }
+
+            const search = searchEl ? searchEl.value.toLowerCase().trim() : '';
+            const filterBelt = beltEl ? beltEl.value : '';
+            const filterClass = classEl ? classEl.value : '';
+
+            const filtered = sortStudentsArray(students.filter(s => {
+                if (!s) return false;
+                if (filterDuplicatesOnly) {
+                    const dInfo = dupAnalysis.byUid[s._uid];
+                    if (!dInfo || !dInfo.isUnconfirmed) return false;
+                }
+                const matchSearch = (s.name && s.name.toLowerCase().includes(search)) ||
                                     (s.id && s.id.toLowerCase().includes(search)) ||
                                     (s.parent && s.parent.toLowerCase().includes(search)) ||
                                     (s.phone && s.phone.includes(search));
                 const matchBelt = filterBelt ? s.belt === filterBelt : true;
                 const matchClass = filterClass ? (filterClass === 'guest' ? s.type === 'guest' : s.className === filterClass) : true;
                 return matchSearch && matchBelt && matchClass;
-            });
+            }), currentStudentSortMode);
 
             // Cập nhật 4 thẻ thống kê Võ Sinh
             const stTotalEl = document.getElementById('st-stat-total');
@@ -8033,26 +8791,41 @@
                     const isGuest = s.type === 'guest';
                     const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 120);
                     const safeId = escapeHtml(s.id);
-                    const safeJsId = escapeJsAttr(s.id);
+                    const safeJsRef = escapeJsAttr(s._uid || s.id);
                     const safeName = escapeHtml(s.name);
                     const safeClass = escapeHtml(s.className);
                     const safeParent = escapeHtml(s.parent || 'Chưa cập nhật');
                     const safePhone = escapeHtml(s.phone || 'N/A');
                     const safeTelHref = String(s.phone || '').replace(/[^0-9+]/g, '');
+
+                    const dupInfo = dupAnalysis.byUid[s._uid] || { isUnconfirmed: false };
+                    const isUnconf = dupInfo.isUnconfirmed;
+
                     return `
-                        <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs card-hover-lift flex flex-col justify-between space-y-3">
+                        <div class="${isUnconf ? 'bg-red-50/80 border-2 border-red-500 ring-2 ring-red-100' : 'bg-white border border-slate-200/90'} rounded-2xl p-4 shadow-xs card-hover-lift flex flex-col justify-between space-y-3">
                             <div class="flex items-start space-x-3.5">
-                                <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsId}')" class="w-14 h-14 rounded-2xl object-cover border-2 border-vovinam-blue/20 shadow-xs cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition flex-shrink-0">
+                                <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsRef}')" class="w-14 h-14 rounded-2xl object-cover border-2 ${isUnconf ? 'border-red-500 ring-2 ring-red-200' : 'border-vovinam-blue/20'} shadow-xs cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition flex-shrink-0">
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center justify-between gap-1">
-                                        <span class="text-[11px] font-mono font-bold text-slate-400">${safeId}</span>
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isGuest ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-vovinam-blue'}">${isGuest ? 'Học ghép/bù' : 'Chính thức'}</span>
+                                        <span class="text-[11px] font-mono font-bold ${dupInfo.isDupIdUnconfirmed ? 'text-white bg-red-600 px-1.5 py-0.5 rounded animate-pulse' : (isUnconf ? 'text-red-700' : 'text-slate-400')}">${safeId}</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isUnconf ? 'bg-red-600 text-white animate-pulse' : (isGuest ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-vovinam-blue')}">${isUnconf ? escapeHtml(dupInfo.shortReason) : (isGuest ? 'Học ghép/bù' : 'Chính thức')}</span>
                                     </div>
-                                    <button type="button" onclick="viewStudentDetail('${safeJsId}')" class="font-black text-slate-800 hover:text-vovinam-blue text-sm truncate block text-left w-full mt-0.5">${safeName}</button>
+                                    <button type="button" onclick="viewStudentDetail('${safeJsRef}')" class="font-black ${isUnconf ? 'text-red-600 hover:text-red-800' : 'text-slate-800 hover:text-vovinam-blue'} text-sm truncate block text-left w-full mt-0.5">
+                                        ${isUnconf ? '<i class="fa-solid fa-triangle-exclamation text-red-600 mr-1 animate-bounce"></i>' : ''}${safeName}
+                                    </button>
                                     <div class="mt-1">${getBeltBadge(s.belt)}</div>
                                 </div>
                             </div>
-                            <div class="pt-2.5 border-t border-slate-100 text-xs text-slate-600 space-y-1">
+                            ${isUnconf ? `
+                                <div class="p-2.5 rounded-xl bg-red-100/90 border border-red-300 text-[11px] text-red-800 space-y-1.5">
+                                    <p class="font-bold leading-snug"><i class="fa-solid fa-circle-exclamation text-red-600 mr-1"></i>${escapeHtml(dupInfo.detailReason)}</p>
+                                    <button type="button" onclick="confirmStudentDuplicate('${safeJsRef}')" class="w-full py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-xs shadow-xs transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                                        <i class="fa-solid fa-check-double"></i>
+                                        <span>Xác Nhận (Tắt Cảnh Báo Đỏ)</span>
+                                    </button>
+                                </div>
+                            ` : ''}
+                            <div class="pt-2.5 border-t ${isUnconf ? 'border-red-200' : 'border-slate-100'} text-xs text-slate-600 space-y-1">
                                 <div class="flex items-center justify-between">
                                     <span class="text-slate-400"><i class="fa-solid fa-chalkboard-user mr-1 text-vovinam-blue"></i>Lớp:</span>
                                     <strong class="text-slate-700 truncate max-w-[170px]">${safeClass}</strong>
@@ -8066,14 +8839,15 @@
                                     <a href="tel:${safeTelHref}" class="font-bold text-vovinam-blue hover:underline">${safePhone} (${safeParent})</a>
                                 </div>
                             </div>
-                            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
-                                <button type="button" onclick="viewStudentDetail('${safeJsId}')" class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-vovinam-blue text-xs font-bold transition flex items-center space-x-1">
+                            <div class="pt-2 border-t ${isUnconf ? 'border-red-200' : 'border-slate-100'} flex items-center justify-between">
+                                <button type="button" onclick="viewStudentDetail('${safeJsRef}')" class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-vovinam-blue text-xs font-bold transition flex items-center space-x-1">
                                     <i class="fa-solid fa-id-card"></i>
                                     <span>Xem Hồ Sơ</span>
                                 </button>
                                 <div class="flex items-center space-x-1">
-                                    <button type="button" onclick="editStudent('${safeJsId}')" title="Sửa" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"><i class="fa-solid fa-pen-to-square"></i></button>
-                                    <button type="button" onclick="deleteStudent('${safeJsId}')" title="Xóa" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"><i class="fa-solid fa-trash-can"></i></button>
+                                    ${isUnconf ? `<button type="button" onclick="confirmStudentDuplicate('${safeJsRef}')" title="Xác nhận bỏ cảnh báo đỏ" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[11px] font-bold transition"><i class="fa-solid fa-check mr-0.5"></i>Xác nhận</button>` : ''}
+                                    <button type="button" onclick="editStudent('${safeJsRef}')" title="Sửa" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button type="button" onclick="deleteStudent('${safeJsRef}')" title="Xóa" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -8088,37 +8862,62 @@
                 const pendingEdit = pendingRequests.find(r => r.type === 'EDIT' && r.studentId === s.id);
                 const pendingDelete = pendingRequests.find(r => r.type === 'DELETE' && r.studentId === s.id);
 
-                let statusBadge = '<span class="px-2 py-0.5 text-xs bg-emerald-100 text-emerald-800 rounded-lg font-bold">Hoạt động</span>';
-                if (pendingDelete) {
-                    statusBadge = '<span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-lg font-bold animate-pulse"><i class="fa-solid fa-hourglass mr-1"></i>Chờ duyệt xóa</span>';
-                } else if (pendingEdit) {
-                    statusBadge = '<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-lg font-bold"><i class="fa-solid fa-hourglass mr-1"></i>Chờ duyệt sửa</span>';
-                }
+                const dupInfo = dupAnalysis.byUid[s._uid] || { isUnconfirmed: false };
+                const isUnconf = dupInfo.isUnconfirmed;
 
                 const safeId = escapeHtml(s.id);
-                const safeJsId = escapeJsAttr(s.id);
+                const safeJsRef = escapeJsAttr(s._uid || s.id);
                 const safeName = escapeHtml(s.name);
                 const safeClass = escapeHtml(s.className);
                 const safeParent = escapeHtml(s.parent || 'Chưa cập nhật');
                 const safePhone = escapeHtml(s.phone || 'N/A');
                 const safeTelHref = String(s.phone || '').replace(/[^0-9+]/g, '');
 
+                let statusBadge = '<span class="px-2 py-0.5 text-xs bg-emerald-100 text-emerald-800 rounded-lg font-bold">Hoạt động</span>';
+                if (isUnconf) {
+                    statusBadge = `
+                        <div class="flex flex-col items-center space-y-1">
+                            <span class="px-2 py-0.5 text-[11px] bg-red-600 text-white rounded-lg font-black animate-pulse shadow-xs">
+                                <i class="fa-solid fa-triangle-exclamation mr-1"></i>${escapeHtml(dupInfo.shortReason)}
+                            </span>
+                            <button type="button" onclick="confirmStudentDuplicate('${safeJsRef}')" class="px-2.5 py-1 bg-white hover:bg-red-600 text-red-600 hover:text-white border border-red-500 rounded-lg text-[11px] font-black shadow-2xs transition flex items-center space-x-1 cursor-pointer" title="Xác nhận thông tin học viên này để tắt cảnh báo đỏ">
+                                <i class="fa-solid fa-check-double"></i>
+                                <span>Xác nhận</span>
+                            </button>
+                        </div>
+                    `;
+                } else if (pendingDelete) {
+                    statusBadge = '<span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-lg font-bold animate-pulse"><i class="fa-solid fa-hourglass mr-1"></i>Chờ duyệt xóa</span>';
+                } else if (pendingEdit) {
+                    statusBadge = '<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-lg font-bold"><i class="fa-solid fa-hourglass mr-1"></i>Chờ duyệt sửa</span>';
+                } else if (dupInfo.isConfirmedDuplicate) {
+                    statusBadge = '<span class="px-2 py-0.5 text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold"><i class="fa-solid fa-circle-check mr-1"></i>Đã xác nhận trùng</span>';
+                }
+
                 return `
-                    <tr class="hover:bg-blue-50/50 transition border-b border-slate-100">
-                        <td class="py-3 px-4 font-mono font-bold text-xs text-slate-700">
-                            ${safeId}
+                    <tr class="${isUnconf ? 'bg-red-50/90 hover:bg-red-100/80 border-l-4 border-l-red-600 border-b border-red-200' : 'hover:bg-blue-50/50 border-b border-slate-100'} transition">
+                        <td class="py-3 px-4 font-mono font-bold text-xs ${dupInfo.isDupIdUnconfirmed ? 'text-red-600 font-black' : (isUnconf ? 'text-red-700' : 'text-slate-700')}">
+                            <div class="flex items-center space-x-1.5">
+                                ${dupInfo.isDupIdUnconfirmed ? '<i class="fa-solid fa-triangle-exclamation text-red-600 animate-pulse" title="Trùng mã định danh"></i>' : ''}
+                                <span class="${dupInfo.isDupIdUnconfirmed ? 'px-2 py-0.5 rounded-lg bg-red-100 border border-red-300 text-red-700 font-black' : ''}">${safeId}</span>
+                            </div>
+                            ${dupInfo.isDupIdUnconfirmed ? '<div class="text-[10px] font-bold text-red-600 mt-0.5">Trùng mã ĐD!</div>' : ''}
                         </td>
                         <td class="py-3 px-4">
                             <div class="flex items-center space-x-3">
-                                <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsId}')" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
+                                <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsRef}')" class="w-10 h-10 rounded-xl object-cover border-2 ${isUnconf ? 'border-red-500 ring-2 ring-red-200' : 'border-slate-200'} shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
                                 <div>
-                                    <button onclick="viewStudentDetail('${safeJsId}')" class="text-left font-bold text-slate-800 hover:text-vovinam-blue transition group flex items-center space-x-1.5">
+                                    <button onclick="viewStudentDetail('${safeJsRef}')" class="text-left font-bold ${isUnconf ? 'text-red-600 font-black hover:text-red-800' : 'text-slate-800 hover:text-vovinam-blue'} transition group flex items-center space-x-1.5">
+                                        ${isUnconf ? '<i class="fa-solid fa-triangle-exclamation text-red-600 animate-bounce"></i>' : ''}
                                         <span class="group-hover:underline">${safeName}</span>
-                                        <i class="fa-solid fa-arrow-up-right-from-square text-[11px] text-slate-400 group-hover:text-vovinam-blue transition"></i>
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-[11px] ${isUnconf ? 'text-red-400 group-hover:text-red-700' : 'text-slate-400 group-hover:text-vovinam-blue'} transition"></i>
                                     </button>
-                                    <div class="text-[11px] text-slate-400">
-                                        ${isGuest ? '<span class="px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 font-bold">Học ghép/bù</span>' : 'Võ sinh chính thức'}
+                                    <div class="text-[11px] text-slate-400 flex flex-wrap items-center gap-1 mt-0.5">
+                                        ${isGuest ? '<span class="px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 font-bold">Học ghép/bù</span>' : '<span>Võ sinh chính thức</span>'}
+                                        ${dupInfo.isDupNameUnconfirmed ? `<span class="px-1.5 py-0.2 rounded bg-red-600 text-white font-black text-[10px]">⚠️ Trùng tên (${dupInfo.nameCount})</span>` : ''}
+                                        ${dupInfo.isDupIdUnconfirmed ? `<span class="px-1.5 py-0.2 rounded bg-red-700 text-white font-black text-[10px]">⚠️ Trùng mã ĐD (${dupInfo.idCount})</span>` : ''}
                                     </div>
+                                    ${isUnconf ? `<div class="text-[10px] font-semibold text-red-600 mt-0.5">${escapeHtml(dupInfo.detailReason)}</div>` : ''}
                                 </div>
                             </div>
                         </td>
@@ -8145,13 +8944,18 @@
                         </td>
                         <td class="py-3 px-4 text-center">
                             <div class="flex items-center justify-center space-x-1.5">
-                                <button onclick="viewStudentDetail('${safeJsId}')" title="Xem hồ sơ" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition">
+                                ${isUnconf ? `
+                                    <button onclick="confirmStudentDuplicate('${safeJsRef}')" title="Xác nhận thông tin học viên trùng (Tắt cảnh báo đỏ)" class="p-1.5 bg-red-600 text-white hover:bg-red-700 rounded-lg transition shadow-xs">
+                                        <i class="fa-solid fa-check-double"></i>
+                                    </button>
+                                ` : ''}
+                                <button onclick="viewStudentDetail('${safeJsRef}')" title="Xem hồ sơ" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition">
                                     <i class="fa-solid fa-eye"></i>
                                 </button>
-                                <button onclick="editStudent('${safeJsId}')" title="Sửa" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                <button onclick="editStudent('${safeJsRef}')" title="Sửa" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button onclick="deleteStudent('${safeJsId}')" title="Xóa" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition">
+                                <button onclick="deleteStudent('${safeJsRef}')" title="Xóa" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -8163,11 +8967,39 @@
 
         // ================= XEM CHI TIẾT HỒ SƠ VÕ SINH =================
         function viewStudentDetail(studentId) {
-            const s = students.find(item => item.id === studentId);
+            const s = findStudentByRef(studentId);
             if (!s) return;
 
             const modal = document.getElementById('detail-modal');
             const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 200);
+
+            const dupAnalysis = analyzeStudentDuplicates();
+            const dupInfo = (s._uid && dupAnalysis.byUid[s._uid]) || { isUnconfirmed: false };
+            const dupWarnBox = document.getElementById('detail-duplicate-warning-box');
+            if (dupWarnBox) {
+                if (dupInfo.isUnconfirmed) {
+                    const safeJsRef = escapeJsAttr(s._uid || s.id);
+                    dupWarnBox.classList.remove('hidden');
+                    dupWarnBox.innerHTML = `
+                        <div class="p-4 rounded-2xl bg-red-50 border-2 border-red-500 text-red-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                            <div class="space-y-1">
+                                <div class="font-black text-xs sm:text-sm text-red-700 flex items-center space-x-2">
+                                    <i class="fa-solid fa-triangle-exclamation text-red-600 animate-bounce"></i>
+                                    <span>CẢNH BÁO ĐỎ: ${escapeHtml(dupInfo.shortReason.toUpperCase())}!</span>
+                                </div>
+                                <p class="text-xs text-red-700 font-medium">${escapeHtml(dupInfo.detailReason)}</p>
+                            </div>
+                            <button type="button" onclick="confirmStudentDuplicate('${safeJsRef}')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-sm transition flex items-center space-x-1.5 flex-shrink-0 cursor-pointer">
+                                <i class="fa-solid fa-check-double"></i>
+                                <span>Xác Nhận (Tắt Cảnh Báo)</span>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    dupWarnBox.classList.add('hidden');
+                    dupWarnBox.innerHTML = '';
+                }
+            }
 
             // Gán dữ liệu cơ bản
             document.getElementById('detail-avatar').src = avatarSrc;
@@ -8398,11 +9230,11 @@
             }
             document.getElementById('detail-btn-edit').onclick = () => {
                 closeDetailModal();
-                editStudent(s.id);
+                editStudent(s._uid || s.id);
             };
             document.getElementById('detail-btn-tuition').onclick = () => {
                 closeDetailModal();
-                openTuitionModal(s.id);
+                openTuitionModal(s._uid || s.id);
             };
 
             modal.classList.remove('hidden');
@@ -8422,7 +9254,11 @@
 
             if (!editMode) {
                 currentEditingStudentId = null;
-                if (form) form.removeAttribute('data-original-id');
+                currentEditingStudentUid = null;
+                if (form) {
+                    form.removeAttribute('data-original-id');
+                    form.removeAttribute('data-editing-uid');
+                }
                 document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user-plus"></i><span>Thêm Võ Sinh Mới</span>';
                 document.getElementById('student-form').reset();
                 document.getElementById('student-id').value = '';
@@ -8435,10 +9271,12 @@
                 if (typeof renderStudentDraftDocsList === 'function') {
                     renderStudentDraftDocsList();
                 }
+                checkStudentFormDuplicate();
 
                 submitBtn.innerText = hasPermission('students_direct') ? 'Lưu Trực Tiếp' : 'Gửi Yêu Cầu Thêm (Chờ Duyệt)';
             } else {
                 document.getElementById('student-id-number').disabled = false;
+                checkStudentFormDuplicate();
                 submitBtn.innerText = hasPermission('students_direct') ? 'Lưu Thay Đổi Trực Tiếp' : 'Gửi Yêu Cầu Sửa (Chờ Duyệt)';
             }
         }
@@ -8446,8 +9284,17 @@
         function closeStudentModal() {
             document.getElementById('student-modal').classList.add('hidden');
             currentEditingStudentId = null;
+            currentEditingStudentUid = null;
             const form = document.getElementById('student-form');
-            if (form) form.removeAttribute('data-original-id');
+            if (form) {
+                form.removeAttribute('data-original-id');
+                form.removeAttribute('data-editing-uid');
+            }
+            const alertBox = document.getElementById('student-modal-duplicate-alert');
+            if (alertBox) {
+                alertBox.classList.add('hidden');
+                alertBox.innerHTML = '';
+            }
         }
 
         let currentStudentDraftDocs = [];
@@ -8657,14 +9504,11 @@
             }
 
             // 6. Xử lý xóa và unmark trong deletedRegistry:
-            // CỰC KỲ QUAN TRỌNG: Đánh dấu oldId là đã xóa để các máy/kênh Cloud khác không khôi phục lại mã cũ thành võ sinh thứ 2
-            markEntityDeleted('students', cleanOldId);
-            unmarkEntityDeleted('students', cleanNewId);
-
-            // 7. Loại bỏ triệt để mọi bản ghi cũ có id trùng với oldId trong mảng students (tránh trùng lặp)
-            if (Array.isArray(students)) {
-                students = students.filter(s => String(s.id).trim() !== cleanOldId || String(s.id).trim() === cleanNewId);
+            const remainingWithOldId = students.some(s => String(s.id).trim() === cleanOldId);
+            if (!remainingWithOldId) {
+                markEntityDeleted('students', cleanOldId);
             }
+            unmarkEntityDeleted('students', cleanNewId);
 
             // 8. Làm mới giao diện các bảng và thống kê liên quan
             if (typeof renderStudents === 'function') renderStudents();
@@ -8679,9 +9523,12 @@
 
         function saveStudent(e) {
             e.preventDefault();
+            ensureStudentUids();
             const form = document.getElementById('student-form');
             const formAttrId = form ? form.getAttribute('data-original-id') : null;
+            const formAttrUid = form ? form.getAttribute('data-editing-uid') : null;
             const originalId = (document.getElementById('student-id').value || currentEditingStudentId || formAttrId || '').trim();
+            const editingUid = currentEditingStudentUid || formAttrUid || null;
             const idNumber = document.getElementById('student-id-number').value.trim();
             if (!idNumber) {
                 showToast('Vui lòng nhập số định danh (mã võ sinh)!', 'error');
@@ -8701,102 +9548,131 @@
 
             // Lấy danh sách tài liệu đính kèm, ưu tiên draft hiện tại, nếu rỗng thì giữ nguyên tài liệu cũ nếu đang sửa
             let attachedDocs = (typeof currentStudentDraftDocs !== 'undefined' && Array.isArray(currentStudentDraftDocs)) ? currentStudentDraftDocs.slice() : [];
-            if (attachedDocs.length === 0 && originalId) {
-                const existingS = students.find(s => String(s.id).trim() === originalId);
+            if (attachedDocs.length === 0 && (editingUid || originalId)) {
+                const existingS = editingUid
+                    ? students.find(s => s && s._uid === editingUid)
+                    : students.find(s => s && String(s.id).trim() === originalId);
                 if (existingS && Array.isArray(existingS.documents)) {
                     attachedDocs = existingS.documents.slice();
                 }
             }
 
+            // Kiểm tra trùng tên hoặc trùng mã định danh với các võ sinh khác trên hệ thống
+            const dupIdPeers = students.filter(s => s && s._uid !== editingUid && normalizeDupId(s.id) === normalizeDupId(idNumber));
+            const dupNamePeers = students.filter(s => s && s._uid !== editingUid && normalizeDupName(s.name) === normalizeDupName(name));
+            const hasAnyDup = dupIdPeers.length > 0 || dupNamePeers.length > 0;
+            const dupReasons = [];
+            if (dupNamePeers.length > 0) dupReasons.push(`Trùng tên "${name}"`);
+            if (dupIdPeers.length > 0) dupReasons.push(`Trùng mã định danh "${idNumber}"`);
+
             const studentData = {
+                _uid: editingUid || ('STU_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
                 id: idNumber,
                 name, dob, belt, className, type, joinDate, parent, phone, address, avatar,
                 documents: attachedDocs
             };
 
             if (hasPermission('students_direct')) {
-                if (originalId) {
-                    // Kiểm tra nếu đổi mã số và mã mới đã thuộc về một võ sinh khác
-                    if (idNumber !== originalId && students.some(s => String(s.id).trim() === idNumber && String(s.id).trim() !== originalId)) {
-                        showToast(`Số định danh mới "${idNumber}" đã thuộc về một võ sinh khác!`, 'error');
-                        return;
+                if (editingUid || originalId) {
+                    let idx = editingUid ? students.findIndex(s => s && s._uid === editingUid) : -1;
+                    if (idx === -1 && originalId) {
+                        idx = students.findIndex(s => s && String(s.id).trim() === originalId);
                     }
-                    const idx = students.findIndex(s => String(s.id).trim() === originalId);
                     if (idx !== -1) {
+                        const prevName = students[idx].name;
+                        const prevId = students[idx].id;
+                        studentData._uid = students[idx]._uid;
                         students[idx] = { ...students[idx], ...studentData, id: idNumber };
-                        // Loại bỏ sạch mọi bản ghi cũ nếu bị trùng lặp do sync
-                        students = students.filter((s, i) => i === idx || String(s.id).trim() !== originalId);
+
+                        if (hasAnyDup || normalizeDupName(prevName) !== normalizeDupName(name) || normalizeDupId(prevId) !== normalizeDupId(idNumber)) {
+                            invalidateDuplicateConfirmation(name, idNumber);
+                            invalidateDuplicateConfirmation(prevName, prevId);
+                        }
+
                         if (idNumber !== originalId) {
                             cascadeUpdateStudentId(originalId, idNumber, name);
+                        }
+
+                        if (hasAnyDup) {
+                            showToast(`⚠️ CẢNH BÁO BÁO TRÙNG: Phát hiện ${dupReasons.join(' & ')}! Đã bật cảnh báo đỏ chờ xác nhận.`, 'error');
+                        } else if (idNumber !== originalId) {
                             showToast(`${getCurrentAccountName()}: Đã đổi mã định danh từ "${originalId}" sang "${idNumber}" và cập nhật hồ sơ!`);
                         } else {
                             showToast(`${getCurrentAccountName()}: Đã cập nhật thông tin võ sinh!`);
                         }
                     } else {
-                        // Trường hợp đặc biệt nếu không tìm thấy idx theo originalId
                         unmarkEntityDeleted('students', studentData.id);
+                        if (hasAnyDup) invalidateDuplicateConfirmation(name, idNumber);
                         students.push(studentData);
-                        showToast(`${getCurrentAccountName()}: Đã lưu võ sinh thành công!`);
+                        if (hasAnyDup) {
+                            showToast(`⚠️ CẢNH BÁO BÁO TRÙNG: Phát hiện ${dupReasons.join(' & ')}! Đã bật cảnh báo đỏ chờ xác nhận.`, 'error');
+                        } else {
+                            showToast(`${getCurrentAccountName()}: Đã lưu võ sinh thành công!`);
+                        }
                     }
                 } else {
-                    if (students.some(s => String(s.id).trim() === idNumber)) {
-                        showToast('Số định danh này đã tồn tại trên hệ thống!', 'error');
-                        return;
-                    }
                     unmarkEntityDeleted('students', studentData.id);
+                    if (hasAnyDup) invalidateDuplicateConfirmation(name, idNumber);
                     students.push(studentData);
-                    showToast(`${getCurrentAccountName()}: Đã thêm mới võ sinh thành công!`);
+                    if (hasAnyDup) {
+                        showToast(`⚠️ CẢNH BÁO BÁO TRÙNG: Phát hiện ${dupReasons.join(' & ')}! Đã bật cảnh báo đỏ chờ xác nhận.`, 'error');
+                    } else {
+                        showToast(`${getCurrentAccountName()}: Đã thêm mới võ sinh thành công!`);
+                    }
                 }
+                sortStudentsInPlace();
                 saveStudentsToStorage();
             } else {
                 // Tài khoản không có quyền trực tiếp: Đẩy vào yêu cầu phê duyệt
-                if (originalId) {
-                    if (idNumber !== originalId && students.some(s => String(s.id).trim() === idNumber && String(s.id).trim() !== originalId)) {
-                        showToast(`Số định danh mới "${idNumber}" đã thuộc về một võ sinh khác!`, 'error');
-                        return;
-                    }
+                if (editingUid || originalId) {
                     pendingRequests.push({
                         reqId: 'REQ_' + Date.now(),
                         type: 'EDIT',
+                        studentUid: editingUid,
                         studentId: originalId,
                         studentName: name,
+                        hasDuplicateWarning: hasAnyDup,
+                        duplicateReason: dupReasons.join(' & '),
                         data: studentData,
                         requester: getCurrentAccountName(),
                         time: new Date().toLocaleString('vi-VN')
                     });
-                    showToast('Đã gửi yêu cầu SỬA hồ sơ (kèm đổi mã định danh) chờ phê duyệt!', 'info');
+                    showToast(hasAnyDup ? `⚠️ Đã gửi yêu cầu SỬA (Có cảnh báo: ${dupReasons.join(' & ')}) chờ Admin duyệt!` : 'Đã gửi yêu cầu SỬA hồ sơ chờ phê duyệt!', hasAnyDup ? 'error' : 'info');
                 } else {
-                    if (students.some(s => String(s.id).trim() === idNumber)) {
-                        showToast('Số định danh này đã tồn tại trên hệ thống!', 'error');
-                        return;
-                    }
                     pendingRequests.push({
                         reqId: 'REQ_' + Date.now(),
                         type: 'ADD',
+                        studentUid: studentData._uid,
                         studentId: idNumber,
                         studentName: name,
+                        hasDuplicateWarning: hasAnyDup,
+                        duplicateReason: dupReasons.join(' & '),
                         data: studentData,
                         requester: getCurrentAccountName(),
                         time: new Date().toLocaleString('vi-VN')
                     });
-                    showToast('Đã gửi yêu cầu THÊM võ sinh chờ phê duyệt!', 'info');
+                    showToast(hasAnyDup ? `⚠️ Đã gửi yêu cầu THÊM (Có cảnh báo: ${dupReasons.join(' & ')}) chờ Admin duyệt!` : 'Đã gửi yêu cầu THÊM võ sinh chờ phê duyệt!', hasAnyDup ? 'error' : 'info');
                 }
                 saveRequestsToStorage();
             }
 
             closeStudentModal();
             renderStudents();
+            if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
             renderPendingApprovals();
         }
 
         function editStudent(id) {
-            const cleanTargetId = String(id || '').trim();
-            const s = students.find(item => String(item.id).trim() === cleanTargetId);
+            const s = findStudentByRef(id);
             if (!s) return;
 
             currentEditingStudentId = s.id;
+            currentEditingStudentUid = s._uid;
             const form = document.getElementById('student-form');
-            if (form) form.setAttribute('data-original-id', s.id);
+            if (form) {
+                form.setAttribute('data-original-id', s.id);
+                form.setAttribute('data-editing-uid', s._uid || '');
+            }
 
             document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square"></i><span>Cập Nhật Thông Tin Võ Sinh</span>';
             document.getElementById('student-id').value = s.id;
@@ -8836,16 +9712,23 @@
         }
 
         function deleteStudent(id) {
-            const cleanTargetId = String(id || '').trim();
-            const s = students.find(item => String(item.id).trim() === cleanTargetId);
+            const s = findStudentByRef(id);
             if (!s) return;
 
             if (hasPermission('students_direct')) {
                 showConfirm('Xác Nhận Xóa Võ Sinh', `Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ môn sinh ${s.name} (${s.id})?`, () => {
-                    markEntityDeleted('students', s.id);
-                    students = students.filter(item => String(item.id).trim() !== String(s.id).trim());
+                    if (s._uid) {
+                        students = students.filter(item => item._uid !== s._uid);
+                        markEntityDeleted('students', s._uid);
+                    } else {
+                        students = students.filter(item => String(item.id).trim() !== String(s.id).trim());
+                    }
+                    if (!students.some(item => String(item.id).trim() === String(s.id).trim())) {
+                        markEntityDeleted('students', s.id);
+                    }
                     saveStudentsToStorage();
                     renderStudents();
+                    if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
                     showToast(`${getCurrentAccountName()}: Đã xóa võ sinh khỏi hệ thống!`, 'error');
                 });
             } else {
@@ -8853,6 +9736,7 @@
                     pendingRequests.push({
                         reqId: 'REQ_' + Date.now(),
                         type: 'DELETE',
+                        studentUid: s._uid,
                         studentId: s.id,
                         studentName: s.name,
                         data: s,
@@ -8881,7 +9765,7 @@
 
             document.getElementById('current-class-display').innerText = `${className} - Ngày ${new Date(date).toLocaleDateString('vi-VN')}`;
 
-            const officialStudents = students.filter(s => s.className === className);
+            const officialStudents = sortStudentsArray(students.filter(s => s.className === className));
             const existingSession = attendanceRecords[key] || [];
 
             let fullList = [];
@@ -8938,23 +9822,27 @@
                 return;
             }
 
+            const dupAnalysis = analyzeStudentDuplicates();
             tbody.innerHTML = list.map((item, idx) => {
                 const s = item.studentObj;
                 const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 100);
                 const isExtraStudent = item.isGuestInSession || s.type === 'guest' || s.className !== currentClass;
-                const safeJsId = escapeJsAttr(s.id);
+                const safeJsId = escapeJsAttr(s._uid || s.id);
+                const dupInfo = (s._uid && dupAnalysis.byUid[s._uid]) || { isUnconfirmed: false };
+                const isUnconf = dupInfo.isUnconfirmed;
 
                 return `
-                    <tr class="hover:bg-slate-50 transition border-b border-slate-100" data-id="${escapeHtml(s.id)}" data-extra="${isExtraStudent ? 'true' : 'false'}">
+                    <tr class="${isUnconf ? 'bg-red-50/70 hover:bg-red-100/60 border-l-4 border-l-red-600' : 'hover:bg-slate-50'} transition border-b border-slate-100" data-id="${escapeHtml(s.id)}" data-extra="${isExtraStudent ? 'true' : 'false'}">
                         <td class="py-3 px-4 font-bold text-slate-400 text-xs text-center">${idx + 1}</td>
                         <td class="py-3 px-4">
                             <div class="flex items-center space-x-3">
-                                <img src="${avatarSrc}" onclick="viewStudentDetail('${safeJsId}')" class="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
+                                <img src="${avatarSrc}" onclick="viewStudentDetail('${safeJsId}')" class="w-9 h-9 rounded-xl object-cover border ${isUnconf ? 'border-red-500 ring-2 ring-red-200' : 'border-slate-200'} shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
                                 <div>
-                                    <button onclick="viewStudentDetail('${safeJsId}')" class="font-bold text-slate-800 text-xs sm:text-sm hover:text-vovinam-blue hover:underline text-left">
-                                        ${escapeHtml(s.name)}
+                                    <button onclick="viewStudentDetail('${safeJsId}')" class="font-bold ${isUnconf ? 'text-red-600 font-black' : 'text-slate-800'} text-xs sm:text-sm hover:text-vovinam-blue hover:underline text-left flex items-center space-x-1">
+                                        ${isUnconf ? '<i class="fa-solid fa-triangle-exclamation text-red-600 animate-pulse"></i>' : ''}
+                                        <span>${escapeHtml(s.name)}</span>
                                     </button>
-                                    <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(s.id)}</div>
+                                    <div class="text-[11px] ${dupInfo.isDupIdUnconfirmed ? 'text-red-600 font-bold' : 'text-slate-400'} font-mono">${escapeHtml(s.id)} ${isUnconf ? `<span class="ml-1 px-1.5 py-0.2 bg-red-600 text-white rounded text-[9px] font-sans font-bold">${escapeHtml(dupInfo.shortReason)}</span>` : ''}</div>
                                 </div>
                             </div>
                         </td>
@@ -9413,8 +10301,13 @@
             let unpaidCount = 0;
             let totalAmount = 0;
 
-            tbody.innerHTML = students.map((s, idx) => {
+            const sortedTuitionStudents = sortStudentsArray(students);
+            const dupAnalysis = analyzeStudentDuplicates();
+            tbody.innerHTML = sortedTuitionStudents.map((s, idx) => {
                 const rec = monthData[s.id] || { status: 'unpaid', amount: 350000, receipt: '' };
+                const dupInfo = (s._uid && dupAnalysis.byUid[s._uid]) || { isUnconfirmed: false };
+                const isUnconf = dupInfo.isUnconfirmed;
+                const safeRef = escapeJsAttr(s._uid || s.id);
 
                 if (rec.status === 'paid') {
                     paidCount++;
@@ -9431,13 +10324,14 @@
                 }
 
                 return `
-                    <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <tr class="${isUnconf ? 'bg-red-50/70 hover:bg-red-100/60 border-l-4 border-l-red-600' : 'hover:bg-slate-50'} transition border-b border-slate-100">
                         <td class="py-3 px-4 font-bold text-slate-400 text-xs text-center">${idx + 1}</td>
                         <td class="py-3 px-4">
-                            <button onclick="viewStudentDetail('${escapeHtml(s.id)}')" class="font-bold text-slate-800 text-xs sm:text-sm hover:text-vovinam-blue hover:underline text-left">
-                                ${escapeHtml(s.name)}
+                            <button onclick="viewStudentDetail('${safeRef}')" class="font-bold ${isUnconf ? 'text-red-600 font-black' : 'text-slate-800'} text-xs sm:text-sm hover:text-vovinam-blue hover:underline text-left flex items-center space-x-1">
+                                ${isUnconf ? '<i class="fa-solid fa-triangle-exclamation text-red-600 animate-pulse"></i>' : ''}
+                                <span>${escapeHtml(s.name)}</span>
                             </button>
-                            <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(s.id)}</div>
+                            <div class="text-[11px] ${dupInfo.isDupIdUnconfirmed ? 'text-red-600 font-bold' : 'text-slate-400'} font-mono">${escapeHtml(s.id)} ${isUnconf ? `<span class="ml-1 px-1.5 py-0.2 bg-red-600 text-white rounded text-[9px] font-sans font-bold">${escapeHtml(dupInfo.shortReason)}</span>` : ''}</div>
                         </td>
                         <td class="py-3 px-4 text-xs font-medium text-slate-600">${escapeHtml(s.className)}</td>
                         <td class="py-3 px-4 text-center">${badge}</td>
@@ -9446,7 +10340,7 @@
                         </td>
                         <td class="py-3 px-4 text-xs text-slate-500">${escapeHtml(rec.receipt || '—')}</td>
                         <td class="py-3 px-4 text-center">
-                            <button onclick="openTuitionModal('${escapeHtml(s.id)}')" class="px-3 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition">
+                            <button onclick="openTuitionModal('${safeRef}')" class="px-3 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition">
                                 Cập nhật
                             </button>
                         </td>
@@ -9465,7 +10359,7 @@
                 showToast('Tài khoản của bạn chưa được phân quyền Quản lý & Thu học phí!', 'error');
                 return;
             }
-            const s = students.find(item => item.id === studentId);
+            const s = findStudentByRef(studentId);
             if (!s) return;
 
             const month = document.getElementById('tuition-month').value;
@@ -10674,13 +11568,18 @@
                 const safeReqClass = escapeHtml(req.data.className || '');
                 const safeReqPhone = escapeHtml(req.data.phone || 'N/A');
                 const safeReqParent = escapeHtml(req.data.parent || 'N/A');
+                const hasDupWarn = Boolean(req.hasDuplicateWarning);
 
                 return `
-                    <tr class="hover:bg-amber-50/30 transition border-b border-slate-100">
+                    <tr class="${hasDupWarn ? 'bg-red-50/70 border-l-4 border-l-red-600' : 'hover:bg-amber-50/30'} transition border-b border-slate-100">
                         <td class="py-3 px-4 text-xs text-slate-500">${safeReqTime}</td>
                         <td class="py-3 px-4 font-bold text-slate-700">${safeReqBy}</td>
                         <td class="py-3 px-4">${badgeType}</td>
-                        <td class="py-3 px-4 font-bold text-slate-800">${safeReqName} <span class="text-xs font-mono text-slate-400">(${safeReqId})</span></td>
+                        <td class="py-3 px-4 font-bold ${hasDupWarn ? 'text-red-600 font-black' : 'text-slate-800'}">
+                            ${hasDupWarn ? '<i class="fa-solid fa-triangle-exclamation text-red-600 mr-1 animate-pulse"></i>' : ''}${safeReqName}
+                            <span class="text-xs font-mono text-slate-400">(${safeReqId})</span>
+                            ${hasDupWarn ? `<div class="text-[10px] font-bold text-red-600 mt-0.5">⚠️ ${escapeHtml(req.duplicateReason || 'Báo trùng tên / mã ĐD')}</div>` : ''}
+                        </td>
                         <td class="py-3 px-4 text-xs text-slate-600">
                             <div>Đai: <strong>${safeReqBelt}</strong> | Lớp: <strong>${safeReqClass}</strong></div>
                             <div>ĐT: ${safeReqPhone} | Phụ huynh: ${safeReqParent}</div>
@@ -10713,35 +11612,46 @@
             if (!req) return;
 
             if (req.type === 'ADD') {
-                students.push(req.data);
+                if (req.data) {
+                    if (!req.data._uid) req.data._uid = 'STU_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+                    invalidateDuplicateConfirmation(req.data.name, req.data.id);
+                    students.push(req.data);
+                }
                 showToast(`Admin: Đã phê duyệt THÊM môn sinh ${req.studentName}!`);
             } else if (req.type === 'EDIT') {
                 const oldId = String(req.studentId || '').trim();
                 const newId = (req.data && req.data.id) ? String(req.data.id).trim() : oldId;
-                const idx = students.findIndex(s => String(s.id).trim() === oldId);
+                const targetUid = req.studentUid || (req.data && req.data._uid) || null;
+                let idx = targetUid ? students.findIndex(s => s && s._uid === targetUid) : -1;
+                if (idx === -1) idx = students.findIndex(s => String(s.id).trim() === oldId);
                 if (idx !== -1) {
-                    if (newId !== oldId && students.some(s => String(s.id).trim() === newId && String(s.id).trim() !== oldId)) {
-                        showToast(`Không thể duyệt: Mã định danh mới "${newId}" đã thuộc về võ sinh khác!`, 'error');
-                        return;
-                    }
+                    invalidateDuplicateConfirmation(req.data.name, newId);
                     students[idx] = { ...students[idx], ...req.data, id: newId };
-                    students = students.filter((s, i) => i === idx || String(s.id).trim() !== oldId);
                     if (newId !== oldId) {
                         cascadeUpdateStudentId(oldId, newId, req.data.name);
                     }
                     showToast(`Admin: Đã phê duyệt SỬA môn sinh ${req.studentName} (Mã: ${newId})!`);
                 }
             } else if (req.type === 'DELETE') {
-                markEntityDeleted('students', req.studentId);
-                students = students.filter(s => s.id !== req.studentId);
+                if (req.studentUid) {
+                    students = students.filter(s => s._uid !== req.studentUid);
+                    markEntityDeleted('students', req.studentUid);
+                } else {
+                    students = students.filter(s => s.id !== req.studentId);
+                }
+                if (!students.some(s => s.id === req.studentId)) {
+                    markEntityDeleted('students', req.studentId);
+                }
                 showToast(`Admin: Đã phê duyệt XÓA môn sinh ${req.studentName}!`, 'error');
             }
 
             markEntityDeleted('requests', reqId);
             pendingRequests = pendingRequests.filter(r => r.reqId !== reqId);
+            sortStudentsInPlace();
             saveStudentsToStorage();
             saveRequestsToStorage();
             renderStudents();
+            if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
             renderPendingApprovals();
         }
 
@@ -10782,7 +11692,8 @@
 
             document.getElementById('rep-total-sessions').innerText = filteredKeys.length;
 
-            let relevantStudents = filterClass === 'all' ? students : students.filter(s => s.className === filterClass);
+            let relevantStudents = sortStudentsArray(filterClass === 'all' ? students : students.filter(s => s.className === filterClass));
+            const dupAnalysis = analyzeStudentDuplicates();
 
             let totalAttendanceCount = 0;
             let totalPossibleCheckins = 0;
@@ -10837,8 +11748,9 @@
                     <tr class="hover:bg-slate-50 transition border-b border-slate-100">
                         <td class="py-3 px-4 text-xs font-bold text-slate-400 text-center">${idx + 1}</td>
                         <td class="py-3 px-4">
-                            <button onclick="viewStudentDetail('${escapeHtml(s.id)}')" class="font-bold text-slate-800 text-xs sm:text-sm hover:text-vovinam-blue hover:underline text-left">
-                                ${escapeHtml(s.name)}
+                            <button onclick="viewStudentDetail('${escapeJsAttr(s._uid || s.id)}')" class="font-bold ${(s._uid && dupAnalysis.byUid[s._uid] && dupAnalysis.byUid[s._uid].isUnconfirmed) ? 'text-red-600 font-black' : 'text-slate-800'} text-xs sm:text-sm hover:text-vovinam-blue hover:underline text-left flex items-center space-x-1">
+                                ${(s._uid && dupAnalysis.byUid[s._uid] && dupAnalysis.byUid[s._uid].isUnconfirmed) ? '<i class="fa-solid fa-triangle-exclamation text-red-600 animate-pulse"></i>' : ''}
+                                <span>${escapeHtml(s.name)}</span>
                             </button>
                         </td>
                         <td class="py-3 px-4 text-xs text-slate-600">${escapeHtml(s.className)}</td>
@@ -11161,6 +12073,7 @@
                 updatedAtDisplay: new Date().toLocaleString('vi-VN'),
                 updatedBy: getCurrentAccountName(),
                 deletedRegistry: deletedRegistry,
+                confirmedDuplicates: confirmedDuplicates,
                 accounts: accounts,
                 siteConfig: siteConfig,
                 classes: classes,
@@ -11258,12 +12171,13 @@
                 }
                 if (Array.isArray(payload.students)) {
                     payload.students.forEach(s => {
-                        if (deletedRegistry.students && deletedRegistry.students[s.id]) return;
-                        const idx = students.findIndex(item => item.id === s.id);
+                        if (!s) return;
+                        if (deletedRegistry.students && (deletedRegistry.students[s.id] || (s._uid && deletedRegistry.students[s._uid]))) return;
+                        const idx = students.findIndex(item => (s._uid && item._uid === s._uid) || (!s._uid && item.id === s.id));
                         if (idx !== -1) students[idx] = { ...students[idx], ...s };
                         else students.push(s);
                     });
-                    students = students.filter(s => !(deletedRegistry.students && deletedRegistry.students[s.id]));
+                    students = students.filter(s => !(deletedRegistry.students && (deletedRegistry.students[s.id] || (s._uid && deletedRegistry.students[s._uid]))));
                 }
                 if (payload.attendanceRecords && typeof payload.attendanceRecords === 'object') {
                     attendanceRecords = { ...attendanceRecords, ...payload.attendanceRecords };
@@ -11312,6 +12226,17 @@
                 hasLocalUserEdits = true;
                 try { localStorage.setItem('vovinam_has_user_edits', '1'); } catch (e) {}
             }
+
+            if (payload.confirmedDuplicates && typeof payload.confirmedDuplicates === 'object') {
+                confirmedDuplicates = {
+                    names: { ...(confirmedDuplicates.names || {}), ...(payload.confirmedDuplicates.names || {}) },
+                    ids: { ...(confirmedDuplicates.ids || {}), ...(payload.confirmedDuplicates.ids || {}) },
+                    uids: { ...(confirmedDuplicates.uids || {}), ...(payload.confirmedDuplicates.uids || {}) }
+                };
+                saveConfirmedDuplicatesToStorage(true);
+            }
+            ensureStudentUids();
+            sortStudentsInPlace();
 
             // Lưu xuống LocalStorage của máy hiện tại (không kích hoạt ngược lại auto-push)
             saveAccountsToStorage(true);
