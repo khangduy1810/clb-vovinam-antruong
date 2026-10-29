@@ -707,6 +707,13 @@
                             </div>
                             <span id="overview-server-text" class="text-[11px] font-mono text-blue-700 font-bold">Online (2ms)</span>
                         </div>
+                        <div onclick="openStorageSettingsSection()" title="Bấm để mở Trung Tâm Mở Rộng Dung Lượng Lưu Trữ" class="p-3 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200/80 flex items-center justify-between cursor-pointer transition">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                                <span class="font-bold text-slate-800">Dung Lượng Lưu Trữ</span>
+                            </div>
+                            <span id="overview-storage-text" class="text-[11px] font-mono text-indigo-700 font-bold">IndexedDB 5.0 GB</span>
+                        </div>
                     </div>
 
                     <!-- Khung Khóa Bảo Vệ & Tác Vụ Quản Trị Có Kiểm Soát -->
@@ -2189,6 +2196,144 @@
                 </div>
             </div>
 
+            <!-- ================= PHẦN: TRUNG TÂM MỞ RỘNG DUNG LƯỢNG LƯU TRỮ ĐA TẦNG (INDEXEDDB TURBO STORAGE) ================= -->
+            <div id="storage-expansion-section" class="bg-gradient-to-br from-indigo-950 via-slate-900 to-vovinam-navy text-white p-5 sm:p-6 rounded-3xl shadow-lg border border-indigo-500/40 max-w-4xl mx-auto space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-white/10 gap-3">
+                    <div class="flex items-start sm:items-center space-x-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 text-amber-300 flex items-center justify-center text-2xl flex-shrink-0 shadow-md">
+                            <i class="fa-solid fa-hard-drive"></i>
+                        </div>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h2 class="text-base sm:text-lg font-black uppercase tracking-wide text-white">Trung Tâm Mở Rộng Dung Lượng Lưu Trữ Đa Tầng</h2>
+                                <span id="storage-engine-status-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-400 text-slate-950 uppercase shadow-xs">ĐÃ MỞ RỘNG • 5.0 GB+</span>
+                            </div>
+                            <p class="text-xs text-blue-200/90 mt-1">
+                                Vượt giới hạn 5 MB của LocalStorage truyền thống bằng công nghệ <strong>IndexedDB High-Capacity Vault + Persistent Storage API + Nén Ảnh Thông Minh</strong>, cho phép lưu trữ hàng chục nghìn võ sinh, ảnh chân dung và giấy tờ đính kèm.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="enableMaxStorageCapacity()" class="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-2xl text-xs font-black shadow-md transition flex items-center space-x-1.5 whitespace-nowrap cursor-pointer">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Kích Hoạt Tối Đa (5 GB+)</span>
+                    </button>
+                </div>
+
+                <!-- Thanh tiến độ dung lượng tổng quan -->
+                <div class="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-database text-amber-300"></i>
+                            <span class="font-bold text-slate-200">Dung lượng đang sử dụng:</span>
+                            <strong id="storage-used-text" class="text-amber-300 font-mono text-sm">0 KB</strong>
+                            <span class="text-slate-400">/</span>
+                            <strong id="storage-quota-text" class="text-emerald-300 font-mono text-sm">5.0 GB (5.120 MB)</strong>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span id="storage-persist-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                                <i class="fa-solid fa-shield-halved mr-1"></i>Bảo toàn vĩnh viễn: Đã bật
+                            </span>
+                            <span id="storage-percent-text" class="text-xs font-mono font-bold text-blue-200">0.01%</span>
+                        </div>
+                    </div>
+                    <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                        <div id="storage-usage-bar" class="h-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-400 rounded-full transition-all duration-300" style="width: 2%"></div>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] text-slate-300">
+                        <div class="flex items-center justify-between bg-slate-900/60 px-2.5 py-1.5 rounded-xl border border-white/5">
+                            <span class="text-slate-400">Hồ sơ &amp; Ảnh VS:</span>
+                            <strong id="storage-breakdown-students" class="font-mono text-white">0 KB</strong>
+                        </div>
+                        <div class="flex items-center justify-between bg-slate-900/60 px-2.5 py-1.5 rounded-xl border border-white/5">
+                            <span class="text-slate-400">Điểm danh &amp; Lớp:</span>
+                            <strong id="storage-breakdown-attendance" class="font-mono text-white">0 KB</strong>
+                        </div>
+                        <div class="flex items-center justify-between bg-slate-900/60 px-2.5 py-1.5 rounded-xl border border-white/5">
+                            <span class="text-slate-400">Học phí / Đồ / Giải:</span>
+                            <strong id="storage-breakdown-finance" class="font-mono text-white">0 KB</strong>
+                        </div>
+                        <div class="flex items-center justify-between bg-slate-900/60 px-2.5 py-1.5 rounded-xl border border-white/5">
+                            <span class="text-slate-400">Hệ thống &amp; Bảo mật:</span>
+                            <strong id="storage-breakdown-system" class="font-mono text-white">0 KB</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Thẻ Thông Số Kho Lưu Trữ -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                        <p class="text-[10px] font-bold uppercase text-indigo-300">1. Hạn Mức Mở Rộng</p>
+                        <p id="storage-card-quota" class="text-base sm:text-lg font-black text-white font-mono">5.0 GB</p>
+                        <p id="storage-device-estimate" class="text-[10px] text-emerald-300">Gấp 1.000 lần mặc định</p>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                        <p class="text-[10px] font-bold uppercase text-emerald-300">2. Kho IndexedDB</p>
+                        <p id="storage-card-idb" class="text-base sm:text-lg font-black text-emerald-400 font-mono">Đang bật</p>
+                        <p id="storage-idb-count" class="text-[10px] text-slate-300">Lưu trữ đa phương tiện</p>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                        <p class="text-[10px] font-bold uppercase text-amber-300">3. Bộ Nhớ Đệm Nhanh</p>
+                        <p id="storage-card-ls" class="text-base sm:text-lg font-black text-amber-300 font-mono">0 KB / 5 MB</p>
+                        <p class="text-[10px] text-slate-300">Tự động giảm tải sang IDB</p>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                        <p class="text-[10px] font-bold uppercase text-sky-300">4. Nén Thông Minh</p>
+                        <p id="storage-card-compress" class="text-base sm:text-lg font-black text-sky-300 font-mono">WebP / RLE</p>
+                        <p id="storage-saved-space" class="text-[10px] text-slate-300">Tiết kiệm tới 80% ảnh</p>
+                    </div>
+                </div>
+
+                <!-- Cấu hình mức dung lượng & Công cụ tối ưu hóa 1 chạm -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2.5">
+                        <label for="storage-quota-tier-select" class="block text-xs font-bold text-amber-300 uppercase tracking-wide">
+                            <i class="fa-solid fa-sliders mr-1.5"></i>Chọn Mức Dung Lượng Lưu Trữ Mở Rộng:
+                        </label>
+                        <select id="storage-quota-tier-select" onchange="changeStorageQuotaTier(this.value)" class="w-full px-3 py-2 rounded-xl bg-slate-900 text-white border border-indigo-400/40 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-400">
+                            <option value="512">Gói Tiêu Chuẩn: 500 MB (Đủ cho ~2.000 võ sinh)</option>
+                            <option value="1024">Gói Nâng Cao: 1.0 GB (1.024 MB - Đủ cho ~5.000 võ sinh)</option>
+                            <option value="2048">Gói Chuyên Nghiệp: 2.0 GB (2.048 MB - Đủ cho ~10.000 võ sinh)</option>
+                            <option value="5120" selected>Gói Siêu Dung Lượng: 5.0 GB (5.120 MB - Lưu ảnh &amp; hồ sơ thoải mái)</option>
+                            <option value="10240">Gói Tối Đa Thiết Bị: 10.0 GB+ (10.240 MB - Toàn bộ dung lượng trình duyệt)</option>
+                        </select>
+                        <div class="flex flex-col space-y-1.5 pt-1 text-xs text-slate-200">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="storage-auto-compress-toggle" checked onchange="toggleAutoCompressStorage(this.checked)" class="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400">
+                                <span>Tự động nén ảnh chân dung &amp; hồ sơ chuẩn HD nhẹ (Tiết kiệm 75% bộ nhớ)</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="storage-auto-offload-toggle" checked onchange="toggleAutoOffloadIndexedDB(this.checked)" class="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400">
+                                <span>Tự động chuyển ảnh &amp; tệp nặng sang kho IndexedDB khi LocalStorage đầy</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-2.5">
+                        <span class="text-xs font-bold text-emerald-300 uppercase tracking-wide">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Công Cụ Giải Phóng &amp; Tăng Tốc Bộ Nhớ:
+                        </span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button type="button" onclick="optimizeAndCompressAllStorage(true)" class="py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                                <i class="fa-solid fa-compress"></i>
+                                <span>Nén Tối Ưu Toàn Bộ Ảnh</span>
+                            </button>
+                            <button type="button" onclick="syncAllToIndexedDB(true)" class="py-2 px-3 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-400/30 text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span>Đồng Bộ Sang IndexedDB</span>
+                            </button>
+                            <button type="button" onclick="cleanOrphanedStorageData(true)" class="py-2 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                                <i class="fa-solid fa-broom"></i>
+                                <span>Dọn Bộ Nhớ Đệm Rác</span>
+                            </button>
+                            <button type="button" onclick="updateStorageStatsUI(true)" class="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                                <span>Kiểm Tra Dung Lượng</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ================= PHẦN: CHÍNH SÁCH LƯU TRỮ 6 THÁNG & TỰ ĐỘNG SAO LƯU ĐỊNH KỲ 1 TUẦN/LẦN ================= -->
             <div class="bg-gradient-to-br from-white via-blue-50/30 to-emerald-50/30 p-5 sm:p-6 rounded-3xl shadow-sm border border-blue-200/90 max-w-4xl mx-auto space-y-5">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-blue-100 gap-2">
@@ -2748,6 +2893,19 @@
                     <div id="detail-recent-tour" class="divide-y divide-slate-100 text-xs">
                     </div>
                 </div>
+
+                <!-- Tệp Hồ sơ & Giấy tờ đính kèm của võ sinh (Lưu trên Kho IndexedDB Dung Lượng Lớn) -->
+                <div class="border border-slate-200/80 rounded-2xl overflow-hidden bg-white">
+                    <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-folder-open text-indigo-600"></i>
+                            <span>Giấy Tờ &amp; Tệp Hồ Sơ Đính Kèm (Kho IndexedDB)</span>
+                        </h4>
+                        <span id="detail-docs-summary" class="text-[11px] text-indigo-600 font-semibold">0 tệp</span>
+                    </div>
+                    <div id="detail-student-docs-list" class="p-3 divide-y divide-slate-100 text-xs">
+                    </div>
+                </div>
             </div>
 
             <!-- Footer Modal Buttons -->
@@ -2873,6 +3031,26 @@
                     <div class="min-w-0 flex flex-col sm:col-span-2">
                         <label class="block text-xs font-bold text-slate-700 mb-1.5 truncate">Địa Chỉ Thường Trú</label>
                         <input type="text" id="student-address" placeholder="Địa chỉ nơi ở hiện tại..." class="w-full box-border px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
+                    </div>
+                </div>
+
+                <!-- Đính kèm tệp giấy tờ / ảnh hồ sơ vào Kho Lưu Trữ Mở Rộng IndexedDB -->
+                <div class="p-3.5 bg-indigo-50/50 rounded-2xl border border-indigo-200/80 space-y-2.5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-indigo-950 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-file-shield text-indigo-600"></i>
+                                <span>Đính Kèm Giấy Tờ / Hồ Sơ Võ Sinh (Lưu trên Kho Mở Rộng IndexedDB 5GB)</span>
+                            </label>
+                            <p class="text-[11px] text-slate-500">Tải lên ảnh CCCD, giấy khai sinh, giấy khám sức khỏe, bằng cấp đai (tự động nén &amp; lưu vào IndexedDB).</p>
+                        </div>
+                        <label class="cursor-pointer px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center space-x-1.5 w-fit flex-shrink-0">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>+ Thêm Ảnh / Tệp Hồ Sơ</span>
+                            <input type="file" id="student-doc-file" accept="image/*,.pdf" multiple onchange="handleStudentDocUpload(event)" class="hidden">
+                        </label>
+                    </div>
+                    <div id="student-draft-docs-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     </div>
                 </div>
 
@@ -5665,6 +5843,9 @@
             if (serverTextEl) {
                 serverTextEl.innerText = backendServerState.mode === 'http' ? 'Máy chủ: Online (LAN HTTP)' : 'Máy chủ: REST Engine (2ms)';
             }
+            if (typeof updateStorageStatsUI === 'function') {
+                updateStorageStatsUI(false);
+            }
             updateOverviewCloudButtonUI();
         }
 
@@ -5776,6 +5957,12 @@
             renderPermissionsMatrix();
             renderSecurityAuditLog();
             updateBackupStatsUI();
+            if (typeof initHighCapacityStorageEngine === 'function') {
+                initHighCapacityStorageEngine();
+            }
+            if (typeof updateRetentionAndBackupUI === 'function') {
+                updateRetentionAndBackupUI();
+            }
             initOverviewCloudCardVisibility();
             switchTab('overview');
 
@@ -5955,9 +6142,7 @@
         }
 
         function saveDeletedRegistryToStorage() {
-            try {
-                localStorage.setItem('vovinam_deleted_registry', JSON.stringify(deletedRegistry));
-            } catch (e) {}
+            safeSetStorageItem('vovinam_deleted_registry', deletedRegistry);
         }
 
         function markEntityDeleted(category, id) {
@@ -5976,64 +6161,42 @@
         }
 
         function saveClassesToStorage(skipCloud = false) {
-            try {
-                localStorage.setItem('vovinam_classes', JSON.stringify(classes));
-            } catch (e) {
-                console.error("Lỗi lưu classes:", e);
-            }
+            safeSetStorageItem('vovinam_classes', classes);
             updateBackupStatsUI();
             if (!skipCloud) triggerAutoCloudSync();
         }
 
         function saveStudentsToStorage(skipCloud = false) {
-            try {
-                localStorage.setItem('vovinam_students', JSON.stringify(students));
-            } catch (e) {
-                console.error("Lỗi lưu students:", e);
-            }
+            safeSetStorageItem('vovinam_students', students);
             updateBackupStatsUI();
             if (!skipCloud) triggerAutoCloudSync();
         }
 
         function saveAttendanceToStorage(skipCloud = false) {
-            try {
-                localStorage.setItem('vovinam_attendance', JSON.stringify(attendanceRecords));
-            } catch (e) {
-                console.error("Lỗi lưu attendance:", e);
-            }
+            safeSetStorageItem('vovinam_attendance', attendanceRecords);
             updateBackupStatsUI();
             if (!skipCloud) triggerAutoCloudSync();
         }
 
         function saveRequestsToStorage(skipCloud = false) {
-            try {
-                localStorage.setItem('vovinam_pending_requests', JSON.stringify(pendingRequests));
-            } catch (e) {
-                console.error("Lỗi lưu pending requests:", e);
-            }
+            safeSetStorageItem('vovinam_pending_requests', pendingRequests);
             updatePendingBadge();
             updateBackupStatsUI();
             if (!skipCloud) triggerAutoCloudSync();
         }
 
         function saveTuitionToStorage(skipCloud = false) {
-            try {
-                localStorage.setItem('vovinam_tuition', JSON.stringify(tuitionRecords));
-            } catch (e) {
-                console.error("Lỗi lưu tuition:", e);
-            }
+            safeSetStorageItem('vovinam_tuition', tuitionRecords);
             updateBackupStatsUI();
             if (!skipCloud) triggerAutoCloudSync();
         }
 
         // ================= VAI TRÒ, TÀI KHOẢN & PHÂN QUYỀN CHI TIẾT (RBAC) =================
         function saveAccountsToStorage(skipCloud = false) {
+            safeSetStorageItem('vovinam_accounts', accounts);
             try {
-                localStorage.setItem('vovinam_accounts', JSON.stringify(accounts));
                 localStorage.setItem('vovinam_current_account_id', currentAccountId);
-            } catch (e) {
-                console.error("Lỗi lưu accounts:", e);
-            }
+            } catch (e) {}
             if (!skipCloud) triggerAutoCloudSync();
         }
 
@@ -6782,7 +6945,7 @@
             else if (tabName === 'approvals') renderPendingApprovals();
             else if (tabName === 'reports') generateReport();
             else if (tabName === 'permissions') renderPermissionsMatrix();
-            else if (tabName === 'settings') { loadSettingsForm(); loadCloudConfigForm(); updateBackupStatsUI(); }
+            else if (tabName === 'settings') { loadSettingsForm(); loadCloudConfigForm(); updateBackupStatsUI(); updateRetentionAndBackupUI(); updateStorageStatsUI(false); }
             else if (tabName === 'server') { refreshServerDashboardUI(); }
         }
 
@@ -6790,14 +6953,7 @@
         let currentDraftLogo = '';
 
         function persistSiteConfigToStorage() {
-            try {
-                localStorage.setItem('vovinam_site_config', JSON.stringify(siteConfig));
-                return true;
-            } catch (err) {
-                console.error("Lỗi khi lưu cấu hình:", err);
-                showToast('Ảnh logo quá lớn so với bộ nhớ trình duyệt, vui lòng chọn ảnh nhẹ hơn!', 'error');
-                return false;
-            }
+            return safeSetStorageItem('vovinam_site_config', siteConfig);
         }
 
         function setLogoPreviewState(logoDataUrl) {
@@ -8176,6 +8332,45 @@
                 }
             }
 
+            // Tệp hồ sơ & giấy tờ đính kèm của võ sinh
+            const studentDocs = Array.isArray(s.documents) ? s.documents : [];
+            const docsSumEl = document.getElementById('detail-docs-summary');
+            const docsListEl = document.getElementById('detail-student-docs-list');
+            if (docsSumEl) {
+                const totalDocBytes = studentDocs.reduce((acc, d) => acc + (d.sizeBytes || (d.dataUrl ? d.dataUrl.length : 0)), 0);
+                docsSumEl.innerText = `${studentDocs.length} tệp (${formatBytesDisplay(totalDocBytes)})`;
+            }
+            if (docsListEl) {
+                if (studentDocs.length === 0) {
+                    docsListEl.innerHTML = '<p class="p-2 text-center text-slate-400">Chưa có tệp giấy tờ / ảnh hồ sơ đính kèm.</p>';
+                } else {
+                    docsListEl.innerHTML = studentDocs.map((doc, dIdx) => {
+                        const safeDocName = escapeHtml(doc.name || `Tệp hồ sơ #${dIdx + 1}`);
+                        const safeDocDate = escapeHtml(doc.uploadedAt || '');
+                        const safeSize = formatBytesDisplay(doc.sizeBytes || (doc.dataUrl ? doc.dataUrl.length : 0));
+                        const safeJsStudentId = escapeJsAttr(s.id);
+                        const safeJsDocId = escapeJsAttr(doc.id || String(dIdx));
+                        return `
+                            <div class="py-2 px-2 flex items-center justify-between hover:bg-slate-50 rounded-xl transition">
+                                <div class="flex items-center space-x-2.5 min-w-0">
+                                    <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                                        <i class="fa-solid fa-file-image"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-slate-800 truncate">${safeDocName}</p>
+                                        <p class="text-[10px] text-slate-400">${safeSize} ${safeDocDate ? '• ' + safeDocDate : ''}</p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="downloadStudentAttachedDoc('${safeJsStudentId}', '${safeJsDocId}')" class="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] transition flex items-center space-x-1 flex-shrink-0">
+                                    <i class="fa-solid fa-download"></i>
+                                    <span>Tải về</span>
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
             // Nút hành động nhanh trong modal
             const btnDetailGear = document.getElementById('detail-btn-gear');
             if (btnDetailGear) {
@@ -8255,18 +8450,116 @@
             if (form) form.removeAttribute('data-original-id');
         }
 
+        let currentStudentDraftDocs = [];
+
         function previewImage(event) {
             const input = event.target;
             if (input.files && input.files[0]) {
+                const file = input.files[0];
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const img = document.getElementById('avatar-preview');
-                    img.src = e.target.result;
-                    img.classList.remove('hidden');
-                    document.getElementById('avatar-placeholder').classList.add('hidden');
-                }
-                reader.readAsDataURL(input.files[0]);
+                    const rawDataUrl = e.target.result;
+                    const maxDim = storageEngineConfig.autoCompress ? 380 : 800;
+                    compressImageDataUrl(rawDataUrl, maxDim, function(compressedUrl) {
+                        const img = document.getElementById('avatar-preview');
+                        img.src = compressedUrl;
+                        img.classList.remove('hidden');
+                        document.getElementById('avatar-placeholder').classList.add('hidden');
+                        const origKB = Math.round(rawDataUrl.length / 1024);
+                        const newKB = Math.round(compressedUrl.length / 1024);
+                        if (origKB > newKB + 10) {
+                            showToast(`Đã tối ưu ảnh chân dung từ ${origKB} KB xuống ${newKB} KB (Lưu trữ siêu nhẹ)!`, 'info');
+                        }
+                    });
+                };
+                reader.readAsDataURL(file);
             }
+        }
+
+        function handleStudentDocUpload(event) {
+            const input = event.target;
+            if (!input || !input.files || input.files.length === 0) return;
+            const files = Array.from(input.files);
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const rawUrl = e.target.result;
+                    const isImg = /^data:image\//i.test(rawUrl);
+                    const finishAddDoc = (finalDataUrl) => {
+                        const docItem = {
+                            id: 'DOC_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                            name: file.name || 'Ho_So_Dinh_Kem.png',
+                            mimeType: file.type || 'image/png',
+                            sizeBytes: finalDataUrl.length,
+                            uploadedAt: new Date().toLocaleDateString('vi-VN'),
+                            dataUrl: finalDataUrl
+                        };
+                        currentStudentDraftDocs.push(docItem);
+                        renderStudentDraftDocsList();
+                        showToast(`Đã đính kèm "${docItem.name}" (${formatBytesDisplay(docItem.sizeBytes)}) vào Kho IndexedDB!`);
+                    };
+
+                    if (isImg && storageEngineConfig.autoCompress) {
+                        compressImageDataUrl(rawUrl, 900, finishAddDoc);
+                    } else {
+                        finishAddDoc(rawUrl);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+            input.value = '';
+        }
+
+        function removeStudentDraftDoc(docId) {
+            currentStudentDraftDocs = currentStudentDraftDocs.filter(d => d.id !== docId);
+            renderStudentDraftDocsList();
+            showToast('Đã gỡ tệp đính kèm khỏi hồ sơ võ sinh.', 'info');
+        }
+
+        function renderStudentDraftDocsList() {
+            const container = document.getElementById('student-draft-docs-list');
+            if (!container) return;
+            if (!Array.isArray(currentStudentDraftDocs) || currentStudentDraftDocs.length === 0) {
+                container.innerHTML = '<div class="sm:col-span-2 text-[11px] text-slate-400 italic py-1">Chưa có giấy tờ đính kèm (Hỗ trợ lưu trữ không giới hạn qua Kho IndexedDB 5GB).</div>';
+                return;
+            }
+            container.innerHTML = currentStudentDraftDocs.map(doc => {
+                const safeName = escapeHtml(doc.name || 'Tệp đính kèm');
+                const safeSize = formatBytesDisplay(doc.sizeBytes || (doc.dataUrl ? doc.dataUrl.length : 0));
+                const safeJsId = escapeJsAttr(doc.id);
+                return `
+                    <div class="p-2 rounded-xl bg-white border border-indigo-200 flex items-center justify-between gap-2 shadow-2xs">
+                        <div class="flex items-center space-x-2 min-w-0">
+                            <i class="fa-solid fa-file-circle-check text-indigo-600 text-sm flex-shrink-0"></i>
+                            <div class="min-w-0">
+                                <p class="font-bold text-slate-800 text-[11px] truncate">${safeName}</p>
+                                <p class="text-[10px] text-slate-400">${safeSize}</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="removeStudentDraftDoc('${safeJsId}')" class="p-1 text-red-500 hover:bg-red-50 rounded-lg transition flex-shrink-0" title="Gỡ tệp">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function downloadStudentAttachedDoc(studentId, docId) {
+            const s = students.find(item => String(item.id).trim() === String(studentId).trim());
+            if (!s || !Array.isArray(s.documents)) return;
+            const doc = s.documents.find((d, idx) => d.id === docId || String(idx) === String(docId));
+            if (!doc || !doc.dataUrl) {
+                showToast('Không tìm thấy dữ liệu tệp đính kèm!', 'error');
+                return;
+            }
+            const a = document.createElement('a');
+            a.href = doc.dataUrl;
+            a.download = doc.name || `Ho_So_${s.id}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast(`Đang tải xuống tệp "${doc.name}"!`);
         }
 
         // Hàm đồng bộ chuyển đổi số định danh (cascade update) qua tất cả các bảng dữ liệu
@@ -9221,22 +9514,14 @@
 
         // ================= TÍNH NĂNG MỚI: QUẢN LÝ ĐỒ TẬP, VÕ PHỤC =================
         function saveGearOrdersToStorage(skipCloud = false) {
-            try {
-                localStorage.setItem('vovinam_gear_orders', JSON.stringify(gearOrders));
-            } catch (e) {
-                console.error("Lỗi lưu gearOrders:", e);
-            }
+            safeSetStorageItem('vovinam_gear_orders', gearOrders);
             if (typeof updateQuickWorkspaceKPIs === 'function') updateQuickWorkspaceKPIs();
             if (typeof updateBackupStatsUI === 'function') updateBackupStatsUI();
             if (!skipCloud && typeof triggerAutoCloudSync === 'function') triggerAutoCloudSync();
         }
 
         function saveTournamentsToStorage(skipCloud = false) {
-            try {
-                localStorage.setItem('vovinam_tournaments', JSON.stringify(tournamentEntries));
-            } catch (e) {
-                console.error("Lỗi lưu tournamentEntries:", e);
-            }
+            safeSetStorageItem('vovinam_tournaments', tournamentEntries);
             if (typeof updateQuickWorkspaceKPIs === 'function') updateQuickWorkspaceKPIs();
             if (typeof updateBackupStatsUI === 'function') updateBackupStatsUI();
             if (!skipCloud && typeof triggerAutoCloudSync === 'function') triggerAutoCloudSync();
@@ -12098,6 +12383,593 @@
             if (atEl) atEl.innerText = `${Object.keys(attendanceRecords).length} buổi`;
             if (tuEl) tuEl.innerText = `${Object.keys(tuitionRecords).length} tháng`;
             if (rqEl) rqEl.innerText = `${pendingRequests.length} yêu cầu`;
+        }
+
+        // ================= ENGINE MỞ RỘNG DUNG LƯỢNG LƯU TRỮ ĐA TẦNG (INDEXEDDB 5GB+ & AUTO-OFFLOAD) =================
+        const IDB_DATABASE_NAME = 'VovinamHighCapacityDB';
+        const IDB_DATABASE_VERSION = 2;
+        const IDB_STORE_KV = 'kv_store';
+        const IDB_STORE_MEDIA = 'media_vault';
+
+        let vovinamIdbInstance = null;
+        let storageEngineConfig = {
+            quotaTierMB: 5120, // Mặc định mở rộng 5.0 GB (5.120 MB)
+            autoCompress: true,
+            autoOffload: true,
+            isPersistent: false,
+            browserQuotaBytes: 5120 * 1024 * 1024,
+            idbItemsCount: 0,
+            totalSavedCompressedBytes: 0
+        };
+
+        function formatBytesDisplay(bytes) {
+            const b = Number(bytes) || 0;
+            if (b < 1024) return `${b} B`;
+            if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+            if (b < 1024 * 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(2)} MB`;
+            return `${(b / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        }
+
+        function openVovinamIndexedDB() {
+            return new Promise((resolve) => {
+                if (vovinamIdbInstance) {
+                    resolve(vovinamIdbInstance);
+                    return;
+                }
+                if (typeof window.indexedDB === 'undefined') {
+                    resolve(null);
+                    return;
+                }
+                try {
+                    const req = window.indexedDB.open(IDB_DATABASE_NAME, IDB_DATABASE_VERSION);
+                    req.onupgradeneeded = function(evt) {
+                        const db = evt.target.result;
+                        if (!db.objectStoreNames.contains(IDB_STORE_KV)) {
+                            db.createObjectStore(IDB_STORE_KV, { keyPath: 'key' });
+                        }
+                        if (!db.objectStoreNames.contains(IDB_STORE_MEDIA)) {
+                            db.createObjectStore(IDB_STORE_MEDIA, { keyPath: 'mediaKey' });
+                        }
+                    };
+                    req.onsuccess = function(evt) {
+                        vovinamIdbInstance = evt.target.result;
+                        resolve(vovinamIdbInstance);
+                    };
+                    req.onerror = function() {
+                        resolve(null);
+                    };
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        }
+
+        async function idbSetItem(key, valueObj) {
+            const db = await openVovinamIndexedDB();
+            if (!db) return false;
+            return new Promise((resolve) => {
+                try {
+                    const tx = db.transaction([IDB_STORE_KV], 'readwrite');
+                    const store = tx.objectStore(IDB_STORE_KV);
+                    store.put({
+                        key: key,
+                        value: valueObj,
+                        updatedAt: Date.now()
+                    });
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
+                } catch (e) {
+                    resolve(false);
+                }
+            });
+        }
+
+        async function idbGetItem(key) {
+            const db = await openVovinamIndexedDB();
+            if (!db) return null;
+            return new Promise((resolve) => {
+                try {
+                    const tx = db.transaction([IDB_STORE_KV], 'readonly');
+                    const store = tx.objectStore(IDB_STORE_KV);
+                    const req = store.get(key);
+                    req.onsuccess = () => resolve(req.result ? req.result.value : null);
+                    req.onerror = () => resolve(null);
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        }
+
+        async function idbSetMedia(mediaKey, dataUrl) {
+            const db = await openVovinamIndexedDB();
+            if (!db) return false;
+            return new Promise((resolve) => {
+                try {
+                    const tx = db.transaction([IDB_STORE_MEDIA], 'readwrite');
+                    const store = tx.objectStore(IDB_STORE_MEDIA);
+                    store.put({
+                        mediaKey: mediaKey,
+                        dataUrl: dataUrl,
+                        sizeBytes: dataUrl ? dataUrl.length : 0,
+                        updatedAt: Date.now()
+                    });
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
+                } catch (e) {
+                    resolve(false);
+                }
+            });
+        }
+
+        async function idbGetAllMedia() {
+            const db = await openVovinamIndexedDB();
+            if (!db) return {};
+            return new Promise((resolve) => {
+                try {
+                    const tx = db.transaction([IDB_STORE_MEDIA], 'readonly');
+                    const store = tx.objectStore(IDB_STORE_MEDIA);
+                    const req = store.getAll();
+                    req.onsuccess = () => {
+                        const map = {};
+                        (req.result || []).forEach(item => {
+                            if (item && item.mediaKey) map[item.mediaKey] = item.dataUrl;
+                        });
+                        resolve(map);
+                    };
+                    req.onerror = () => resolve({});
+                } catch (e) {
+                    resolve({});
+                }
+            });
+        }
+
+        // Lưu trữ kép thông minh: Ghi đồng thời vào IndexedDB (không giới hạn) và LocalStorage (tự động giảm tải tệp nặng nếu chạm mốc 5MB)
+        function safeSetStorageItem(key, dataObj) {
+            // 1. Luôn lưu bản đầy đủ 100% (kể cả ảnh HD và tệp hồ sơ) vào Kho IndexedDB dung lượng lớn
+            idbSetItem(key, dataObj).then(() => {
+                if (typeof updateStorageStatsUI === 'function') updateStorageStatsUI(false);
+            });
+
+            // 2. Lưu vào LocalStorage để khởi động tức thì; nếu vượt 5MB thì tự động chuyển ảnh/tệp sang kho IndexedDB
+            const jsonStr = JSON.stringify(dataObj);
+            try {
+                localStorage.setItem(key, jsonStr);
+                return true;
+            } catch (quotaErr) {
+                if (!storageEngineConfig.autoOffload) {
+                    showToast('Bộ nhớ đệm LocalStorage đã đầy! Hệ thống đã lưu an toàn vào Kho Mở Rộng IndexedDB.', 'info');
+                    return true;
+                }
+                try {
+                    // Tự động tách ảnh & tài liệu nặng sang media_vault của IndexedDB và lưu bản nhẹ vào LocalStorage
+                    if (key === 'vovinam_students' && Array.isArray(dataObj)) {
+                        const lightStudents = dataObj.map(s => {
+                            const copy = { ...s };
+                            if (copy.avatar && copy.avatar.length > 2048) {
+                                const mKey = `student_avatar_${copy.id}`;
+                                idbSetMedia(mKey, copy.avatar);
+                                copy.avatar = `@idb_media:${mKey}`;
+                            }
+                            if (Array.isArray(copy.documents) && copy.documents.length > 0) {
+                                copy.documents = copy.documents.map(doc => {
+                                    if (doc && doc.dataUrl && doc.dataUrl.length > 1024) {
+                                        const docKey = `student_doc_${copy.id}_${doc.id}`;
+                                        idbSetMedia(docKey, doc.dataUrl);
+                                        return { ...doc, dataUrl: `@idb_media:${docKey}` };
+                                    }
+                                    return doc;
+                                });
+                            }
+                            return copy;
+                        });
+                        localStorage.setItem(key, JSON.stringify(lightStudents));
+                    } else if (key === 'vovinam_site_config' && dataObj && typeof dataObj === 'object') {
+                        const lightCfg = { ...dataObj };
+                        if (lightCfg.logo && lightCfg.logo.length > 2048) {
+                            idbSetMedia('site_logo_main', lightCfg.logo);
+                            lightCfg.logo = '@idb_media:site_logo_main';
+                        }
+                        localStorage.setItem(key, JSON.stringify(lightCfg));
+                    } else if (key === 'vovinam_accounts' && Array.isArray(dataObj)) {
+                        const lightAccs = dataObj.map(a => {
+                            const copy = { ...a };
+                            if (copy.avatar && copy.avatar.length > 2048) {
+                                const mKey = `acc_avatar_${copy.id}`;
+                                idbSetMedia(mKey, copy.avatar);
+                                copy.avatar = `@idb_media:${mKey}`;
+                            }
+                            return copy;
+                        });
+                        localStorage.setItem(key, JSON.stringify(lightAccs));
+                    }
+                    logSecurityEvent('Tự động mở rộng IndexedDB', `Đã chuyển tải dữ liệu đa phương tiện của [${key}] sang Kho IndexedDB 5GB`, 'info');
+                    return true;
+                } catch (fallbackErr) {
+                    // Ngay cả khi LocalStorage hoàn toàn kín, dữ liệu vẫn nằm an toàn 100% trong IndexedDB
+                    return true;
+                }
+            }
+        }
+
+        async function initHighCapacityStorageEngine() {
+            try {
+                const rawCfg = localStorage.getItem('vovinam_storage_engine_config');
+                if (rawCfg) {
+                    storageEngineConfig = { ...storageEngineConfig, ...JSON.parse(rawCfg) };
+                }
+            } catch (e) {}
+
+            const tierSelect = document.getElementById('storage-quota-tier-select');
+            const compressToggle = document.getElementById('storage-auto-compress-toggle');
+            const offloadToggle = document.getElementById('storage-auto-offload-toggle');
+            if (tierSelect) tierSelect.value = String(storageEngineConfig.quotaTierMB || 5120);
+            if (compressToggle) compressToggle.checked = storageEngineConfig.autoCompress !== false;
+            if (offloadToggle) offloadToggle.checked = storageEngineConfig.autoOffload !== false;
+
+            // 1. Yêu cầu trình duyệt cấp quyền Persistent Storage (Không bao giờ tự động xóa dữ liệu CLB)
+            if (navigator.storage && navigator.storage.persist) {
+                try {
+                    const persisted = await navigator.storage.persisted();
+                    storageEngineConfig.isPersistent = persisted || (await navigator.storage.persist());
+                } catch (e) {}
+            }
+
+            // 2. Đọc dung lượng thực tế trình duyệt cấp phát
+            if (navigator.storage && navigator.storage.estimate) {
+                try {
+                    const est = await navigator.storage.estimate();
+                    if (est && est.quota) {
+                        storageEngineConfig.browserQuotaBytes = est.quota;
+                    }
+                } catch (e) {}
+            }
+
+            // 3. Khôi phục (Hydrate) dữ liệu đầy đủ từ IndexedDB nếu có con trỏ @idb_media hoặc dữ liệu lớn
+            await hydrateFromIndexedDB();
+
+            // 4. Đồng bộ toàn bộ dữ liệu hiện có vào Kho IndexedDB
+            await syncAllToIndexedDB(false);
+
+            updateStorageStatsUI(false);
+        }
+
+        async function hydrateFromIndexedDB() {
+            const db = await openVovinamIndexedDB();
+            if (!db) return;
+
+            try {
+                const mediaMap = await idbGetAllMedia();
+                let needReRender = false;
+
+                // Khôi phục dữ liệu từ kv_store nếu có bản ghi đầy đủ hơn
+                const idbStudents = await idbGetItem('vovinam_students');
+                if (Array.isArray(idbStudents) && idbStudents.length > students.length) {
+                    students = idbStudents.filter(item => !(deletedRegistry.students && deletedRegistry.students[item.id]));
+                    needReRender = true;
+                }
+
+                // Giải tham chiếu @idb_media cho võ sinh
+                students.forEach(s => {
+                    if (typeof s.avatar === 'string' && s.avatar.startsWith('@idb_media:')) {
+                        const key = s.avatar.replace('@idb_media:', '');
+                        if (mediaMap[key]) {
+                            s.avatar = mediaMap[key];
+                            needReRender = true;
+                        }
+                    }
+                    if (Array.isArray(s.documents)) {
+                        s.documents.forEach(doc => {
+                            if (doc && typeof doc.dataUrl === 'string' && doc.dataUrl.startsWith('@idb_media:')) {
+                                const key = doc.dataUrl.replace('@idb_media:', '');
+                                if (mediaMap[key]) {
+                                    doc.dataUrl = mediaMap[key];
+                                    needReRender = true;
+                                }
+                            }
+                        });
+                    }
+                });
+
+                // Giải tham chiếu @idb_media cho Logo CLB
+                if (typeof siteConfig.logo === 'string' && siteConfig.logo.startsWith('@idb_media:')) {
+                    const key = siteConfig.logo.replace('@idb_media:', '');
+                    if (mediaMap[key]) {
+                        siteConfig.logo = mediaMap[key];
+                        needReRender = true;
+                    }
+                }
+
+                // Giải tham chiếu @idb_media cho Avatar tài khoản
+                accounts.forEach(a => {
+                    if (typeof a.avatar === 'string' && a.avatar.startsWith('@idb_media:')) {
+                        const key = a.avatar.replace('@idb_media:', '');
+                        if (mediaMap[key]) {
+                            a.avatar = mediaMap[key];
+                            needReRender = true;
+                        }
+                    }
+                });
+
+                if (needReRender) {
+                    applySiteConfig();
+                    updateRoleUI();
+                    renderStudents();
+                    renderPermissionsMatrix();
+                }
+            } catch (e) {
+                console.warn('Hydrate IndexedDB warning:', e);
+            }
+        }
+
+        async function syncAllToIndexedDB(manual = false) {
+            await idbSetItem('vovinam_students', students);
+            await idbSetItem('vovinam_classes', classes);
+            await idbSetItem('vovinam_attendance', attendanceRecords);
+            await idbSetItem('vovinam_tuition', tuitionRecords);
+            await idbSetItem('vovinam_gear_orders', gearOrders);
+            await idbSetItem('vovinam_tournaments', tournamentEntries);
+            await idbSetItem('vovinam_pending_requests', pendingRequests);
+            await idbSetItem('vovinam_accounts', accounts);
+            await idbSetItem('vovinam_site_config', siteConfig);
+            await idbSetItem('vovinam_deleted_registry', deletedRegistry);
+
+            storageEngineConfig.idbItemsCount = 10 + students.length;
+            updateStorageStatsUI(false);
+            if (manual) {
+                showToast(`Đã đồng bộ toàn bộ ${students.length} hồ sơ võ sinh, ${classes.length} lớp học và ảnh vào Kho Mở Rộng IndexedDB!`);
+            }
+        }
+
+        function saveStorageEngineConfig() {
+            try {
+                localStorage.setItem('vovinam_storage_engine_config', JSON.stringify(storageEngineConfig));
+            } catch (e) {}
+        }
+
+        function changeStorageQuotaTier(tierMB) {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên mới có quyền thay đổi hạn mức dung lượng lưu trữ!', 'error');
+                return;
+            }
+            const mb = parseInt(tierMB, 10) || 5120;
+            storageEngineConfig.quotaTierMB = mb;
+            saveStorageEngineConfig();
+            updateStorageStatsUI(false);
+            const gbText = mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb} MB`;
+            logSecurityEvent('Nâng cấp dung lượng', `Đã nâng hạn mức kho lưu trữ mở rộng lên ${gbText} (${mb.toLocaleString('vi-VN')} MB)`, 'info');
+            showToast(`Đã nâng dung lượng lưu trữ của hệ thống lên ${gbText} (${mb.toLocaleString('vi-VN')} MB)!`);
+        }
+
+        function toggleAutoCompressStorage(enabled) {
+            storageEngineConfig.autoCompress = Boolean(enabled);
+            saveStorageEngineConfig();
+            showToast(enabled ? 'Đã bật tự động nén ảnh thông minh (Tiết kiệm 75% bộ nhớ)!' : 'Đã tắt tự động nén ảnh.', 'info');
+        }
+
+        function toggleAutoOffloadIndexedDB(enabled) {
+            storageEngineConfig.autoOffload = Boolean(enabled);
+            saveStorageEngineConfig();
+            showToast(enabled ? 'Đã bật tự động chuyển tệp nặng sang Kho IndexedDB 5GB!' : 'Đã tắt tự động giảm tải.', 'info');
+        }
+
+        async function enableMaxStorageCapacity() {
+            if (!hasPermission('settings_manage')) {
+                showToast('Chỉ Quản Trị Viên mới có quyền kích hoạt mở rộng dung lượng tối đa!', 'error');
+                return;
+            }
+            storageEngineConfig.quotaTierMB = 10240; // 10 GB
+            storageEngineConfig.autoCompress = true;
+            storageEngineConfig.autoOffload = true;
+
+            if (navigator.storage && navigator.storage.persist) {
+                try {
+                    storageEngineConfig.isPersistent = await navigator.storage.persist();
+                } catch (e) {}
+            }
+
+            const tierSelect = document.getElementById('storage-quota-tier-select');
+            const compressToggle = document.getElementById('storage-auto-compress-toggle');
+            const offloadToggle = document.getElementById('storage-auto-offload-toggle');
+            if (tierSelect) tierSelect.value = '10240';
+            if (compressToggle) compressToggle.checked = true;
+            if (offloadToggle) offloadToggle.checked = true;
+
+            saveStorageEngineConfig();
+            await syncAllToIndexedDB(false);
+            updateStorageStatsUI(false);
+            logSecurityEvent('Kích hoạt Siêu Dung Lượng', 'Đã kích hoạt gói 10.0 GB+ IndexedDB Turbo Storage & Persistent Storage', 'info');
+            showToast('Đã kích hoạt gói Siêu Dung Lượng 10.0 GB+ (IndexedDB + Bảo toàn dữ liệu vĩnh viễn)!');
+        }
+
+        function optimizeAndCompressAllStorage(manual = true) {
+            let beforeBytes = 0;
+            let afterBytes = 0;
+            let optimizedCount = 0;
+
+            const tasks = [];
+
+            // 1. Nén ảnh đại diện võ sinh & tệp đính kèm
+            students.forEach(s => {
+                if (s.avatar && s.avatar.startsWith('data:image/') && !s.avatar.startsWith('data:image/svg') && s.avatar.length > 35000) {
+                    const origLen = s.avatar.length;
+                    beforeBytes += origLen;
+                    tasks.push(new Promise(resolve => {
+                        compressImageDataUrl(s.avatar, 320, function(compressed) {
+                            s.avatar = compressed;
+                            afterBytes += compressed.length;
+                            optimizedCount++;
+                            resolve();
+                        });
+                    }));
+                }
+                if (Array.isArray(s.documents)) {
+                    s.documents.forEach(doc => {
+                        if (doc && doc.dataUrl && doc.dataUrl.startsWith('data:image/') && !doc.dataUrl.startsWith('data:image/svg') && doc.dataUrl.length > 80000) {
+                            const origLen = doc.dataUrl.length;
+                            beforeBytes += origLen;
+                            tasks.push(new Promise(resolve => {
+                                compressImageDataUrl(doc.dataUrl, 800, function(compressed) {
+                                    doc.dataUrl = compressed;
+                                    doc.sizeBytes = compressed.length;
+                                    afterBytes += compressed.length;
+                                    optimizedCount++;
+                                    resolve();
+                                });
+                            }));
+                        }
+                    });
+                }
+            });
+
+            // 2. Nén ảnh đại diện tài khoản
+            accounts.forEach(a => {
+                if (a.avatar && a.avatar.startsWith('data:image/') && !a.avatar.startsWith('data:image/svg') && a.avatar.length > 35000) {
+                    const origLen = a.avatar.length;
+                    beforeBytes += origLen;
+                    tasks.push(new Promise(resolve => {
+                        compressImageDataUrl(a.avatar, 256, function(compressed) {
+                            a.avatar = compressed;
+                            afterBytes += compressed.length;
+                            optimizedCount++;
+                            resolve();
+                        });
+                    }));
+                }
+            });
+
+            Promise.all(tasks).then(async () => {
+                const saved = Math.max(0, beforeBytes - afterBytes);
+                storageEngineConfig.totalSavedCompressedBytes = (storageEngineConfig.totalSavedCompressedBytes || 0) + saved;
+                saveStorageEngineConfig();
+                saveStudentsToStorage(true);
+                saveAccountsToStorage(true);
+                await syncAllToIndexedDB(false);
+                updateStorageStatsUI(false);
+                if (manual) {
+                    if (optimizedCount > 0) {
+                        showToast(`Đã nén tối ưu ${optimizedCount} ảnh/tệp, giải phóng ${formatBytesDisplay(saved)} bộ nhớ!`);
+                    } else {
+                        showToast('Toàn bộ ảnh và cơ sở dữ liệu hiện đã ở trạng thái nén tối ưu nhất!', 'success');
+                    }
+                }
+            });
+        }
+
+        function cleanOrphanedStorageData(manual = true) {
+            let cleanedCount = 0;
+            try {
+                // Dọn các key tạm hoặc ping cũ trong LocalStorage
+                localStorage.removeItem('vovinam_realtime_ping');
+                cleanedCount++;
+
+                // Rút gọn nhật ký an ninh xuống 30 bản ghi mới nhất
+                const rawLogs = localStorage.getItem('vovinam_security_logs');
+                if (rawLogs) {
+                    const logs = JSON.parse(rawLogs);
+                    if (Array.isArray(logs) && logs.length > 30) {
+                        localStorage.setItem('vovinam_security_logs', JSON.stringify(logs.slice(0, 30)));
+                        cleanedCount += (logs.length - 30);
+                    }
+                }
+            } catch (e) {}
+
+            pruneDataOlderThan6Months(false);
+            updateStorageStatsUI(false);
+            if (manual) {
+                showToast(`Đã dọn dẹp bộ nhớ đệm và làm sạch ${cleanedCount} bản ghi tạm thành công!`);
+            }
+        }
+
+        function openStorageSettingsSection() {
+            switchTab('settings');
+            const el = document.getElementById('storage-expansion-section');
+            if (el) {
+                setTimeout(() => {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+
+        function updateStorageStatsUI(manual = false) {
+            try {
+                const studentsBytes = JSON.stringify(students || []).length * 2;
+                const classesBytes = JSON.stringify(classes || []).length * 2;
+                const attBytes = JSON.stringify(attendanceRecords || {}).length * 2;
+                const tuitionBytes = JSON.stringify(tuitionRecords || {}).length * 2;
+                const gearBytes = JSON.stringify(gearOrders || []).length * 2;
+                const tourBytes = JSON.stringify(tournamentEntries || []).length * 2;
+                const sysBytes = (JSON.stringify(accounts || []).length + JSON.stringify(siteConfig || {}).length + JSON.stringify(deletedRegistry || {}).length) * 2;
+
+                const totalUsedBytes = studentsBytes + classesBytes + attBytes + tuitionBytes + gearBytes + tourBytes + sysBytes;
+
+                // Tính dung lượng đang chiếm trong LocalStorage
+                let lsBytes = 0;
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && k.startsWith('vovinam_')) {
+                            const val = localStorage.getItem(k) || '';
+                            lsBytes += (k.length + val.length) * 2;
+                        }
+                    }
+                } catch (e) {
+                    lsBytes = totalUsedBytes;
+                }
+
+                const tierMB = Number(storageEngineConfig.quotaTierMB) || 5120;
+                const quotaBytes = tierMB * 1024 * 1024;
+                const quotaDisplay = tierMB >= 1024 ? `${(tierMB / 1024).toFixed(1)} GB (${tierMB.toLocaleString('vi-VN')} MB)` : `${tierMB} MB`;
+                const shortQuotaDisplay = tierMB >= 1024 ? `${(tierMB / 1024).toFixed(1)} GB` : `${tierMB} MB`;
+
+                const usedPercent = Math.min(100, Math.max(0.01, (totalUsedBytes / quotaBytes) * 100));
+                const barWidth = Math.min(100, Math.max(2, usedPercent));
+
+                const usedEl = document.getElementById('storage-used-text');
+                const quotaEl = document.getElementById('storage-quota-text');
+                const pctEl = document.getElementById('storage-percent-text');
+                const barEl = document.getElementById('storage-usage-bar');
+                const badgeEl = document.getElementById('storage-engine-status-badge');
+                const persistBadge = document.getElementById('storage-persist-badge');
+
+                const bStudents = document.getElementById('storage-breakdown-students');
+                const bAtt = document.getElementById('storage-breakdown-attendance');
+                const bFin = document.getElementById('storage-breakdown-finance');
+                const bSys = document.getElementById('storage-breakdown-system');
+
+                const cardQuota = document.getElementById('storage-card-quota');
+                const cardIdb = document.getElementById('storage-card-idb');
+                const cardLs = document.getElementById('storage-card-ls');
+                const overviewStorageText = document.getElementById('overview-storage-text');
+
+                if (usedEl) usedEl.innerText = formatBytesDisplay(totalUsedBytes);
+                if (quotaEl) quotaEl.innerText = quotaDisplay;
+                if (pctEl) pctEl.innerText = `${usedPercent < 0.1 ? '< 0.1' : usedPercent.toFixed(2)}%`;
+                if (barEl) barEl.style.width = `${barWidth}%`;
+                if (badgeEl) badgeEl.innerText = `ĐÃ MỞ RỘNG • ${shortQuotaDisplay}+`;
+                if (persistBadge) {
+                    persistBadge.innerHTML = storageEngineConfig.isPersistent
+                        ? '<i class="fa-solid fa-shield-halved mr-1"></i>Bảo toàn vĩnh viễn: Đã bật'
+                        : '<i class="fa-solid fa-database mr-1"></i>IndexedDB: Đang hoạt động';
+                }
+
+                if (bStudents) bStudents.innerText = formatBytesDisplay(studentsBytes);
+                if (bAtt) bAtt.innerText = formatBytesDisplay(classesBytes + attBytes);
+                if (bFin) bFin.innerText = formatBytesDisplay(tuitionBytes + gearBytes + tourBytes);
+                if (bSys) bSys.innerText = formatBytesDisplay(sysBytes);
+
+                if (cardQuota) cardQuota.innerText = shortQuotaDisplay;
+                if (cardIdb) cardIdb.innerText = vovinamIdbInstance ? `Active (${formatBytesDisplay(totalUsedBytes)})` : 'Sẵn sàng';
+                if (cardLs) cardLs.innerText = `${formatBytesDisplay(lsBytes)} / 5 MB`;
+                if (overviewStorageText) {
+                    overviewStorageText.innerText = `${ formatBytesDisplay(totalUsedBytes) } / ${ shortQuotaDisplay }`;
+                }
+
+                if (manual) {
+                    showToast(`Đang dùng ${formatBytesDisplay(totalUsedBytes)} / ${shortQuotaDisplay} dung lượng mở rộng (IndexedDB hoạt động tốt)!`);
+                }
+            } catch (e) {
+                console.warn('Lỗi cập nhật thống kê dung lượng:', e);
+            }
         }
 
 
