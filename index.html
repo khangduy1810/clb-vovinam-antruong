@@ -149,6 +149,7 @@
         }
         @media print { .attendance-save-dock { display:none !important; } }
         @media (prefers-reduced-motion:reduce) { .card-hover-lift,main > section:not(.hidden) { animation:none; transition:none; } }
+        .rbac-denied,.rbac-action-denied { display:none !important; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -1860,7 +1861,7 @@
                             <i class="fa-solid fa-table-cells-large text-vovinam-blue"></i>
                             <span>Ma Trận Phân Quyền Trực Tiếp Theo Chức Năng & Nhiệm Vụ</span>
                         </h3>
-                        <p class="text-[11px] text-slate-500 mt-0.5">Tích chọn hoặc bỏ tích vào từng ô chức năng để cấp hoặc thu hồi quyền ngay lập tức cho tài khoản đó.</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Bấm Sửa quyền & lớp để chọn chức năng và phạm vi dữ liệu của từng tài khoản.</p>
                     </div>
                     <span id="perm-matrix-notice" class="text-xs font-bold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-xl border border-emerald-200 w-fit">
                         Admin đang bật chế độ chỉnh sửa quyền
@@ -1869,61 +1870,7 @@
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200">
-                                <th class="py-3 px-4 min-w-[200px]">Tài Khoản & Nhiệm Vụ</th>
-                                <th class="py-3 px-2.5 text-center" title="Thêm/Sửa/Xóa võ sinh trực tiếp không cần chờ duyệt">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa-solid fa-users text-vovinam-blue mb-1 text-sm"></i>
-                                        <span>Võ Sinh</span>
-                                        <span class="text-[9px] font-normal text-slate-400">(Trực tiếp)</span>
-                                    </div>
-                                </th>
-                                <th class="py-3 px-2.5 text-center" title="Thêm, sửa giờ học, tạm dừng hoặc xóa lớp học">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa-solid fa-chalkboard-user text-indigo-600 mb-1 text-sm"></i>
-                                        <span>Lớp Học</span>
-                                        <span class="text-[9px] font-normal text-slate-400">(Quản lý lịch)</span>
-                                    </div>
-                                </th>
-                                <th class="py-3 px-2.5 text-center" title="Thực hiện điểm danh hàng ngày và lưu báo cáo buổi học">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa-solid fa-calendar-check text-emerald-600 mb-1 text-sm"></i>
-                                        <span>Điểm Danh</span>
-                                        <span class="text-[9px] font-normal text-slate-400">(Chuyên cần)</span>
-                                    </div>
-                                </th>
-                                <th class="py-3 px-2.5 text-center" title="Thu học phí, cập nhật biên lai và miễn giảm">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa-solid fa-wallet text-amber-600 mb-1 text-sm"></i>
-                                        <span>Học Phí</span>
-                                        <span class="text-[9px] font-normal text-slate-400">(Thu ngân)</span>
-                                    </div>
-                                </th>
-                                <th class="py-3 px-2.5 text-center" title="Duyệt hoặc từ chối yêu cầu thêm/sửa/xóa võ sinh">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa-solid fa-clock-rotate-left text-purple-600 mb-1 text-sm"></i>
-                                        <span>Phê Duyệt</span>
-                                        <span class="text-[9px] font-normal text-slate-400">(Xét duyệt)</span>
-                                    </div>
-                                </th>
-                                <th class="py-3 px-2.5 text-center" title="Xuất dữ liệu ra file Excel CSV và In báo cáo">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa-solid fa-file-export text-cyan-600 mb-1 text-sm"></i>
-                                        <span>Báo Cáo</span>
-                                        <span class="text-[9px] font-normal text-slate-400">(Xuất CSV/In)</span>
-                                    </div>
-                                </th>
-                                <th class="py-3 px-2.5 text-center" title="Chỉnh sửa cài đặt hệ thống, thương hiệu và phân quyền">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa-solid fa-sliders text-red-600 mb-1 text-sm"></i>
-                                        <span>Hệ Thống</span>
-                                        <span class="text-[9px] font-normal text-slate-400">(Cài đặt/Quyền)</span>
-                                    </div>
-                                </th>
-                                <th class="py-3 px-3 text-center min-w-[150px]">Thao Tác</th>
-                            </tr>
-                        </thead>
+                        <thead><tr class="bg-slate-100 text-slate-700 text-xs"><th class="p-3 text-left">Tài khoản</th><th class="p-3 text-left">Lớp được giao</th><th class="p-3 text-left">Quyền / tab làm việc</th><th class="p-3 text-left">Thao tác</th></tr></thead>
                         <tbody id="permissions-matrix-body" class="divide-y divide-slate-100">
                         </tbody>
                     </table>
@@ -3823,8 +3770,11 @@
                         <input type="text" id="acc-role-title" required placeholder="VD: HLV Phụ Trách Điểm Danh / Thủ Quỹ" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
                     </div>
                     <div>
-                        <label for="acc-assigned-class" class="block text-xs font-bold text-slate-700 mb-1">Phạm Vi Lớp Phụ Trách</label>
-                        <input type="text" id="acc-assigned-class" placeholder="VD: Tất cả các lớp hoặc Lớp Tối T3-T5-T7" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none text-slate-700">
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Phạm vi lớp được xem và thao tác</label>
+                        <input type="hidden" id="acc-assigned-class">
+                        <label class="flex items-center gap-2 text-xs mb-2"><input type="checkbox" id="rbac-all-classes" class="w-4 h-4">Tất cả các lớp (cấp riêng)</label>
+                        <div id="rbac-class-options" class="grid grid-cols-1 gap-2 max-h-48 overflow-auto"></div>
+                        <p class="text-[11px] text-slate-500 mt-2">Bỏ chọn tất cả: tài khoản chưa được giao lớp. Quyền chức năng không tự mở rộng phạm vi lớp.</p>
                     </div>
                 </div>
 
@@ -3852,63 +3802,7 @@
                     </div>
                 </div>
 
-                <!-- Danh sách 7 quyền chức năng chi tiết -->
-                <div class="space-y-2.5">
-                    <label class="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-                        Tùy Chỉnh Chi Tiết Từng Quyền Chức Năng:
-                    </label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <label class="flex items-start space-x-3 p-3 rounded-2xl border border-slate-200 hover:bg-blue-50/40 cursor-pointer transition">
-                            <input type="checkbox" id="perm-students-direct" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div>
-                                <p class="text-xs font-bold text-slate-800">1. Quản lý Võ sinh trực tiếp</p>
-                                <p class="text-[11px] text-slate-500">Thêm, sửa, xóa võ sinh ngay lập tức (nếu tắt sẽ gửi yêu cầu chờ duyệt).</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start space-x-3 p-3 rounded-2xl border border-slate-200 hover:bg-blue-50/40 cursor-pointer transition">
-                            <input type="checkbox" id="perm-classes-manage" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div>
-                                <p class="text-xs font-bold text-slate-800">2. Quản lý Lớp học & Lịch tập</p>
-                                <p class="text-[11px] text-slate-500">Thêm lớp mới, đổi giờ học, đổi HLV, tạm dừng hoặc xóa lớp học.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start space-x-3 p-3 rounded-2xl border border-slate-200 hover:bg-blue-50/40 cursor-pointer transition">
-                            <input type="checkbox" id="perm-attendance-manage" checked class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div>
-                                <p class="text-xs font-bold text-slate-800">3. Điểm danh & Báo cáo buổi học</p>
-                                <p class="text-[11px] text-slate-500">Điểm danh hàng ngày, thêm học sinh học bù và lưu kết quả điểm danh.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start space-x-3 p-3 rounded-2xl border border-slate-200 hover:bg-blue-50/40 cursor-pointer transition">
-                            <input type="checkbox" id="perm-tuition-manage" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div>
-                                <p class="text-xs font-bold text-slate-800">4. Quản lý & Thu Học phí</p>
-                                <p class="text-[11px] text-slate-500">Cập nhật trạng thái đóng tiền, số tiền thu và ghi chú biên lai học phí.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start space-x-3 p-3 rounded-2xl border border-slate-200 hover:bg-blue-50/40 cursor-pointer transition">
-                            <input type="checkbox" id="perm-approvals-manage" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div>
-                                <p class="text-xs font-bold text-slate-800">5. Phê duyệt yêu cầu</p>
-                                <p class="text-[11px] text-slate-500">Duyệt hoặc từ chối các đề xuất thêm/sửa/xóa võ sinh từ HLV khác.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start space-x-3 p-3 rounded-2xl border border-slate-200 hover:bg-blue-50/40 cursor-pointer transition">
-                            <input type="checkbox" id="perm-reports-export" checked class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div>
-                                <p class="text-xs font-bold text-slate-800">6. Xuất Báo cáo & In ấn</p>
-                                <p class="text-[11px] text-slate-500">Xuất các danh sách võ sinh, điểm danh, học phí ra file Excel CSV và In.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start space-x-3 p-3 rounded-2xl border border-slate-200 hover:bg-blue-50/40 cursor-pointer transition sm:col-span-2">
-                            <input type="checkbox" id="perm-settings-manage" class="mt-0.5 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
-                            <div>
-                                <p class="text-xs font-bold text-slate-800">7. Quản trị Hệ thống, Cài đặt & Phân quyền</p>
-                                <p class="text-[11px] text-slate-500">Thay đổi Logo, tên trang, cấu hình Cloud Sync, sao lưu dữ liệu và phân quyền cho tài khoản khác.</p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                <div class="space-y-2.5"><p class="text-xs font-bold uppercase">Quyền chức năng — chỉ hiện các tab được cấp</p><div id="rbac-permission-options" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div></div>
 
                 <div class="pt-4 border-t border-slate-100 flex justify-end space-x-2">
                     <button type="button" onclick="closeAccountModal()" class="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-semibold">Hủy</button>
@@ -5305,6 +5199,7 @@
         }
 
         function renderSecurityAuditLog() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return;
             const tbody = document.getElementById('security-audit-table-body');
             if (!tbody) return;
             let logs = [];
@@ -5335,6 +5230,7 @@
         }
 
         function clearSecurityLogs() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được xóa nhật ký an ninh!', 'error');
                 return;
@@ -5347,6 +5243,7 @@
         }
 
         function exportSecurityLogsCSV() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('reports_export') && !hasPermission('settings_manage')) {
                 showToast('Tài khoản của bạn chưa được cấp quyền Xuất nhật ký an ninh!', 'error');
                 return;
@@ -5444,6 +5341,7 @@
 
         // ================= QUY TẮC FIREBASE CHUẨN MODAL =================
         function openFirebaseRulesModal() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             const modal = document.getElementById('firebase-rules-modal');
             if (modal) modal.classList.remove('hidden');
         }
@@ -5454,6 +5352,7 @@
         }
 
         function copyFirebaseRulesText() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             const textarea = document.getElementById('firebase-rules-code');
             if (!textarea) return;
             textarea.select();
@@ -6127,9 +6026,9 @@
             const stKpi = document.getElementById('overview-kpi-students');
             const stOffEl = document.getElementById('overview-st-official');
             const stGuestEl = document.getElementById('overview-st-guest');
-            const officialCount = students.filter(s => s.type !== 'guest').length;
-            const guestCount = students.filter(s => s.type === 'guest').length;
-            if (stKpi) stKpi.innerText = `${students.length} võ sinh`;
+            const officialCount = rbacStudents().filter(s => s.type !== 'guest').length;
+            const guestCount = rbacStudents().filter(s => s.type === 'guest').length;
+            if (stKpi) stKpi.innerText = `${rbacStudents().length} võ sinh`;
             if (stOffEl) stOffEl.innerText = `Chính thức: ${officialCount}`;
             if (stGuestEl) stGuestEl.innerText = `Học bù: ${guestCount}`;
 
@@ -6137,15 +6036,15 @@
             const clsKpi = document.getElementById('overview-kpi-classes');
             const clsShiftsEl = document.getElementById('overview-cls-shifts');
             const clsAvgEl = document.getElementById('overview-cls-avg');
-            const activeClasses = classes.filter(c => c.status !== 'paused');
-            if (clsKpi) clsKpi.innerText = `${activeClasses.length}/${classes.length} lớp mở`;
+            const activeClasses = rbacClasses().filter(c => c.status !== 'paused');
+            if (clsKpi) clsKpi.innerText = `${activeClasses.length}/${rbacClasses().length} lớp mở`;
             if (clsShiftsEl) clsShiftsEl.innerText = `Ca học: Sáng / Chiều / Tối`;
-            const avgRoster = classes.length > 0 ? (students.length / classes.length).toFixed(1) : 0;
+            const avgRoster = rbacClasses().length > 0 ? (rbacStudents().length / rbacClasses().length).toFixed(1) : 0;
             if (clsAvgEl) clsAvgEl.innerText = `Sĩ số TB: ${avgRoster} HS`;
 
             // 3. Chỉ số Điểm Danh
             const attKpi = document.getElementById('overview-kpi-attendance');
-            const totalSessions = Object.keys(attendanceRecords).length;
+            const totalSessions = Object.keys(rbacAttendanceRecords()).length;
             if (attKpi) attKpi.innerText = `${totalSessions} buổi tập`;
 
             // 4. Chỉ số Học Phí
@@ -6154,18 +6053,18 @@
             const tUnpaidEl = document.getElementById('overview-tuition-unpaid');
             const monthInput = document.getElementById('tuition-month');
             const curMonth = monthInput ? monthInput.value : '';
-            const monthMap = (curMonth && tuitionRecords[curMonth]) ? tuitionRecords[curMonth] : {};
+            const monthMap = (curMonth && rbacTuitionRecords()[curMonth]) ? rbacTuitionRecords()[curMonth] : {};
             let paidCount = 0;
             let totalCollected = 0;
-            students.forEach(s => {
+            rbacStudents().forEach(s => {
                 const rec = safetyTuitionRecord(curMonth, s);
                 if (rec && rec.status === 'paid') {
                     paidCount++;
                     totalCollected += Number(rec.amount || 0);
                 }
             });
-            const unpaidCount = students.length - paidCount;
-            if (tuitionKpi) tuitionKpi.innerText = `${paidCount}/${students.length} đã đóng`;
+            const unpaidCount = rbacStudents().length - paidCount;
+            if (tuitionKpi) tuitionKpi.innerText = `${paidCount}/${rbacStudents().length} đã đóng`;
             if (tSumEl) tSumEl.innerText = `Tổng thu: ${totalCollected.toLocaleString('vi-VN')} đ`;
             if (tUnpaidEl) tUnpaidEl.innerText = `${unpaidCount} chưa đóng`;
 
@@ -6173,21 +6072,21 @@
             const gearKpi = document.getElementById('overview-kpi-gear');
             const gearPaidEl = document.getElementById('overview-gear-paid');
             const gearDelivEl = document.getElementById('overview-gear-deliv');
-            const paidGearOrders = gearOrders.filter(o => o.paymentStatus === 'paid' || o.isPaid);
+            const paidGearOrders = rbacGearOrders().filter(o => o.paymentStatus === 'paid' || o.isPaid);
             const totalGearPaid = paidGearOrders.reduce((sum, o) => sum + Number(o.totalPrice || o.totalAmount || 0), 0);
-            const deliveredGear = gearOrders.filter(o => o.deliveryStatus === 'delivered').length;
-            if (gearKpi) gearKpi.innerText = `${gearOrders.length} đơn hàng`;
+            const deliveredGear = rbacGearOrders().filter(o => o.deliveryStatus === 'delivered').length;
+            if (gearKpi) gearKpi.innerText = `${rbacGearOrders().length} đơn hàng`;
             if (gearPaidEl) gearPaidEl.innerText = `Đã TT: ${totalGearPaid.toLocaleString('vi-VN')} đ`;
-            if (gearDelivEl) gearDelivEl.innerText = `Đã giao: ${deliveredGear}/${gearOrders.length}`;
+            if (gearDelivEl) gearDelivEl.innerText = `Đã giao: ${deliveredGear}/${rbacGearOrders().length}`;
 
             // 6. Chỉ số Thi Đấu Giải
             const trnKpi = document.getElementById('overview-kpi-tournaments');
             const trnDocsEl = document.getElementById('overview-trn-docs');
             const trnFeeEl = document.getElementById('overview-trn-fee');
-            const completeDocsCount = tournamentEntries.filter(t => evaluateDossier(t.dossier).isComplete || t.docsComplete).length;
-            const paidTrnFee = tournamentEntries.filter(t => t.feeStatus === 'paid' || t.isFeePaid).reduce((sum, t) => sum + Number(t.feeAmount || t.fee || 0), 0);
-            if (trnKpi) trnKpi.innerText = `${tournamentEntries.length} VĐV`;
-            if (trnDocsEl) trnDocsEl.innerText = `Đủ hồ sơ: ${completeDocsCount}/${tournamentEntries.length} (6/6)`;
+            const completeDocsCount = rbacTournamentEntries().filter(t => evaluateDossier(t.dossier).isComplete || t.docsComplete).length;
+            const paidTrnFee = rbacTournamentEntries().filter(t => t.feeStatus === 'paid' || t.isFeePaid).reduce((sum, t) => sum + Number(t.feeAmount || t.fee || 0), 0);
+            if (trnKpi) trnKpi.innerText = `${rbacTournamentEntries().length} VĐV`;
+            if (trnDocsEl) trnDocsEl.innerText = `Đủ hồ sơ: ${completeDocsCount}/${rbacTournamentEntries().length} (6/6)`;
             if (trnFeeEl) trnFeeEl.innerText = `Đã nộp phí: ${paidTrnFee.toLocaleString('vi-VN')} đ`;
 
             // 7. Trạng thái Kết nối
@@ -6203,6 +6102,8 @@
                 updateStorageStatsUI(false);
             }
             updateOverviewCloudButtonUI();
+        
+            rbacApplyActionVisibility();
         }
 
         function updateOverviewCloudButtonUI() {
@@ -6232,6 +6133,7 @@
         }
 
         function openProtectedCloudSync() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Super Admin hoặc tài khoản được cấp quyền Hệ thống mới có quyền mở cấu hình!', 'error');
                 return;
@@ -6653,7 +6555,7 @@
                 const s=JSON.parse(localStorage.getItem('vovinam_auth_session')||'null');
                 if(!s || s.accountId!==acc.id || !s.expiresAt || s.expiresAt<=Date.now() || !s.integrityToken || localStorage.getItem('vovinam_session_locked')==='1')return false;
                 if(!timingSafeEqual(s.integrityToken,computeSessionIntegrityToken(acc,s.expiresAt)))return false;
-                return Boolean(acc.isSuperAdmin || acc.permissions?.[permKey]);
+                return Boolean(acc.isSuperAdmin || acc.permissions?.full_access===true || acc.permissions?.[permKey]===true);
             }catch{return false;}
         }
 
@@ -6697,7 +6599,7 @@
 
         function updateRoleUI() {
             const acc = getCurrentAccount() || {name:'Chưa đăng nhập',username:'',roleTitle:'Chưa đăng nhập',permissions:{},isSuperAdmin:false};
-            currentUserRole = (acc.isSuperAdmin || hasPermission('settings_manage')) ? 'admin' : 'staff';
+            currentUserRole = rbacGlobalAdmin(acc) ? 'admin' : 'staff';
 
             const userDisplay = document.getElementById('current-user-display');
             const roleBadge = document.getElementById('current-role-badge');
@@ -6760,7 +6662,7 @@
             const wbSubtext = document.getElementById('workspace-bar-subtext');
             if (wbUserName) wbUserName.innerText = acc.name;
             if (wbRolePill) wbRolePill.innerText = acc.roleTitle || (acc.isSuperAdmin ? 'Quản Trị Viên' : 'Huấn Luyện Viên');
-            if (wbSubtext) wbSubtext.innerText = `ID: ${formatUsername(acc.username)} • Phụ trách: ${acc.assignedClasses || 'Tất cả các lớp'}`;
+            if (wbSubtext) wbSubtext.innerText = `ID: ${formatUsername(acc.username)} • Phụ trách: ${rbacAccountScopeLabel(acc)}`;
             if (wbAvatarImg && wbAvatarText) {
                 if (safeAccAvatar) {
                     wbAvatarImg.src = safeAccAvatar;
@@ -6782,14 +6684,14 @@
                 btnAdmin.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition bg-vovinam-blue text-white shadow-xs';
                 btnStaff.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-semibold transition bg-slate-200 text-slate-600 hover:bg-slate-300';
             } else {
-                roleBadge.innerText = `${enabledPermsCount}/7 QUYỀN`;
+                roleBadge.innerText = `${enabledPermsCount}/${Object.keys(PERMISSION_LABELS).length} QUYỀN`;
                 roleBadge.className = 'px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500 text-white leading-tight';
                 btnStaff.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition bg-vovinam-blue text-white shadow-xs';
                 btnAdmin.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-semibold transition bg-slate-200 text-slate-600 hover:bg-slate-300';
             }
 
             if (bannerText) {
-                bannerText.innerHTML = `<strong class="text-vovinam-gold">${escapeHtml(acc.name)}</strong><br><span class="text-[11px] text-blue-100/90">${escapeHtml(acc.roleTitle)} (${escapeHtml(acc.assignedClasses || 'Tất cả các lớp')})</span>`;
+                bannerText.innerHTML = `<strong class="text-vovinam-gold">${escapeHtml(acc.name)}</strong><br><span class="text-[11px] text-blue-100/90">${escapeHtml(acc.roleTitle)} (${escapeHtml(rbacAccountScopeLabel(acc))})</span>`;
             }
 
             // Hiển thị các huy hiệu quyền hạn trong menu thu gọn
@@ -6842,7 +6744,7 @@
                     permMatrixNotice.innerText = 'Được phép cấp & thu hồi quyền';
                     permMatrixNotice.className = 'text-xs font-bold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-xl border border-emerald-200 w-fit';
                 } else {
-                    permMatrixNotice.innerText = 'Chế độ chỉ xem (Cần quyền Hệ thống)';
+                    permMatrixNotice.innerText = 'Cần quyền Quản lý tài khoản';
                     permMatrixNotice.className = 'text-xs font-bold px-3 py-1 bg-amber-100 text-amber-800 rounded-xl border border-amber-200 w-fit';
                 }
             }
@@ -6873,10 +6775,11 @@
             }
 
             updatePendingBadge();
+            rbacRefreshVisibility();
         }
 
         function updatePendingBadge() {
-            const count = pendingRequests.length;
+            const count = rbacPendingRequests().length;
             const navBadge = document.getElementById('nav-pending-count');
             const mobBadge = document.getElementById('mobile-pending-count');
             if (count > 0) {
@@ -6892,149 +6795,37 @@
 
         // ================= QUẢN LÝ MA TRẬN PHÂN QUYỀN & BẢO MẬT TÀI KHOẢN =================
         function renderPermissionsMatrix() {
-            const tbody = document.getElementById('permissions-matrix-body');
-            if (!tbody) return;
-
-            const totalEl = document.getElementById('perm-stat-total');
-            const adminsEl = document.getElementById('perm-stat-admins');
-            const curEl = document.getElementById('perm-stat-current');
-
-            const adminCount = accounts.filter(a => a.isSuperAdmin || (a.permissions && a.permissions.settings_manage)).length;
-            const curAcc = getCurrentAccount();
-
-            const customCountEl = document.getElementById('perm-stat-custom');
-            const curAvatarEl = document.getElementById('perm-stat-current-avatar');
-
-            if (totalEl) totalEl.innerText = `${accounts.length} tài khoản`;
-            if (adminsEl) adminsEl.innerText = `${adminCount} tài khoản`;
-            if (customCountEl) customCountEl.innerText = `${Math.max(0, accounts.length - adminCount)} tài khoản`;
-            if (curEl && curAcc) curEl.innerText = curAcc.name;
-            if (curAvatarEl && curAcc) {
-                const curSafeAva = sanitizeImageUrl(curAcc.avatar || '');
-                if (curSafeAva) {
-                    curAvatarEl.innerHTML = `<img src="${curSafeAva}" alt="${escapeHtml(curAcc.name)}" class="w-full h-full object-cover">`;
-                } else {
-                    curAvatarEl.innerHTML = `<span class="font-black text-sm">${escapeHtml(curAcc.name.charAt(0).toUpperCase())}</span>`;
-                }
-            }
-
-            const canEditPerms = hasPermission('settings_manage');
-            const permKeys = ['students_direct', 'classes_manage', 'attendance_manage', 'tuition_manage', 'approvals_manage', 'reports_export', 'settings_manage'];
-
-            tbody.innerHTML = accounts.map(acc => {
-                const isCurrent = acc.id === currentAccountId;
-                const isLocked = acc.status === 'locked';
-                const safeAccAva = sanitizeImageUrl(acc.avatar || '');
-                const canChangeThisAvatar = isCurrent || canEditPerms;
-                const safeJsAccId = escapeJsAttr(acc.id);
-                return `
-                    <tr class="hover:bg-blue-50/30 transition border-b border-slate-100 ${isCurrent ? 'bg-blue-50/40' : ''} ${isLocked ? 'bg-red-50/30' : ''}">
-                        <td class="py-3.5 px-4">
-                            <div class="flex items-center space-x-2.5">
-                                <div ${canChangeThisAvatar ? `onclick="openPersonalAvatarModal('${safeJsAccId}')"` : ''} title="${canChangeThisAvatar ? 'Bấm để đổi ảnh đại diện cho tài khoản này' : escapeHtml(acc.name)}" class="relative w-10 h-10 rounded-xl ${acc.isSuperAdmin ? 'bg-vovinam-blue text-vovinam-gold' : (isLocked ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-700')} font-black text-sm flex items-center justify-center flex-shrink-0 border border-slate-200 overflow-hidden ${canChangeThisAvatar ? 'cursor-pointer group shadow-xs' : ''}">
-                                    ${safeAccAva
-                                        ? `<img src="${safeAccAva}" alt="${escapeHtml(acc.name)}" class="w-full h-full object-cover">`
-                                        : `<span>${escapeHtml(acc.name).charAt(0).toUpperCase()}</span>`
-                                    }
-                                    ${canChangeThisAvatar ? `<div class="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[10px]"><i class="fa-solid fa-camera"></i></div>` : ''}
-                                </div>
-                                <div>
-                                    <div class="flex items-center space-x-1.5 flex-wrap">
-                                        <span class="font-bold text-slate-800 text-xs sm:text-sm">${escapeHtml(acc.name)}</span>
-                                        ${isCurrent ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-500 text-white rounded-md uppercase">Đang dùng</span>' : ''}
-                                        ${isLocked ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-red-600 text-white rounded-md uppercase">Tạm khóa</span>' : '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded-md">Hoạt động</span>'}
-                                    </div>
-                                    <div class="text-[11px] font-semibold text-vovinam-blue">${escapeHtml(acc.roleTitle)}</div>
-                                    <div class="text-[10px] text-slate-500 font-mono flex items-center space-x-1 mt-0.5">
-                                        <span class="text-blue-700 font-bold">${formatUsername(acc.username)}</span>
-                                        <span>•</span>
-                                        <span class="text-slate-400">Mã hóa Hash (SHA-256)</span>
-                                        <span>•</span>
-                                        <span class="text-slate-400">${escapeHtml(acc.assignedClasses || 'Tất cả các lớp')}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                        ${permKeys.map(pKey => {
-                            const checked = acc.isSuperAdmin || (acc.permissions && acc.permissions[pKey]);
-                            const disabled = acc.isSuperAdmin || !canEditPerms;
-                            const safeAccId = escapeJsAttr(acc.id);
-                            return `
-                                <td class="py-3 px-2 text-center">
-                                    <input type="checkbox"
-                                        ${checked ? 'checked' : ''}
-                                        ${disabled ? 'disabled' : ''}
-                                        onchange="toggleAccountPermission('${safeAccId}', '${pKey}', this.checked)"
-                                        class="w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}">
-                                </td>
-                            `;
-                        }).join('')}
-                        <td class="py-3 px-3 text-center">
-                            <div class="flex items-center justify-center space-x-1">
-                                <button onclick="promptSwitchToAccount('${escapeJsAttr(acc.id)}')" title="Đăng nhập tài khoản này (Cần mật khẩu)" class="px-2 py-1 rounded-lg text-[11px] font-bold transition ${isCurrent ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 hover:bg-vovinam-blue hover:text-white text-slate-700'}">
-                                    ${isCurrent ? 'Đang dùng' : 'Đăng nhập'}
-                                </button>
-                                ${(isCurrent || canEditPerms) ? `
-                                    <button onclick="openPersonalAvatarModal('${escapeJsAttr(acc.id)}')" title="Đổi ảnh đại diện tài khoản" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
-                                        <i class="fa-solid fa-camera"></i>
-                                    </button>
-                                ` : ''}
-                                ${canEditPerms ? `
-                                    <button onclick="openAdminResetPasswordModal('${escapeJsAttr(acc.id)}')" title="Admin đặt lại mật khẩu" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition">
-                                        <i class="fa-solid fa-key"></i>
-                                    </button>
-                                    ${!acc.isSuperAdmin ? `
-                                        <button onclick="toggleAccountLock('${escapeJsAttr(acc.id)}')" title="${isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}" class="p-1.5 ${isLocked ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-500 hover:text-red-600 hover:bg-red-50'} rounded-lg transition">
-                                            <i class="fa-solid ${isLocked ? 'fa-lock-open' : 'fa-user-lock'}"></i>
-                                        </button>
-                                    ` : ''}
-                                    <button onclick="editAccount('${escapeJsAttr(acc.id)}')" title="Sửa tài khoản & quyền" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </button>
-                                    ${!acc.isSuperAdmin ? `
-                                        <button onclick="deleteAccount('${escapeJsAttr(acc.id)}')" title="Xóa tài khoản" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition">
-                                            <i class="fa-solid fa-trash-can"></i>
-                                        </button>
-                                    ` : ''}
-                                ` : ''}
-                            </div>
-                        </td>
-                    </tr>
-                `;
+            const tbody=document.getElementById('permissions-matrix-body');if(!tbody)return;
+            if(!hasPermission('accounts_manage')){tbody.innerHTML='';return;}
+            const visible=rbacAccountsForManagement();
+            const write=(id,text)=>{const el=document.getElementById(id);if(el)el.textContent=text;};
+            write('perm-stat-total',visible.length+' tài khoản');write('perm-stat-admins',visible.filter(rbacGlobalAdmin).length+' tài khoản');write('perm-stat-custom',visible.filter(a=>!rbacGlobalAdmin(a)).length+' tài khoản');write('perm-stat-current',getCurrentAccount()?.name||'');
+            tbody.innerHTML=visible.map(a=>{
+                const editable=rbacCanManageAccount(a),ref=escapeJsAttr(a.id),perms=Object.keys(RBAC_PERMISSIONS).filter(k=>a.isSuperAdmin||a.permissions?.full_access||a.permissions?.[k]);
+                return '<tr class="border-b border-slate-100"><td class="p-3"><strong>'+escapeHtml(a.name)+'</strong><div class="text-xs text-slate-500">'+formatUsername(a.username)+' · '+escapeHtml(a.roleTitle||'')+'</div><span class="text-[11px]">'+(a.isSuperAdmin?'SUPER ADMIN':a.permissions?.full_access?'TOÀN QUYỀN':a.status==='locked'?'Đã khóa':'Theo quyền được cấp')+'</span></td><td class="p-3 text-xs">'+escapeHtml(rbacAccountScopeLabel(a))+'</td><td class="p-3"><details><summary class="cursor-pointer text-xs">'+perms.length+' quyền chức năng</summary><ul class="mt-2 text-xs space-y-1">'+perms.map(k=>'<li>'+escapeHtml(RBAC_PERMISSIONS[k])+'</li>').join('')+'</ul></details></td><td class="p-3"><div class="flex flex-wrap gap-2">'+(editable?'<button type="button" onclick="openAccountModal(true,\''+ref+'\')" class="px-3 py-2 rounded-lg bg-blue-50 text-vovinam-blue font-bold">Sửa quyền &amp; lớp</button><button type="button" onclick="openAdminResetPasswordModal(\''+ref+'\')" class="px-3 py-2 border rounded-lg">Đổi mật khẩu</button>':'')+(!a.isSuperAdmin&&editable?'<button type="button" onclick="toggleAccountLock(\''+ref+'\')" class="px-3 py-2 border rounded-lg">'+(a.status==='locked'?'Mở khóa':'Khóa')+'</button><button type="button" onclick="deleteAccount(\''+ref+'\')" class="px-3 py-2 border rounded-lg text-red-700">Xóa</button>':'')+'</div></td></tr>';
             }).join('');
         }
 
-        function toggleAccountPermission(accId, permKey, isChecked) {
-            if (!hasPermission('settings_manage')) {
-                showToast('Tài khoản của bạn không có quyền thay đổi phân quyền!', 'error');
-                renderPermissionsMatrix();
-                return;
-            }
-
-            const acc = accounts.find(a => a.id === accId);
-            if (!acc || acc.isSuperAdmin) return;
-
-            if (!acc.permissions) acc.permissions = {};
-            acc.permissions[permKey] = Boolean(isChecked);
-
-            saveAccountsToStorage();
-            updateRoleUI();
-            renderPermissionsMatrix();
-
-            const permLabel = PERMISSION_LABELS[permKey] ? PERMISSION_LABELS[permKey].name : permKey;
-            showToast(`Đã ${isChecked ? 'CẤP' : 'THU HỒI'} quyền "${permLabel}" cho ${acc.name}!`);
+        function toggleAccountPermission(accId,permKey,isChecked) {
+            const target=accounts.find(a=>a.id===accId);if(!target || !Object.hasOwn(RBAC_PERMISSIONS,permKey))return;
+            const next={...target.permissions,[permKey]:Boolean(isChecked)};
+            if(!rbacValidateAccountGrant(accId,next,rbacAssignedIds(target),rbacAllClasses(target)))return;
+            target.permissions=next;saveAccountsToStorage();updateRoleUI();renderPermissionsMatrix();
         }
 
         function openAccountModal(isEdit = false, accId = null) {
-            if (!hasPermission('settings_manage')) {
+            if (!hasPermission('accounts_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được thêm/sửa tài khoản!', 'error');
                 return;
             }
 
+            if(!rbacCanManageAccount(isEdit?accounts.find(a=>a.id===accId):null))return rbacDeny();
+            rbacRenderAccountControls(isEdit?accounts.find(a=>a.id===accId):null);
             const modal = document.getElementById('account-modal');
             const form = document.getElementById('account-form');
             const title = document.getElementById('account-modal-title');
             form.reset();
+            rbacRenderAccountControls(isEdit?accounts.find(a=>a.id===accId):null);
 
             const pwdInput = document.getElementById('acc-password');
             const pwdReq = document.getElementById('acc-pwd-req-badge');
@@ -7044,7 +6835,7 @@
             if (!isEdit) {
                 title.innerHTML = '<i class="fa-solid fa-user-plus text-vovinam-gold mr-1.5"></i><span>Thêm Tài Khoản & Mật Khẩu Riêng</span>';
                 document.getElementById('acc-id').value = '';
-                document.getElementById('acc-assigned-class').value = 'Tất cả các lớp';
+                document.getElementById('acc-assigned-class').value = '';
                 if (pwdInput) { pwdInput.required = true; pwdInput.value = ''; }
                 if (pwdReq) pwdReq.classList.remove('hidden');
                 if (pwdHint) pwdHint.innerText = 'Thiết lập mật khẩu khởi tạo cho tài khoản này (tối thiểu 6 ký tự).';
@@ -7077,6 +6868,8 @@
                 document.getElementById('perm-settings-manage').checked = acc.isSuperAdmin || Boolean(perms.settings_manage);
             }
 
+            rbacRenderAccountControls(isEdit?accounts.find(a=>a.id===accId):null);
+            if(!isEdit)rbacApplyRolePreset('coach');
             modal.classList.remove('hidden');
         }
 
@@ -7089,59 +6882,16 @@
         }
 
         function applyRolePreset(preset) {
-            const map = {
-                full_admin: {
-                    roleTitle: 'Quản Trị Viên CLB',
-                    perms: [true, true, true, true, true, true, true]
-                },
-                training_manager: {
-                    roleTitle: 'Phó Chủ Nhiệm Phụ Trách Đào Tạo',
-                    perms: [true, true, true, false, true, true, false]
-                },
-                coach: {
-                    roleTitle: 'Huấn Luyện Viên Chuyên Môn',
-                    perms: [false, false, true, false, false, true, false]
-                },
-                accountant: {
-                    roleTitle: 'Thủ Quỹ & Quản Lý Học Phí',
-                    perms: [true, false, false, true, false, true, false]
-                },
-                assistant: {
-                    roleTitle: 'Trợ Giảng Điểm Danh',
-                    perms: [false, false, true, false, false, false, false]
-                }
-            };
-
-            const cfg = map[preset];
-            if (!cfg) return;
-
-            const roleInput = document.getElementById('acc-role-title');
-            if (roleInput && !roleInput.value.trim()) {
-                roleInput.value = cfg.roleTitle;
-            } else if (roleInput) {
-                roleInput.value = cfg.roleTitle;
-            }
-
-            const ids = [
-                'perm-students-direct',
-                'perm-classes-manage',
-                'perm-attendance-manage',
-                'perm-tuition-manage',
-                'perm-approvals-manage',
-                'perm-reports-export',
-                'perm-settings-manage'
-            ];
-            ids.forEach((id, idx) => {
-                const el = document.getElementById(id);
-                if (el) el.checked = cfg.perms[idx];
-            });
+            const titles={full_admin:'Quản trị toàn hệ thống',training_manager:'Quản lý đào tạo',coach:'Huấn luyện viên',accountant:'Thủ quỹ',assistant:'Trợ giảng điểm danh'};
+            const el=document.getElementById('acc-role-title');if(el)el.value=titles[preset]||'';
+            rbacApplyRolePreset(preset);
         }
 
         function saveAccount(e) {
             return safetyRunMutation(()=>{
 
             e.preventDefault();
-            if (!hasPermission('settings_manage')) {
+            if (!hasPermission('accounts_manage')) {
                 showToast('Tài khoản của bạn không có quyền lưu phân quyền!', 'error');
                 return;
             }
@@ -7151,7 +6901,7 @@
             const rawUsername = document.getElementById('acc-username').value.trim();
             const username = sanitizeUsername(rawUsername);
             const roleTitle = document.getElementById('acc-role-title').value.trim();
-            const assignedClasses = document.getElementById('acc-assigned-class').value.trim() || 'Tất cả các lớp';
+            let assignedClasses = '';
             const passwordInput = document.getElementById('acc-password').value.trim();
             const statusSelect = document.getElementById('acc-status');
             const status = statusSelect ? statusSelect.value : 'active';
@@ -7168,15 +6918,10 @@
                 return;
             }
 
-            const permissions = {
-                students_direct: document.getElementById('perm-students-direct').checked,
-                classes_manage: document.getElementById('perm-classes-manage').checked,
-                attendance_manage: document.getElementById('perm-attendance-manage').checked,
-                tuition_manage: document.getElementById('perm-tuition-manage').checked,
-                approvals_manage: document.getElementById('perm-approvals-manage').checked,
-                reports_export: document.getElementById('perm-reports-export').checked,
-                settings_manage: document.getElementById('perm-settings-manage').checked
-            };
+            const {permissions,assignedClassIds,allClasses}=rbacReadAccountControls();
+            if(!rbacValidateAccountGrant(id,permissions,assignedClassIds,allClasses))return;
+            assignedClasses=allClasses?'Tất cả các lớp':assignedClassIds.map(classId=>classes.find(c=>c.id===classId)?.name).filter(Boolean).join(', ');
+
 
             if (id) {
                 const idx = accounts.findIndex(a => a.id === id);
@@ -7197,6 +6942,7 @@
                         avatar: finalAvatar,
                         roleTitle,
                         assignedClasses,
+                        assignedClassIds,allClasses,
                         status: isSuper ? 'active' : status,
                         passwordHash: updatedHash,
                         passwordChangedAt: passwordInput ? new Date().toISOString().split('T')[0] : accounts[idx].passwordChangedAt,
@@ -7229,9 +6975,10 @@
                     passwordChangedAt: new Date().toISOString().split('T')[0],
                     lastLogin: '',
                     roleTitle,
-                    roleType: permissions.settings_manage ? 'admin' : 'staff',
+                    roleType: permissions.full_access ? 'admin' : 'staff',
                     isSuperAdmin: false,
                     assignedClasses,
+                        assignedClassIds,allClasses,
                     permissions
                 };
                 accounts.push(newAcc);
@@ -7250,7 +6997,8 @@
         }
 
         function deleteAccount(accId) {
-            if (!hasPermission('settings_manage')) {
+            if(!(rbacCanManageAccount(accounts.find(a=>a.id===accId)) || rbacDeny()))return;
+            if (!hasPermission('accounts_manage')) {
                 showToast('Tài khoản của bạn không có quyền xóa tài khoản!', 'error');
                 return;
             }
@@ -7329,6 +7077,8 @@
         });
 
         function switchTab(tabName) {
+            if(!rbacCanTab(tabName))return rbacDeny('Tab này chưa được cấp quyền cho tài khoản.');
+            rbacCurrentTab=tabName;
             const systemTabs = ['permissions', 'settings', 'server'];
             ['overview', 'students', 'classes', 'attendance', 'tuition', 'gear', 'tournaments', 'approvals', 'reports', 'permissions', 'settings', 'server'].forEach(tab => {
                 const el = document.getElementById(`tab-${tab}`);
@@ -7836,7 +7586,7 @@
         // ================= ĐỒNG BỘ HÓA DROPDOWN LỚP HỌC TRÊN TOÀN HỆ THỐNG =================
         function populateMakeupClassFilters() {
             const currentClass=document.getElementById('attendance-class')?.value || '';
-            const names=[...new Set(classes.map(c=>c && c.name).filter(Boolean))];
+            const names=[...new Set(rbacMakeupClasses().map(c=>c && c.name).filter(Boolean))];
             for(const [id,inline] of [['attendance-makeup-class-filter',true],['guest-modal-class-filter',false]]) {
                 const select=document.getElementById(id);if(!select)continue;
                 const previous=select.value;
@@ -7855,7 +7605,7 @@
                 const curVal = filterClass.value;
                 filterClass.innerHTML = `
                     <option value="">-- Tất cả Lớp/Phân loại --</option>
-                    ${classes.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.time)})</option>`).join('')}
+                    ${rbacClasses().map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.time)})</option>`).join('')}
                     <option value="guest">Học sinh học thêm (Tăng cường)</option>
                 `;
                 filterClass.value = curVal;
@@ -7867,10 +7617,10 @@
             const studentClass = document.getElementById('student-class');
             if (studentClass && !isStudentModalOpen) {
                 const curVal = studentClass.value;
-                studentClass.innerHTML = classes.map(c => `
+                studentClass.innerHTML = rbacClasses().map(c => `
                     <option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.time)})</option>
                 `).join('');
-                if (curVal && classes.some(c => c.name === curVal)) {
+                if (curVal && rbacClasses().some(c => c.name === curVal)) {
                     studentClass.value = curVal;
                 }
             }
@@ -7879,10 +7629,10 @@
             const attendanceClass = document.getElementById('attendance-class');
             if (attendanceClass) {
                 const curVal = attendanceClass.value;
-                attendanceClass.innerHTML = classes.map(c => `
+                attendanceClass.innerHTML = rbacClasses().map(c => `
                     <option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.time)})</option>
                 `).join('');
-                if (curVal && classes.some(c => c.name === curVal)) {
+                if (curVal && rbacClasses().some(c => c.name === curVal)) {
                     attendanceClass.value = curVal;
                 }
             }
@@ -7893,7 +7643,7 @@
                 const curVal = reportClass.value;
                 reportClass.innerHTML = `
                     <option value="all">Tất cả các lớp</option>
-                    ${classes.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('')}
+                    ${rbacClasses().map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('')}
                 `;
                 if (curVal) reportClass.value = curVal;
             }
@@ -7902,13 +7652,14 @@
 
         // ================= TÍNH NĂNG ADMIN: QUẢN LÝ LỚP HỌC & THỜI GIAN HỌC =================
         function renderClasses() {
+            if(!rbacCanTab('classes')){document.getElementById('class-cards-container').innerHTML='';return;}
             const searchInput = document.getElementById('search-class');
             const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
             const scheduleSelect = document.getElementById('filter-class-schedule');
             const scheduleFilter = scheduleSelect ? scheduleSelect.value : 'all';
 
-            const filtered = classes.filter(cls => {
+            const filtered = rbacClasses().filter(cls => {
                 const matchSearch = cls.name.toLowerCase().includes(search) ||
                                     (cls.coach && cls.coach.toLowerCase().includes(search)) ||
                                     (cls.room && cls.room.toLowerCase().includes(search)) ||
@@ -7931,12 +7682,12 @@
             const classStudentsEl = document.getElementById('stat-class-students');
             const avgStudentsEl = document.getElementById('stat-avg-students');
 
-            const totalStudentsCount = students.length;
-            if (totalClassesEl) totalClassesEl.innerText = classes.length;
+            const totalStudentsCount = rbacStudents().length;
+            if (totalClassesEl) totalClassesEl.innerText = rbacClasses().length;
             if (typeof updateQuickWorkspaceKPIs === 'function') updateQuickWorkspaceKPIs();
             if (classStudentsEl) classStudentsEl.innerText = totalStudentsCount;
             if (avgStudentsEl) {
-                const avg = classes.length > 0 ? (totalStudentsCount / classes.length).toFixed(1) : 0;
+                const avg = rbacClasses().length > 0 ? (totalStudentsCount / rbacClasses().length).toFixed(1) : 0;
                 avgStudentsEl.innerText = `${avg} HS`;
             }
 
@@ -7964,7 +7715,7 @@
             ];
 
             container.innerHTML = filtered.map(cls => {
-                const classStudentList = students.filter(s => s.className === cls.name);
+                const classStudentList = rbacStudents().filter(s => s.className === cls.name);
                 const currentCount = classStudentList.length;
                 const max = cls.maxStudents || 30;
                 const percentage = Math.min(100, Math.round((currentCount / max) * 100));
@@ -8074,9 +7825,12 @@
                     </div>
                 `;
             }).join('');
+        
+            rbacApplyActionVisibility();
         }
 
         function openClassModal(isEdit = false, classId = null) {
+            if(!(rbacRequire('classes_manage') && (isEdit?rbacCanClassId(classId):rbacAllClasses()) || rbacDeny()))return;
             if (!hasPermission('classes_manage')) {
                 showToast('Tài khoản của bạn chưa được phân quyền Quản lý Lớp học & Lịch tập!', 'error');
                 return;
@@ -8112,7 +7866,7 @@
 
                 submitBtn.innerText = 'Tạo Lớp Mới (Admin)';
             } else {
-                const cls = classes.find(c => c.id === classId);
+                const cls = rbacClasses().find(c => c.id === classId);
                 if (!cls) return;
 
                 title.innerHTML = '<i class="fa-solid fa-pen-to-square mr-1.5"></i><span>Cập Nhật Lớp Học & Lịch Học</span>';
@@ -8146,6 +7900,7 @@
         }
 
         function toggleClassStatus(classId) {
+            if(!(rbacRequire('classes_manage') && rbacCanClassId(classId) || rbacDeny()))return;
             if (!hasPermission('classes_manage')) {
                 showToast('Tài khoản của bạn chưa được phân quyền Quản lý Lớp học!', 'error');
                 return;
@@ -8172,7 +7927,9 @@
 
             const id = document.getElementById('class-id').value;
             const originalName = document.getElementById('class-original-name').value;
+            if(!(id?rbacCanClassId(id):rbacAllClasses()))return rbacDeny();
             const name = document.getElementById('class-name').value.trim();
+            if(classes.some(c=>c.id!==id && (c.name===name || c.previousNames?.includes(name))))return rbacDeny('Tên lớp đã được sử dụng.');
             const startTime = document.getElementById('class-start-time').value;
             const endTime = document.getElementById('class-end-time').value;
             const coach = document.getElementById('class-coach').value.trim();
@@ -8213,6 +7970,7 @@
                 if (idx !== -1) {
                     classes[idx] = {
                         ...classes[idx],
+                        previousNames:[...new Set([...(classes[idx].previousNames||[]),classes[idx].name])],
                         name,
                         days: daysText,
                         daysArr: checkedDays,
@@ -8232,7 +7990,7 @@
                         let countMoved = 0;
                         students.forEach(s => {
                             if (s.className === originalName) {
-                                s.className = name;
+                                s.className = name;s.classId=id;
                                 countMoved++;
                             }
                         });
@@ -8285,6 +8043,7 @@
         }
 
         function deleteClass(classId) {
+            if(!(rbacRequire('classes_manage') && rbacCanClassId(classId) || rbacDeny()))return;
             if (!hasPermission('classes_manage')) {
                 showToast('Tài khoản của bạn chưa được phân quyền Xóa lớp học!', 'error');
                 return;
@@ -8315,7 +8074,8 @@
 
         // ================= XEM DANH SÁCH VÕ SINH THEO LỚP =================
         function viewClassStudents(classId) {
-            const cls = classes.find(c => c.id === classId);
+            if(!(rbacCanClassId(classId) && (rbacCanTab('classes') || rbacCanTab('students') || rbacCanTab('attendance')) || rbacDeny()))return;
+            const cls = rbacClasses().find(c => c.id === classId);
             if (!cls) return;
 
             const modal = document.getElementById('class-students-modal');
@@ -8324,7 +8084,7 @@
             const tbody = document.getElementById('class-students-table-body');
             const noMsg = document.getElementById('class-no-students-msg');
 
-            const classStudents = sortStudentsArray(students.filter(s => s.className === cls.name));
+            const classStudents = sortStudentsArray(rbacStudents().filter(s => s.className === cls.name));
             const dupAnalysis = analyzeStudentDuplicates();
 
             title.innerHTML = `<i class="fa-solid fa-users mr-1.5"></i><span>Danh Sách Võ Sinh: ${escapeHtml(cls.name)}</span>`;
@@ -8400,6 +8160,7 @@
 
         // ================= MODAL XÁC NHẬN =================
         function showConfirm(title, desc, onConfirm) {
+            const authority=rbacAuthorityFingerprint();
             const modal = document.getElementById('confirm-modal');
             document.getElementById('confirm-title').innerText = title;
             document.getElementById('confirm-desc').innerText = desc;
@@ -8416,6 +8177,7 @@
 
             okBtn.onclick = () => {
                 cleanup();
+                if(!safetyAuthenticated() || authority!==rbacAuthorityFingerprint())return rbacDeny('Tài khoản hoặc quyền đã thay đổi. Hãy thực hiện lại thao tác.');
                 onConfirm();
             };
             cancelBtn.onclick = () => {
@@ -8507,7 +8269,7 @@
         }
 
         function findStudentByRef(ref) {
-            if(!ref)return null;ensureStudentUids();return safetyResolve(String(ref).trim());
+            if(!ref)return null;ensureStudentUids();const student=students.find(s=>s._uid===String(ref).trim()) || safetyResolve(String(ref).trim());return student && (rbacCanStudent(student) || rbacCanCrossMakeup())?student:null;
         }
 
         function extractVietnameseGivenName(fullName) {
@@ -8592,7 +8354,7 @@
             const nameGroups = {};
             const idGroups = {};
 
-            students.forEach(s => {
+            rbacStudents().forEach(s => {
                 if (!s) return;
                 const nKey = normalizeDupName(s.name);
                 const iKey = normalizeDupId(s.id);
@@ -8651,7 +8413,7 @@
             let confirmedStudentCount = 0;
             let totalDuplicateStudentCount = 0;
 
-            students.forEach(s => {
+            rbacStudents().forEach(s => {
                 if (!s) return;
                 const nKey = normalizeDupName(s.name);
                 const iKey = normalizeDupId(s.id);
@@ -8717,7 +8479,7 @@
             const seenKeepNames = new Set();
             const seenKeepIds = new Set();
             const redundantDuplicates = [];
-            students.forEach(s => {
+            rbacStudents().forEach(s => {
                 if (!s) return;
                 const dInfo = byUid[s._uid];
                 if (!dInfo || (!dInfo.hasDupName && !dInfo.hasDupId)) return;
@@ -8761,6 +8523,7 @@
         }
 
         function confirmStudentDuplicate(ref, silent = false) {
+            if(!(rbacRequire('students_direct')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const s = findStudentByRef(ref);
             if (!s) return;
@@ -8810,6 +8573,7 @@
         }
 
         function confirmDuplicateGroup(groupType, normKey) {
+            if(!(rbacRequire('students_direct')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const analysis = analyzeStudentDuplicates();
             if (groupType === 'name') {
@@ -8842,6 +8606,7 @@
         }
 
         function confirmAllStudentDuplicates() {
+            if(!(rbacRequire('students_direct')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const analysis = analyzeStudentDuplicates();
             analysis.unconfirmedNameGroups.forEach(grp => {
@@ -8866,8 +8631,9 @@
         }
 
         function resetConfirmedDuplicates() {
+            if(!(rbacRequire('students_direct')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
-            confirmedDuplicates = { names: {}, ids: {}, uids: {} };
+            if(rbacAllClasses())confirmedDuplicates={names:{},ids:{},uids:{}};else {const own=rbacStudents(),uids=new Set(own.map(s=>s._uid));for(const key of Object.keys(confirmedDuplicates.uids||{}))if([...uids].some(uid=>key.startsWith(uid+':')))delete confirmedDuplicates.uids[key];for(const person of own){delete confirmedDuplicates.names[normalizeDupName(person.name)];delete confirmedDuplicates.ids[normalizeDupId(person.id)];}}
             saveConfirmedDuplicatesToStorage();
             renderStudents();
             if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
@@ -8943,6 +8709,7 @@
         }
 
         function executeBulkRemoveStudentsByUids(uidsToRemoveSet, successMessage) {
+            if(!((hasPermission('students_direct') || hasPermission('students_request')) && [...uidsToRemoveSet].every(uid=>rbacCanStudent(rbacLookupFull(uid))) || rbacDeny()))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             if (!uidsToRemoveSet || uidsToRemoveSet.size === 0) return;
             const removedStudents = students.filter(s => s && uidsToRemoveSet.has(s._uid));
@@ -9280,10 +9047,10 @@
             ensureStudentUids();
 
             const dupIdPeers = normId
-                ? students.filter(s => s && s._uid !== currentEditingStudentUid && normalizeDupId(s.id) === normId)
+                ? rbacStudents().filter(s => s && s._uid !== currentEditingStudentUid && normalizeDupId(s.id) === normId)
                 : [];
             const dupNamePeers = normName
-                ? students.filter(s => s && s._uid !== currentEditingStudentUid && normalizeDupName(s.name) === normName)
+                ? rbacStudents().filter(s => s && s._uid !== currentEditingStudentUid && normalizeDupName(s.name) === normName)
                 : [];
 
             // Cập nhật giao diện ô nhập Mã định danh
@@ -9351,6 +9118,7 @@
 
         // ================= TAB 1: DANH SÁCH VÕ SINH =================
         function renderStudents() {
+            if(!rbacCanTab('students')){document.getElementById('student-table-body').innerHTML='';document.getElementById('student-grid-wrapper').innerHTML='';document.getElementById('student-count').innerText=0;document.getElementById('student-total-count').textContent=rbacStudents().length;return;}
             // Chỉ đảm bảo UID; không sắp xếp/mutate mảng students gốc khi render.
             // Thứ tự hiển thị được áp dụng trên bản sao `filtered` bên dưới,
             // tránh việc mở cảnh báo/kiểm tra trùng tên làm xáo thứ tự dữ liệu gốc.
@@ -9373,7 +9141,7 @@
             const filterBelt = beltEl ? beltEl.value : '';
             const filterClass = classEl ? classEl.value : '';
 
-            const filtered = sortStudentsArray(students.filter(s => {
+            const filtered = sortStudentsArray(rbacStudents().filter(s => {
                 if (!s) return false;
                 if (filterDuplicatesOnly) {
                     const dInfo = dupAnalysis.byUid[s._uid];
@@ -9393,17 +9161,17 @@
             const stOfficialEl = document.getElementById('st-stat-official');
             const stGuestEl = document.getElementById('st-stat-guest');
             const stAdvEl = document.getElementById('st-stat-advanced');
-            const officialCount = students.filter(s => s.type !== 'guest').length;
-            const guestCount = students.filter(s => s.type === 'guest').length;
-            const advCount = students.filter(s => s.belt && (s.belt.includes('Hoàng đai') || s.belt.includes('Hồng đai'))).length;
-            if (stTotalEl) stTotalEl.innerText = `${students.length} võ sinh`;
+            const officialCount = rbacStudents().filter(s => s.type !== 'guest').length;
+            const guestCount = rbacStudents().filter(s => s.type === 'guest').length;
+            const advCount = rbacStudents().filter(s => s.belt && (s.belt.includes('Hoàng đai') || s.belt.includes('Hồng đai'))).length;
+            if (stTotalEl) stTotalEl.innerText = `${rbacStudents().length} võ sinh`;
             if (stOfficialEl) stOfficialEl.innerText = `${officialCount} chính thức`;
             if (stGuestEl) stGuestEl.innerText = `${guestCount} học bù`;
             if (stAdvEl) stAdvEl.innerText = `${advCount} môn sinh`;
             updateQuickWorkspaceKPIs();
 
             document.getElementById('student-count').innerText = filtered.length;
-            const totalEl=document.getElementById('student-total-count');if(totalEl)totalEl.textContent=students.length;
+            const totalEl=document.getElementById('student-total-count');if(totalEl)totalEl.textContent=rbacStudents().length;
             const tbody = document.getElementById('student-table-body');
             const gridContainer = document.getElementById('student-grid-wrapper');
             const emptyMsg = document.getElementById('no-students-msg');
@@ -9504,8 +9272,8 @@
                 const isGuest = s.type === 'guest';
                 const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 100);
 
-                const pendingEdit = pendingRequests.find(r => r.type === 'EDIT' && safetyRecordMatches(r, s));
-                const pendingDelete = pendingRequests.find(r => r.type === 'DELETE' && safetyRecordMatches(r, s));
+                const pendingEdit = rbacPendingRequests().find(r => r.type === 'EDIT' && safetyRecordMatches(r, s));
+                const pendingDelete = rbacPendingRequests().find(r => r.type === 'DELETE' && safetyRecordMatches(r, s));
 
                 const dupInfo = dupAnalysis.byUid[s._uid] || { isUnconfirmed: false };
                 const isUnconf = dupInfo.isUnconfirmed;
@@ -9610,10 +9378,13 @@
             }).join('');
 
             updateBulkSelectToolbarUI();
+        
+            rbacApplyActionVisibility();
         }
 
         // ================= XEM CHI TIẾT HỒ SƠ VÕ SINH =================
         function viewStudentDetail(studentId) {
+            if(!((rbacCanStudent(rbacLookupFull(studentId)) || rbacCanCrossMakeup()) && (rbacCanTab('students') || rbacCanTab('attendance') || rbacCanTab('tuition') || rbacCanTab('gear') || rbacCanTab('tournaments')) || rbacDeny()))return;
             const s = findStudentByRef(studentId);
             if (!s) return;
 
@@ -9681,7 +9452,7 @@
             }
 
             // Tính thống kê chuyên cần cá nhân
-            const allKeys = Object.keys(attendanceRecords).sort().reverse();
+            const allKeys = Object.keys(rbacAttendanceRecords()).sort().reverse();
             let totalSessions = 0;
             let presentCount = 0;
             let recentList = [];
@@ -9690,7 +9461,7 @@
                 const parsedKey = parseAttendanceKey(key);
                 const date = parsedKey.date;
                 const className = parsedKey.className;
-                const records = attendanceRecords[key] || [];
+                const records = rbacAttendanceRecords()[key] || [];
                 const rec = records.find(r => safetyRecordMatches(r, s));
 
                 if (rec) {
@@ -9713,7 +9484,7 @@
 
             // Kiểm tra trạng thái học phí tháng
             const curMonth = document.getElementById('tuition-month').value;
-            const monthTuition = tuitionRecords[curMonth] || {};
+            const monthTuition = rbacTuitionRecords()[curMonth] || {};
             const tInfo = safetyTuitionRecord(curMonth, s);
             const tuitionStatusEl = document.getElementById('detail-tuition-status');
 
@@ -9752,7 +9523,7 @@
             }
 
             // Đồ tập võ sinh này đã đăng ký mua
-            const studentGear = gearOrders.filter(o => safetyRecordMatches(o,s));
+            const studentGear = rbacGearOrders().filter(o => safetyRecordMatches(o,s));
             const gearSumEl = document.getElementById('detail-gear-summary');
             const gearListEl = document.getElementById('detail-recent-gear');
             if (gearSumEl) {
@@ -9781,7 +9552,7 @@
             }
 
             // Giải đấu võ sinh này tham gia
-            const studentTour = tournamentEntries.filter(t => safetyRecordMatches(t,s));
+            const studentTour = rbacTournamentEntries().filter(t => safetyRecordMatches(t,s));
             const tourSumEl = document.getElementById('detail-tour-summary');
             const tourListEl = document.getElementById('detail-recent-tour');
             if (tourSumEl) {
@@ -9885,6 +9656,8 @@
             };
 
             modal.classList.remove('hidden');
+        
+            rbacApplyActionVisibility();
         }
 
         function closeDetailModal() {
@@ -9895,6 +9668,7 @@
         let currentEditingStudentId = null;
 
         function openStudentModal(editMode = false) {
+            if(!hasPermission('students_direct') && !hasPermission('students_request'))return rbacDeny();
             document.getElementById('student-modal').classList.remove('hidden');
             const submitBtn = document.getElementById('submit-student-btn');
             const form = document.getElementById('student-form');
@@ -9971,6 +9745,7 @@
         }
 
         function handleStudentDocUpload(event) {
+            if(!hasPermission('students_direct') && !hasPermission('students_request'))return rbacDeny();
             const input = event.target;
             if (!input || !input.files || input.files.length === 0) return;
             const files = Array.from(input.files);
@@ -10006,6 +9781,7 @@
         }
 
         function removeStudentDraftDoc(docId) {
+            if(!hasPermission('students_direct') && !hasPermission('students_request'))return rbacDeny();
             currentStudentDraftDocs = currentStudentDraftDocs.filter(d => d.id !== docId);
             renderStudentDraftDocsList();
             showToast('Đã gỡ tệp đính kèm khỏi hồ sơ võ sinh.', 'info');
@@ -10089,6 +9865,7 @@
             const belt = document.getElementById('student-belt').value;
             const className = document.getElementById('student-class').value;
             const type = document.getElementById('student-type').value;
+            if(!rbacStudentWriteAllowed(editingUid || originalId,className))return;
             const joinDate = document.getElementById('student-join-date').value;
             const parent = document.getElementById('student-parent').value.trim();
             const phone = document.getElementById('student-phone').value.trim();
@@ -10122,7 +9899,7 @@
                 _updatedAt: nowTs,
                 _isManualDuplicate: Boolean(hasAnyDup),
                 id: idNumber,
-                name, dob, belt, className, type, joinDate, parent, phone, address, avatar,
+                name, dob, belt, className, classId:rbacClassByName(className)?.id || '', type, joinDate, parent, phone, address, avatar,
                 documents: attachedDocs
             };
             unmarkEntityDeleted('students', idNumber);
@@ -10225,6 +10002,7 @@
         }
 
         function editStudent(id) {
+            if(!((hasPermission('students_direct') || hasPermission('students_request')) && rbacCanStudent(rbacLookupFull(id)) || rbacDeny()))return;
             const s = findStudentByRef(id);
             if (!s) return;
 
@@ -10274,6 +10052,7 @@
         }
 
         function deleteStudent(id) {
+            if(!((hasPermission('students_direct') || hasPermission('students_request')) && rbacCanStudent(rbacLookupFull(id)) || rbacDeny()))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const s = findStudentByRef(id);
             if (!s) return;
@@ -10383,16 +10162,17 @@
         }
 
         function loadAttendanceSheet(preserveDomEdits=false) {
+            if(!rbacCanTab('attendance') || !rbacCanClassName(document.getElementById('attendance-class')?.value||'')){document.getElementById('attendance-table-body').innerHTML='';return;}
             uxEnsureAttendanceDraftStore();
             uxRememberAttendanceDraft();
             ensureStudentUids();
             const date=document.getElementById('attendance-date').value,className=document.getElementById('attendance-class').value,key=getAttendanceKey();
             if(key!==lastLoadedAttendanceKey){currentGuestList=[];inlineMakeupCheckedIds.clear();lastLoadedAttendanceKey=key;}
             const draft=uxAttendanceDrafts.get(key);
-            if(draft?.dirty){currentGuestList=draft.guests.map(uid=>students.find(s=>s._uid===uid)).filter(Boolean);removedSavedGuestIdsByKey[key]=new Set(draft.removed||[]);}
-            const dom=draft?.dirty?draft.rows:preserveDomEdits?captureCurrentAttendanceDomMap():{},saved=attendanceRecords[key]||[],removed=removedSavedGuestIdsByKey[key]||new Set();
+            if(draft?.dirty){currentGuestList=draft.guests.map(uid=>rbacSessionStudents().find(s=>s._uid===uid)).filter(Boolean);removedSavedGuestIdsByKey[key]=new Set(draft.removed||[]);}
+            const dom=draft?.dirty?draft.rows:preserveDomEdits?captureCurrentAttendanceDomMap():{},saved=rbacAttendanceRecords()[key]||[],removed=removedSavedGuestIdsByKey[key]||new Set();
             document.getElementById('current-class-display').innerText=`${className} - Ngày ${date?new Date(date).toLocaleDateString('vi-VN'):''}`;
-            const official=sortStudentsArray(students.filter(s=>s.className===className)),included=new Set(),list=[];
+            const official=sortStudentsArray(rbacSessionStudents().filter(s=>s.className===className)),included=new Set(),list=[];
             const add=(s,guest)=>{
                 if(!s || included.has(s._uid) || (guest && removed.has(s._uid)))return;
                 const rec=saved.find(r=>safetyRecordMatches(r,s)),draft=dom[s._uid];
@@ -10400,11 +10180,11 @@
             };
             official.forEach(s=>add(s,false));
             const guests=[];
-            for(const r of saved){const s=r.studentUid?students.find(x=>x._uid===r.studentUid):safetyResolve(r.studentId);if(s && s.className!==className)guests.push(s);}
+            for(const r of saved){const s=r.studentUid?rbacSessionStudents().find(x=>x._uid===r.studentUid):safetyResolve(r.studentId);if(s && s.className!==className)guests.push(s);}
             guests.push(...currentGuestList);sortStudentsArray(guests).forEach(s=>add(s,true));
             renderAttendanceTable(list);updateAttendanceStats(list);renderActiveMakeupBar(list);renderAttendanceMakeupSearchResults();
             const search=document.getElementById('attendance-table-search-input');if(search?.value.trim())filterCurrentAttendanceTable(search.value);
-            const ambiguous=saved.filter(r=>!r.studentUid && students.filter(s=>s.id===r.studentId).length>1);
+            const ambiguous=saved.filter(r=>!r.studentUid && rbacSessionStudents().filter(s=>s.id===r.studentId).length>1);
             let warning=document.getElementById('safety-attendance-legacy');
             if(ambiguous.length){if(!warning){warning=document.createElement('p');warning.id='safety-attendance-legacy';warning.className='text-amber-700 text-sm p-3';document.getElementById('attendance-table-body').closest('table').before(warning);}warning.textContent=`Có ${ambiguous.length} mục điểm danh cũ trùng mã, chưa gán cho người nào. Khi lưu, hệ thống giữ riêng các mục này để đối chiếu.`;}else warning?.remove();
             uxUpdateAttendanceSaveUI();
@@ -10480,9 +10260,12 @@
                     </tr>
                 `;
             }).join('');
+        
+            rbacApplyActionVisibility();
         }
 
         function changeStatus(studentId, newStatus) {
+            if(!(rbacRequire('attendance_manage',document.getElementById('attendance-class')?.value||'')))return;
             if(!hasPermission('attendance_manage'))return showToast('Cần quyền điểm danh để thay đổi trạng thái.','error');
             const btnPresent = document.getElementById(`btn-${studentId}-present`);
             const btnAbsent = document.getElementById(`btn-${studentId}-absent`);
@@ -10505,6 +10288,7 @@
         }
 
         function markAllPresent() {
+            if(!(rbacRequire('attendance_manage',document.getElementById('attendance-class')?.value||'')))return;
             if(!hasPermission('attendance_manage'))return showToast('Cần quyền điểm danh.','error');
             const rows = document.querySelectorAll('#attendance-table-body tr[data-id]');
             if(!rows.length)return showToast('Chưa có võ sinh trong buổi học.','info');
@@ -10561,8 +10345,9 @@
         function collectCurrentSessionReportData() {
             const date = document.getElementById('attendance-date').value;
             const className = document.getElementById('attendance-class').value;
-            const clsObj = classes.find(c => c.name === className);
+            const clsObj = rbacClasses().find(c => c.name === className);
             const timeStr = clsObj ? clsObj.time : '';
+            if(!rbacCanClassName(className))return {date,dateFormatted:date,className,timeStr,total:0,mainClassCount:0,extraClassCount:0,presentCount:0,absentUnexcusedCount:0,absentExcusedCount:0,totalAbsent:0,presentRate:0,items:[]};
             const rows = document.querySelectorAll('#attendance-table-body tr[data-id]');
 
             let items = [];
@@ -10586,7 +10371,7 @@
                     status = 'excused';
                 }
 
-                const s = findStudentByRef(id) || { id, name: 'Không rõ', belt: 'N/A', className: className, type: 'official' };
+                const s = rbacSessionStudentByRef(id) || { id, name: 'Không rõ', belt: 'N/A', className: className, type: 'official' };
                 const isExtra = (row.getAttribute('data-extra') === 'true') || (s.type === 'guest') || (s.className !== className);
 
                 let categoryText = 'Lớp chính';
@@ -10648,6 +10433,7 @@
         }
 
         function saveAttendance(openReport = true) {
+            if(!(rbacAttendanceWriteAllowed()))return;
             return safetyRunMutation(()=>{
 
             if (!hasPermission('attendance_manage')) {
@@ -10695,6 +10481,7 @@
         }
 
         function openSessionReportModal() {
+            if(!(rbacCanClassName(document.getElementById('attendance-class')?.value||'') && (hasPermission('attendance_manage') || rbacCanTab('reports')) || rbacDeny()))return;
             const report = collectCurrentSessionReportData();
             if (report.total === 0) {
                 showToast('Chưa có võ sinh nào trong danh sách điểm danh!', 'error');
@@ -10790,6 +10577,7 @@
         }
 
         function copySessionReportText() {
+            if(!(rbacCanClassName(document.getElementById('attendance-class')?.value||'') && hasPermission('reports_export') || rbacDeny()))return;
             const textarea = document.getElementById('sr-text-summary');
             if (!textarea || !textarea.value) return;
 
@@ -10814,6 +10602,7 @@
         }
 
         function printSessionReport() {
+            if(!(rbacCanClassName(document.getElementById('attendance-class')?.value||'') && hasPermission('reports_export') || rbacDeny()))return;
             document.body.classList.add('printing-session');
             window.print();
             setTimeout(() => {
@@ -10822,6 +10611,7 @@
         }
 
         function exportCurrentSessionCSV() {
+            if(!(rbacCanClassName(document.getElementById('attendance-class')?.value||'') && hasPermission('reports_export') || rbacDeny()))return;
             if (!hasPermission('reports_export')) {
                 showToast('Tài khoản của bạn chưa được cấp quyền Xuất báo cáo!', 'error');
                 return;
@@ -10979,6 +10769,7 @@
         }
 
         function addCheckedInlineMakeupStudents() {
+            if(!(rbacRequire('attendance_manage',document.getElementById('attendance-class')?.value||'')))return;
             if (inlineMakeupCheckedIds.size === 0) return;
             const key = getAttendanceKey();
             const removedSet = removedSavedGuestIdsByKey[key];
@@ -11022,12 +10813,12 @@
 
             let candidatePool = [];
             if (classFilter === 'ALL_CLASSES') {
-                candidatePool = students.slice();
+                candidatePool = rbacMakeupStudents().slice();
             } else if (classFilter) {
-                candidatePool = students.filter(s => s.className === classFilter);
+                candidatePool = rbacMakeupStudents().filter(s => s.className === classFilter);
             } else {
                 // Mặc định khi gõ tên: ưu tiên tìm toàn bộ võ sinh lớp khác; nếu gõ tên trùng lớp chính cũng hiển thị rõ để đối chiếu
-                candidatePool = rawQuery ? students.slice() : students.filter(s => s.className !== currentClass);
+                candidatePool = rawQuery ? rbacMakeupStudents().slice() : rbacMakeupStudents().filter(s => s.className !== currentClass);
             }
 
             let matched = sortStudentsArray(candidatePool.filter(s => matchesStudentSearchQuery(s, rawQuery)));
@@ -11132,6 +10923,7 @@
         }
 
         function quickAddMakeupStudentToAttendance(studentId, keepModalOpen = false) {
+            if(!(rbacRequire('attendance_manage',document.getElementById('attendance-class')?.value||'') && (rbacCanStudent(rbacLookupFull(studentId)) || rbacCanCrossMakeup()) || rbacDeny()))return;
             const studentObj = findStudentByRef(studentId);
             if (!studentObj) return;
 
@@ -11170,7 +10962,7 @@
             const inSessionIds = getCurrentAttendanceSessionIds();
 
             const candidates = sortStudentsArray(
-                students.filter(s => !inSessionIds.has(s.id) && matchesStudentSearchQuery(s, rawQuery))
+                rbacMakeupStudents().filter(s => !inSessionIds.has(s.id) && matchesStudentSearchQuery(s, rawQuery))
             );
             // Ưu tiên võ sinh lớp khác
             candidates.sort((a, b) => (a.className !== currentClass ? 0 : 1) - (b.className !== currentClass ? 0 : 1));
@@ -11183,6 +10975,7 @@
         }
 
         function quickCreateAndAddMakeupStudent(rawName) {
+            if(!(rbacRequire('students_direct',document.getElementById('attendance-class')?.value||'') && hasPermission('attendance_manage')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const cleanName = String(rawName || '').trim().replace(/\s+/g, ' ');
             if (!cleanName) {
@@ -11228,6 +11021,7 @@
         }
 
         function removeMakeupStudentFromSession(studentId) {
+            if(!(rbacRequire('attendance_manage',document.getElementById('attendance-class')?.value||'')))return;
             const key = getAttendanceKey();
             if (!removedSavedGuestIdsByKey[key]) {
                 removedSavedGuestIdsByKey[key] = new Set();
@@ -11274,9 +11068,10 @@
         }
 
         function openAddGuestModal() {
+            if(!(rbacRequire('attendance_manage',document.getElementById('attendance-class')?.value||'')))return;
             populateMakeupClassFilters();
             const currentClass = document.getElementById('attendance-class').value;
-            const otherStudents = sortStudentsArray(students.filter(s => s.className !== currentClass));
+            const otherStudents = sortStudentsArray(rbacMakeupStudents().filter(s => s.className !== currentClass));
 
             guestModalCheckedIds.clear();
             const searchInput = document.getElementById('guest-modal-search-input');
@@ -11342,7 +11137,7 @@
             }
 
             const otherStudents = sortStudentsArray(
-                students.filter(s => {
+                rbacMakeupStudents().filter(s => {
                     if (s.className === currentClass) return false;
                     if (classFilter && s.className !== classFilter) return false;
                     return matchesStudentSearchQuery(s, rawQuery);
@@ -11427,6 +11222,7 @@
         }
 
         function addGuestToCurrentAttendance() {
+            if(!(rbacRequire('attendance_manage',document.getElementById('attendance-class')?.value||'')))return;
             const key = getAttendanceKey();
             const removedSet = removedSavedGuestIdsByKey[key];
             const inSessionIds = getCurrentAttendanceSessionIds();
@@ -11475,15 +11271,16 @@
 
         // ================= TAB 3: QUẢN LÝ HỌC PHÍ =================
         function renderTuitionTable() {
+            if(!rbacCanTab('tuition')){document.getElementById('tuition-table-body').innerHTML='';return;}
             const month = document.getElementById('tuition-month').value;
-            const monthData = tuitionRecords[month] || {};
+            const monthData = rbacTuitionRecords()[month] || {};
             const tbody = document.getElementById('tuition-table-body');
 
             let paidCount = 0;
             let unpaidCount = 0;
             let totalAmount = 0;
 
-            const sortedTuitionStudents = sortStudentsArray(students);
+            const sortedTuitionStudents = sortStudentsArray(rbacStudents());
             const dupAnalysis = analyzeStudentDuplicates();
             tbody.innerHTML = sortedTuitionStudents.map((s, idx) => {
                 const rec = safetyTuitionRecord(month, s) || { status: 'unpaid', amount: 350000, receipt: '' };
@@ -11534,9 +11331,12 @@
             document.getElementById('tuition-stat-unpaid').innerText = unpaidCount;
             document.getElementById('tuition-stat-amount').innerText = totalAmount.toLocaleString('vi-VN') + ' VNĐ';
             if (typeof updateQuickWorkspaceKPIs === 'function') updateQuickWorkspaceKPIs();
+        
+            rbacApplyActionVisibility();
         }
 
         function openTuitionModal(studentId) {
+            if(!(rbacRequireStudent(studentId,'tuition_manage')))return;
             if (!hasPermission('tuition_manage')) {
                 showToast('Tài khoản của bạn chưa được phân quyền Quản lý & Thu học phí!', 'error');
                 return;
@@ -11545,7 +11345,7 @@
             if (!s) return;
 
             const month = document.getElementById('tuition-month').value;
-            const monthData = tuitionRecords[month] || {};
+            const monthData = rbacTuitionRecords()[month] || {};
             const rec = safetyTuitionRecord(month, s) || { status: 'unpaid', amount: 350000, receipt: '' };
 
             document.getElementById('tuition-student-id').value = s._uid;
@@ -11562,6 +11362,7 @@
         }
 
         function saveTuitionRecord(e) {
+            if(!(rbacRequireStudent(document.getElementById('tuition-student-id').value,'tuition_manage')))return;
             return safetyRunMutation(()=>{
 
             e.preventDefault();if(!hasPermission('tuition_manage'))return showToast('Cần quyền quản lý học phí.','error');
@@ -11594,7 +11395,7 @@
             const select = document.getElementById('gear-student-id');
             if (!select) return;
             select.innerHTML = '<option value="">-- Chọn võ sinh đăng ký --</option>' +
-                students.map(s => `<option value="${escapeHtml(s._uid)}" ${(s._uid === selectedId || s.id === selectedId) ? 'selected' : ''}>${escapeHtml(s.name)} (${escapeHtml(s.id)} - ${escapeHtml(s.className)})</option>`).join('');
+                rbacStudents().map(s => `<option value="${escapeHtml(s._uid)}" ${(s._uid === selectedId || s.id === selectedId) ? 'selected' : ''}>${escapeHtml(s.name)} (${escapeHtml(s.id)} - ${escapeHtml(s.className)})</option>`).join('');
         }
 
         function populateGearProductPresets() {
@@ -11649,12 +11450,13 @@
         }
 
         function renderGearOrders() {
+            if(!rbacCanTab('gear')){document.getElementById('gear-table-body').innerHTML='';return;}
             const search = (document.getElementById('search-gear') ? document.getElementById('search-gear').value : '').toLowerCase().trim();
             const filterType = document.getElementById('filter-gear-type') ? document.getElementById('filter-gear-type').value : '';
             const filterPayment = document.getElementById('filter-gear-payment') ? document.getElementById('filter-gear-payment').value : '';
             const filterDelivery = document.getElementById('filter-gear-delivery') ? document.getElementById('filter-gear-delivery').value : '';
 
-            const filtered = gearOrders.filter(o => {
+            const filtered = rbacGearOrders().filter(o => {
                 const matchSearch = (o.studentName && o.studentName.toLowerCase().includes(search)) ||
                                     (o.studentId && o.studentId.toLowerCase().includes(search)) ||
                                     (o.itemName && o.itemName.toLowerCase().includes(search)) ||
@@ -11666,13 +11468,13 @@
             });
 
             // Cập nhật thống kê
-            const totalOrders = gearOrders.length;
-            const paidOrders = gearOrders.filter(o => o.paymentStatus === 'paid');
-            const unpaidOrders = gearOrders.filter(o => o.paymentStatus !== 'paid');
+            const totalOrders = rbacGearOrders().length;
+            const paidOrders = rbacGearOrders().filter(o => o.paymentStatus === 'paid');
+            const unpaidOrders = rbacGearOrders().filter(o => o.paymentStatus !== 'paid');
             const totalPaidAmount = paidOrders.reduce((acc, cur) => acc + (Number(cur.totalPrice) || 0), 0);
             const totalUnpaidAmount = unpaidOrders.reduce((acc, cur) => acc + (Number(cur.totalPrice) || 0), 0);
-            const deliveredCount = gearOrders.filter(o => o.deliveryStatus === 'delivered').length;
-            const pendingDeliveryCount = gearOrders.filter(o => o.deliveryStatus !== 'delivered').length;
+            const deliveredCount = rbacGearOrders().filter(o => o.deliveryStatus === 'delivered').length;
+            const pendingDeliveryCount = rbacGearOrders().filter(o => o.deliveryStatus !== 'delivered').length;
 
             const statTotalEl = document.getElementById('gear-stat-total');
             const statPaidEl = document.getElementById('gear-stat-paid');
@@ -11795,9 +11597,12 @@
                     </tr>
                 `;
             }).join('');
+        
+            rbacApplyActionVisibility();
         }
 
         function toggleGearPaymentStatus(orderId) {
+            if(!(rbacRequireEntity('gear',orderId,'gear_manage')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const order = gearOrders.find(o => o.id === orderId);
             if (!order) return;
@@ -11820,6 +11625,7 @@
         }
 
         function toggleGearDeliveryStatus(orderId) {
+            if(!(rbacRequireEntity('gear',orderId,'gear_manage')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const order = gearOrders.find(o => o.id === orderId);
             if (!order) return;
@@ -11839,6 +11645,7 @@
         }
 
         function openGearOrderModal(isEdit = false, orderId = null) {
+            if(!(rbacRequire('gear_manage') && (!isEdit || rbacCanEntity(rbacGearOrders().find(o=>o.id===orderId))) || rbacDeny()))return;
             const modal = document.getElementById('gear-modal');
             const form = document.getElementById('gear-form');
             const title = document.getElementById('gear-modal-title');
@@ -11861,7 +11668,7 @@
                 calculateGearTotal();
                 submitBtn.innerText = 'Lưu Đơn Đăng Ký';
             } else {
-                const order = gearOrders.find(o => o.id === orderId);
+                const order = rbacGearOrders().find(o => o.id === orderId);
                 if (!order) return;
 
                 title.innerHTML = '<i class="fa-solid fa-pen-to-square text-teal-300 mr-1.5"></i><span>Cập Nhật Đơn Mua Đồ Tập</span>';
@@ -11892,6 +11699,7 @@
         }
 
         function saveGearOrder(e) {
+            if(!(rbacRequireStudent(document.getElementById('gear-student-id').value,'gear_manage') && (!document.getElementById('gear-order-id').value || rbacCanEntity(gearOrders.find(o=>o.id===document.getElementById('gear-order-id').value))) || rbacDeny()))return;
             return safetyRunMutation(()=>{
 
             e.preventDefault();
@@ -11985,6 +11793,7 @@
         }
 
         function deleteGearOrder(orderId) {
+            if(!(rbacRequireEntity('gear',orderId,'gear_manage')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const order = gearOrders.find(o => o.id === orderId);
             if (!order) return;
@@ -12000,26 +11809,17 @@
         }
 
         function clearAllGearOrders() {
-            if (!hasPermission('gear_manage') && !hasPermission('tuition_manage')) {
-                showToast('Tài khoản của bạn chưa được cấp quyền Quản lý Đồ tập!', 'error');
-                return;
-            }
-            if (gearOrders.length === 0) {
-                showToast('Danh sách đơn mua đồ hiện đang trống!', 'info');
-                return;
-            }
-            showConfirm('Xác Nhận Xóa Toàn Bộ Đơn Hàng', `Bạn có chắc muốn xóa vĩnh viễn toàn bộ ${gearOrders.length} đơn đăng ký mua đồ tập? Sau khi xóa, các đơn mẫu sẽ không bao giờ tự động hiện lại.`, () => {
-                gearOrders.forEach(o => markEntityDeleted('gear', o.id));
-                gearOrders = [];
-                saveGearOrdersToStorage();
-                renderGearOrders();
-                if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
-                showToast('Đã xóa sạch toàn bộ đơn đăng ký đồ tập vĩnh viễn!');
+            if(!rbacRequire('gear_manage'))return;
+            const targets=rbacGearOrders(),ids=new Set(targets.map(r=>r.id));if(!ids.size)return;
+            showConfirm('Xóa trong phạm vi được giao',`Xóa ${ids.size} hồ sơ thuộc các lớp bạn được quản lý?`,()=>{
+                gearOrders=gearOrders.filter(r=>!ids.has(r.id));targets.forEach(r=>markEntityDeleted('gear',r.id));
+                saveGearOrdersToStorage();renderGearOrders();
             });
         }
 
         function viewGearReceipt(orderId) {
-            const order = gearOrders.find(o => o.id === orderId);
+            if(!(rbacRequireEntity('gear',orderId,'gear_manage')))return;
+            const order = rbacGearOrders().find(o => o.id === orderId);
             if (!order) return;
 
             const modal = document.getElementById('gear-receipt-modal');
@@ -12058,7 +11858,8 @@
         }
 
         function exportGearOrdersCSV() {
-            if (gearOrders.length === 0) {
+            if(!(hasPermission('reports_export') && hasPermission('gear_manage') || rbacDeny()))return;
+            if (rbacGearOrders().length === 0) {
                 showToast('Chưa có dữ liệu đơn đăng ký đồ tập để xuất!', 'info');
                 return;
             }
@@ -12071,7 +11872,7 @@
             csv += `STT,Mã Đơn,Mã Võ Sinh,Họ và Tên Võ Sinh,Lớp Luyện Tập,Sản Phẩm Đặt Mua,Kích Thước (Size),Số Lượng,Đơn Giá (VNĐ),Thành Tiền (VNĐ),Trạng Thái Đóng Tiền,Phương Thức Thanh Toán,Số Biên Lai,Trạng Thái Giao Đồ,Ngày Đăng Ký,Ghi Chú
 `;
 
-            gearOrders.forEach((o, idx) => {
+            rbacGearOrders().forEach((o, idx) => {
                 const row = [
                     sanitizeCsvCell(idx + 1),
                     sanitizeCsvCell(o.id),
@@ -12130,14 +11931,14 @@
             const select = document.getElementById('tour-student-id');
             if (!select) return;
             select.innerHTML = '<option value="">-- Chọn võ sinh tham gia thi đấu --</option>' +
-                students.map(s => `<option value="${escapeHtml(s._uid)}" ${(s._uid === selectedId || s.id === selectedId) ? 'selected' : ''}>${escapeHtml(s.name)} (${escapeHtml(s.id)} - ${escapeHtml(s.belt)} - ${escapeHtml(s.className)})</option>`).join('');
+                rbacStudents().map(s => `<option value="${escapeHtml(s._uid)}" ${(s._uid === selectedId || s.id === selectedId) ? 'selected' : ''}>${escapeHtml(s.name)} (${escapeHtml(s.id)} - ${escapeHtml(s.belt)} - ${escapeHtml(s.className)})</option>`).join('');
         }
 
         function populateTourFilterDropdown() {
             const select = document.getElementById('filter-tour-name');
             if (!select) return;
             const cur = select.value;
-            const tourNames = Array.from(new Set(tournamentEntries.map(t => t.tournamentName).filter(Boolean)));
+            const tourNames = Array.from(new Set(rbacTournamentEntries().map(t => t.tournamentName).filter(Boolean)));
             select.innerHTML = '<option value="">-- Tất cả Giải đấu --</option>' +
                 tourNames.map(name => `<option value="${escapeHtml(name)}" ${name === cur ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('');
         }
@@ -12171,13 +11972,14 @@
         }
 
         function renderTournaments() {
+            if(!rbacCanTab('tournaments')){document.getElementById('tournament-table-body').innerHTML='';return;}
             populateTourFilterDropdown();
             const search = (document.getElementById('search-tour') ? document.getElementById('search-tour').value : '').toLowerCase().trim();
             const filterName = document.getElementById('filter-tour-name') ? document.getElementById('filter-tour-name').value : '';
             const filterDossier = document.getElementById('filter-tour-dossier') ? document.getElementById('filter-tour-dossier').value : '';
             const filterFee = document.getElementById('filter-tour-fee') ? document.getElementById('filter-tour-fee').value : '';
 
-            const filtered = tournamentEntries.filter(t => {
+            const filtered = rbacTournamentEntries().filter(t => {
                 const dossierEval = evaluateDossier(t.dossier);
                 const matchSearch = (t.studentName && t.studentName.toLowerCase().includes(search)) ||
                                     (t.studentId && t.studentId.toLowerCase().includes(search)) ||
@@ -12191,10 +11993,10 @@
             });
 
             // Cập nhật thống kê
-            const totalAthletes = tournamentEntries.length;
-            const fullDossierCount = tournamentEntries.filter(t => evaluateDossier(t.dossier).isComplete).length;
+            const totalAthletes = rbacTournamentEntries().length;
+            const fullDossierCount = rbacTournamentEntries().filter(t => evaluateDossier(t.dossier).isComplete).length;
             const missingDossierCount = totalAthletes - fullDossierCount;
-            const feePaidList = tournamentEntries.filter(t => t.feeStatus === 'paid');
+            const feePaidList = rbacTournamentEntries().filter(t => t.feeStatus === 'paid');
             const totalFeeAmount = feePaidList.reduce((acc, cur) => acc + (Number(cur.feeAmount) || 0), 0);
             const dossierRate = totalAthletes > 0 ? Math.round((fullDossierCount / totalAthletes) * 100) : 0;
 
@@ -12336,9 +12138,12 @@
                     </tr>
                 `;
             }).join('');
+        
+            rbacApplyActionVisibility();
         }
 
         function toggleTournamentFeeStatus(entryId) {
+            if(!(rbacRequireEntity('tour',entryId,'tournaments_manage')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const entry = tournamentEntries.find(t => t.id === entryId);
             if (!entry) return;
@@ -12367,6 +12172,7 @@
         }
 
         function openTournamentModal(isEdit = false, entryId = null) {
+            if(!(rbacRequire('tournaments_manage') && (!isEdit || rbacCanEntity(rbacTournamentEntries().find(o=>o.id===entryId))) || rbacDeny()))return;
             const modal = document.getElementById('tournament-modal');
             const form = document.getElementById('tournament-form');
             const title = document.getElementById('tournament-modal-title');
@@ -12391,7 +12197,7 @@
                 onTourCompTypeChange('combat');
                 submitBtn.innerText = 'Lưu Đăng Ký Đi Giải';
             } else {
-                const entry = tournamentEntries.find(t => t.id === entryId);
+                const entry = rbacTournamentEntries().find(t => t.id === entryId);
                 if (!entry) return;
 
                 title.innerHTML = '<i class="fa-solid fa-medal text-amber-300 mr-1.5"></i><span>Cập Nhật Đăng Ký VĐV Đi Giải</span>';
@@ -12431,6 +12237,7 @@
         }
 
         function saveTournamentEntry(e) {
+            if(!(rbacRequireStudent(document.getElementById('tour-student-id').value,'tournaments_manage') && (!document.getElementById('tour-entry-id').value || rbacCanEntity(tournamentEntries.find(o=>o.id===document.getElementById('tour-entry-id').value))) || rbacDeny()))return;
             return safetyRunMutation(()=>{
 
             e.preventDefault();
@@ -12532,6 +12339,7 @@
         }
 
         function deleteTournamentEntry(entryId) {
+            if(!(rbacRequireEntity('tour',entryId,'tournaments_manage')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             const entry = tournamentEntries.find(t => t.id === entryId);
             if (!entry) return;
@@ -12547,27 +12355,18 @@
         }
 
         function clearAllTournamentEntries() {
-            if (!hasPermission('approvals_manage') && !hasPermission('settings_manage') && currentUserRole !== 'admin') {
-                showToast('Tài khoản của bạn chưa được cấp quyền Quản lý Giải đấu!', 'error');
-                return;
-            }
-            if (tournamentEntries.length === 0) {
-                showToast('Danh sách VĐV thi đấu hiện đang trống!', 'info');
-                return;
-            }
-            showConfirm('Xác Nhận Xóa Toàn Bộ VĐV Thi Đấu', `Bạn có chắc muốn xóa vĩnh viễn toàn bộ ${tournamentEntries.length} hồ sơ VĐV đăng ký thi đấu? Sau khi xóa, các mẫu sẽ không bao giờ tự động hiện lại.`, () => {
-                tournamentEntries.forEach(t => markEntityDeleted('tournaments', t.id));
-                tournamentEntries = [];
-                saveTournamentsToStorage();
-                renderTournaments();
-                if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
-                showToast('Đã xóa sạch toàn bộ danh sách VĐV thi đấu giải vĩnh viễn!');
+            if(!rbacRequire('tournaments_manage'))return;
+            const targets=rbacTournamentEntries(),ids=new Set(targets.map(r=>r.id));if(!ids.size)return;
+            showConfirm('Xóa trong phạm vi được giao',`Xóa ${ids.size} hồ sơ thuộc các lớp bạn được quản lý?`,()=>{
+                tournamentEntries=tournamentEntries.filter(r=>!ids.has(r.id));targets.forEach(r=>markEntityDeleted('tournaments',r.id));
+                saveTournamentsToStorage();renderTournaments();
             });
         }
 
         // --- Hộp thoại kiểm tra & thẩm định hồ sơ thi đấu nhanh (Dossier Checklist Modal) ---
         function openDossierModal(entryId) {
-            const entry = tournamentEntries.find(t => t.id === entryId);
+            if(!(rbacRequireEntity('tour',entryId,'tournaments_manage')))return;
+            const entry = rbacTournamentEntries().find(t => t.id === entryId);
             if (!entry) return;
 
             const modal = document.getElementById('dossier-checklist-modal');
@@ -12647,6 +12446,7 @@
         }
 
         function saveDossierChecklist(e) {
+            if(!(rbacRequireEntity('tour',document.getElementById('chk-entry-id').value,'tournaments_manage')))return;
             if(!safetyAuthenticated())return showToast('Vui lòng đăng nhập và mở khóa phiên làm việc.','error');
             e.preventDefault();
             const entryId = document.getElementById('chk-entry-id').value;
@@ -12678,7 +12478,8 @@
         }
 
         function exportTournamentsCSV() {
-            if (tournamentEntries.length === 0) {
+            if(!(hasPermission('reports_export') && hasPermission('tournaments_manage') || rbacDeny()))return;
+            if (rbacTournamentEntries().length === 0) {
                 showToast('Chưa có dữ liệu đăng ký thi đấu để xuất!', 'info');
                 return;
             }
@@ -12691,7 +12492,7 @@
             csv += `STT,Mã ĐK,Mã VĐV,Họ và Tên VĐV,Cấp Đai,Lớp Học,Tên Giải Đấu,Ngày Thi Đấu,Địa Điểm,Nội Dung / Hạng Cân,HLV Phụ Trách,Kinh Phí (VNĐ),Trạng Thái Kinh Phí,Số Biên Lai,Trạng Thái Hồ Sơ (Đủ/Thiếu),Số Giấy Tờ Đã Nộp,Giấy Tờ Còn Thiếu,Ghi Chú Hồ Sơ
 `;
 
-            tournamentEntries.forEach((t, idx) => {
+            rbacTournamentEntries().forEach((t, idx) => {
                 const evalRes = evaluateDossier(t.dossier);
                 const row = [
                     sanitizeCsvCell(idx + 1),
@@ -12721,7 +12522,8 @@
         }
 
         function printTournamentTeamList() {
-            if (tournamentEntries.length === 0) {
+            if(!(hasPermission('reports_export') && hasPermission('tournaments_manage') || rbacDeny()))return;
+            if (rbacTournamentEntries().length === 0) {
                 showToast('Chưa có VĐV đăng ký thi đấu để in!', 'info');
                 return;
             }
@@ -12731,17 +12533,18 @@
 
         // ================= TAB 4: PHÊ DUYỆT YÊU CẦU =================
         function renderPendingApprovals() {
+            if(!rbacCanTab('approvals')){document.getElementById('approval-table-body').innerHTML='';return;}
             const tbody = document.getElementById('approval-table-body');
             const emptyMsg = document.getElementById('no-pending-msg');
 
-            if (pendingRequests.length === 0) {
+            if (rbacPendingRequests().length === 0) {
                 tbody.innerHTML = '';
                 emptyMsg.classList.remove('hidden');
                 return;
             }
 
             emptyMsg.classList.add('hidden');
-            tbody.innerHTML = pendingRequests.map(req => {
+            tbody.innerHTML = rbacPendingRequests().map(req => {
                 let badgeType = '';
                 if (req.type === 'ADD') badgeType = '<span class="px-2 py-1 text-xs bg-emerald-100 text-emerald-800 rounded-lg font-bold">Thêm Mới</span>';
                 else if (req.type === 'EDIT') badgeType = '<span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-bold">Chỉnh Sửa</span>';
@@ -12791,6 +12594,7 @@
         }
 
         function approveRequest(reqId) {
+            if(!(hasPermission('approvals_manage') && rbacPendingRequests().some(r=>r.reqId===reqId) || rbacDeny()))return;
             if (!hasPermission('approvals_manage')) {
                 showToast('Tài khoản của bạn chưa được phân quyền Phê duyệt yêu cầu!', 'error');
                 return;
@@ -12852,6 +12656,7 @@
         }
 
         function rejectRequest(reqId) {
+            if(!(hasPermission('approvals_manage') && rbacPendingRequests().some(r=>r.reqId===reqId) || rbacDeny()))return;
             if (!hasPermission('approvals_manage')) {
                 showToast('Tài khoản của bạn chưa được phân quyền Phê duyệt yêu cầu!', 'error');
                 return;
@@ -12868,27 +12673,28 @@
 
         // ================= TAB 5: BÁO CÁO & XUẤT CSV =================
         function generateReport() {
+            if(!rbacCanTab('reports')){document.getElementById('report-table-body').innerHTML='';return;}
             const startDate = document.getElementById('report-start').value;
             const endDate = document.getElementById('report-end').value;
             const filterClass = document.getElementById('report-class').value;
 
             document.getElementById('print-time-range').innerText = `Giai đoạn thống kê: Từ ngày ${startDate} đến ngày ${endDate}`;
 
-            const allKeys = Object.keys(attendanceRecords);
+            const allKeys = Object.keys(rbacAttendanceRecords());
             const filteredKeys = allKeys.filter(key => {
                 const parsedKey = parseAttendanceKey(key);
                 const date = parsedKey.date;
                 const className = parsedKey.className;
 
                 const inDateRange = (!startDate || date >= startDate) && (!endDate || date <= endDate);
-                const inClass = (filterClass === 'all') || (className === filterClass);
+                const inClass = (filterClass === 'all') || (rbacSameClass(className, filterClass));
 
                 return inDateRange && inClass;
             });
 
             document.getElementById('rep-total-sessions').innerText = filteredKeys.length;
 
-            let relevantStudents = sortStudentsArray(filterClass === 'all' ? students : students.filter(s => s.className === filterClass));
+            let relevantStudents = sortStudentsArray(filterClass === 'all' ? students : rbacStudents().filter(s => s.rbacSameClass(className, filterClass)));
             const dupAnalysis = analyzeStudentDuplicates();
 
             let totalAttendanceCount = 0;
@@ -12902,7 +12708,7 @@
                 let sExcused = 0;
 
                 filteredKeys.forEach(key => {
-                    const sessionRecords = attendanceRecords[key] || [];
+                    const sessionRecords = rbacAttendanceRecords()[key] || [];
                     const record = sessionRecords.find(r => safetyRecordMatches(r, s));
 
                     if (record) {
@@ -12966,17 +12772,18 @@
 
         // Xuất file CSV hỗ trợ chuẩn Unicode BOM tiếng Việt cho Excel
         function exportStudentsCSV() {
+            if(!(hasPermission('reports_export') && rbacCanTab('students') || rbacDeny()))return;
             if (!hasPermission('reports_export')) {
                 showToast('Tài khoản của bạn chưa được cấp quyền Xuất báo cáo!', 'error');
                 return;
             }
-            if (students.length === 0) {
+            if (rbacStudents().length === 0) {
                 showToast('Chưa có dữ liệu võ sinh để xuất!', 'error');
                 return;
             }
 
             let csvContent = "\uFEFFSố Định Danh,Họ và Tên,Ngày Sinh,Tuổi,Cấp Đai,Lớp Luyện Tập,Phân Loại,Phụ Huynh,Số Điện Thoại,Địa Chỉ\n";
-            students.forEach(s => {
+            rbacStudents().forEach(s => {
                 const age = calculateAge(s.dob);
                 const row = [
                     sanitizeCsvCell(s.id),
@@ -12992,13 +12799,14 @@
                 ].join(",");
                 csvContent += row + "\n";
             });
-            logSecurityEvent('Xuất file an toàn', `Xuất danh sách ${students.length} võ sinh ra file CSV (Đã khử Formula Injection)`, 'info');
+            logSecurityEvent('Xuất file an toàn', `Xuất danh sách ${rbacStudents().length} võ sinh ra file CSV (Đã khử Formula Injection)`, 'info');
 
             downloadFile(csvContent, `Danh_Sach_Vo_Sinh_Vovinam_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv;charset=utf-8;');
             showToast('Đã xuất danh sách võ sinh sang CSV!');
         }
 
         function exportAttendanceCSV() {
+            if(!(rbacRequire('reports_export')))return;
             if (!hasPermission('reports_export')) {
                 showToast('Tài khoản của bạn chưa được cấp quyền Xuất báo cáo!', 'error');
                 return;
@@ -13009,15 +12817,15 @@
             let csvContent = `\uFEFF${sanitizeCsvCell('BÁO CÁO ĐIỂM DANH VOVINAM (' + startDate + ' ĐẾN ' + endDate + ')')}\n\n`;
             csvContent += "Mã Số,Họ và Tên,Lớp Học,Tổng Buổi,Có Mặt,Vắng K.Phép,Có Phép / Trễ,Tỷ Lệ Chuyên Cần (%)\n";
 
-            const allKeys = Object.keys(attendanceRecords).filter(key => {
+            const allKeys = Object.keys(rbacAttendanceRecords()).filter(key => {
                 const date = parseAttendanceKey(key).date;
                 return (!startDate || date >= startDate) && (!endDate || date <= endDate);
             });
 
-            students.forEach(s => {
+            rbacStudents().forEach(s => {
                 let sTotal = 0, sPresent = 0, sAbsent = 0, sExcused = 0;
                 allKeys.forEach(key => {
-                    const rec = (attendanceRecords[key] || []).find(r => safetyRecordMatches(r, s));
+                    const rec = (rbacAttendanceRecords()[key] || []).find(r => safetyRecordMatches(r, s));
                     if (rec) {
                         sTotal++;
                         if (rec.status === 'present') sPresent++;
@@ -13046,17 +12854,18 @@
         }
 
         function exportTuitionCSV() {
+            if(!(hasPermission('reports_export') && hasPermission('tuition_manage') || rbacDeny()))return;
             if (!hasPermission('reports_export')) {
                 showToast('Tài khoản của bạn chưa được cấp quyền Xuất báo cáo!', 'error');
                 return;
             }
             const month = document.getElementById('tuition-month').value;
-            const monthData = tuitionRecords[month] || {};
+            const monthData = rbacTuitionRecords()[month] || {};
 
             let csvContent = `\uFEFF${sanitizeCsvCell('BÁO CÁO HỌC PHÍ VOVINAM THÁNG ' + month)}\n\n`;
             csvContent += "Mã Số,Họ và Tên,Lớp Luyện Tập,Trạng Thái,Số Tiền (VNĐ),Số Biên Lai / Ghi Chú\n";
 
-            students.forEach(s => {
+            rbacStudents().forEach(s => {
                 const rec = safetyTuitionRecord(month,s) || { status: 'unpaid', amount: 350000, receipt: '' };
                 const sttText = rec.status === 'paid' ? 'Đã đóng' : (rec.status === 'discount' ? 'Miễn giảm' : 'Chưa đóng');
 
@@ -13089,6 +12898,7 @@
         }
 
         function printReport() {
+            if(!(rbacRequire('reports_export')))return;
             window.print();
         }
 
@@ -13122,6 +12932,7 @@
         }
 
         function loadCloudConfigForm() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return;
             const urlEl = document.getElementById('cloud-db-url');
             const keyEl = document.getElementById('cloud-club-key');
             const secEl = document.getElementById('cloud-secret-key');
@@ -13138,6 +12949,7 @@
         }
 
         function openCloudSyncSettingsSection() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             switchTab('settings');
             const el = document.getElementById('cloud-db-url');
             if (el) {
@@ -13314,6 +13126,7 @@
         }
 
         function onCloudAutoSyncToggle() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             const autoEl = document.getElementById('cloud-auto-sync');
             cloudConfig.autoSync = autoEl ? autoEl.checked : true;
             saveCloudConfigToStorage();
@@ -13328,6 +13141,7 @@
         }
 
         function changeCloudSyncInterval(val) {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             const ms = Math.max(800, parseInt(val, 10) || 1500);
             cloudConfig.syncIntervalMs = ms;
             saveCloudConfigToStorage();
@@ -13338,6 +13152,7 @@
         }
 
         function saveAndTestCloudConfig() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được thay đổi cấu hình Cloud!', 'error');
                 return;
@@ -13386,6 +13201,7 @@
         }
 
         function disconnectCloudConfig() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được ngắt kết nối Cloud!', 'error');
                 return;
@@ -13811,6 +13627,7 @@
 
         // Tạo Mã Ghép Nối Nhanh (Sync Code) và Link Tự Động Kết Nối giữa nhiều máy (Hoạt động cả khi dùng Phòng Tự Động hoặc Firebase)
         function encodeCloudPairingPayload() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             const urlEl = document.getElementById('cloud-db-url');
             const keyEl = document.getElementById('cloud-club-key');
             const secEl = document.getElementById('cloud-secret-key');
@@ -13832,6 +13649,7 @@
         }
 
         function copyCloudSyncShareCode() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được trích xuất Mã Ghép Nối Cloud!', 'error');
                 return;
@@ -13856,6 +13674,7 @@
         }
 
         function copyCloudSyncShareUrl() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được tạo Link Tự Kết Nối Cloud!', 'error');
                 return;
@@ -13881,6 +13700,7 @@
         }
 
         function applyCloudPairingCode(rawInput = null) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được nạp Mã Ghép Nối Cloud!', 'error');
                 return false;
@@ -14132,10 +13952,10 @@
                 cloudConfig.lastSync = timeNow;
                 saveCloudConfigToStorage();
                 updateCloudStatusUI('connected', `• ${timeNow} (${elapsedMs}ms)`);
-                showCloudDiagnostic('success', `Đã đồng bộ ${data.students ? data.students.length : 0} võ sinh & ${data.classes ? data.classes.length : 0} lớp học từ Cloud (Cập nhật bởi: ${data.updatedBy || 'Admin'} lúc ${timeNow} • ${elapsedMs}ms).`);
+                showCloudDiagnostic('success', `Đã đồng bộ ${rbacStudents().length} võ sinh & ${rbacClasses().length} lớp học từ Cloud (Cập nhật bởi: ${data.updatedBy || 'Admin'} lúc ${timeNow} • ${elapsedMs}ms).`);
 
                 if (manual && !silent) {
-                    showToast(`Đã tải dữ liệu mới nhất từ Cloud (${data.students ? data.students.length : 0} võ sinh • ${elapsedMs}ms)!`);
+                    showToast(`Đã tải dữ liệu mới nhất từ Cloud (${rbacStudents().length} võ sinh • ${elapsedMs}ms)!`);
                 }
             } catch (err) {
                 if (err && err.name === 'AbortError') return;
@@ -14343,6 +14163,7 @@
 
         // ================= SAO LƯU & KHÔI PHỤC FILE .JSON =================
         function updateBackupStatsUI() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return;
             const stEl = document.getElementById('backup-stat-students');
             const clEl = document.getElementById('backup-stat-classes');
             const atEl = document.getElementById('backup-stat-attendance');
@@ -14642,6 +14463,7 @@
         }
 
         function optimizeAndCompressAllStorage(manual = true) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             let beforeBytes = 0;
             let afterBytes = 0;
             let optimizedCount = 0;
@@ -14716,6 +14538,7 @@
         }
 
         function cleanOrphanedStorageData(manual = true) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             let cleanedCount = 0;
             try {
                 // Dọn các key tạm hoặc ping cũ trong LocalStorage
@@ -14751,6 +14574,7 @@
         }
 
         function updateStorageStatsUI(manual = false) {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return;
             try {
                 const studentsBytes = JSON.stringify(students || []).length * 2;
                 const classesBytes = JSON.stringify(classes || []).length * 2;
@@ -14855,6 +14679,7 @@
         }
 
         async function pruneDataOlderThan6Months(manual=false) {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             if(!manual)return {totalPruned:0};
             if(!hasPermission('settings_manage'))return showToast('Cần quyền quản trị hệ thống.','error');
             try {
@@ -14881,6 +14706,7 @@
         }
 
         async function triggerWeeklyAutoBackupDownload(manual=false) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if(!hasPermission('settings_manage'))return;
             try {
                 const payload=safetyClone(buildFullDatabasePayload()),now=Date.now();safetyAssertCompleteMedia(payload);
@@ -14897,12 +14723,14 @@
         }
 
         function toggleRetentionPolicy(enabled) {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             localStorage.setItem('vovinam_retention_6months_enabled','false');
             updateRetentionAndBackupUI();
             showToast('Lịch sử được giữ nguyên. Dùng Lưu lịch sử đầy đủ để tạo bản lưu riêng.','info');
         }
 
         function toggleWeeklyAutoBackup(enabled) {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             try {
                 localStorage.setItem('vovinam_auto_backup_weekly_enabled', enabled ? 'true' : 'false');
             } catch (e) {}
@@ -14930,6 +14758,7 @@
         }
 
         function exportFullDatabaseJSON() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được xuất toàn bộ cơ sở dữ liệu (.JSON)!', 'error');
                 return;
@@ -14943,6 +14772,7 @@
         }
 
         function copyFullDatabaseJSONText() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được sao chép mã cơ sở dữ liệu (.JSON)!', 'error');
                 return;
@@ -14974,6 +14804,7 @@
         }
 
         function importFullDatabaseJSON(event) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             const input=event?.target,file=input?.files?.[0];
             if(!hasPermission('settings_manage')){if(input)input.value='';return showToast('Cần quyền quản trị hệ thống.','error');}
             if(!file)return;
@@ -14990,6 +14821,7 @@
         }
 
         function applyPastedDatabaseJSON() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if(!hasPermission('settings_manage'))return showToast('Cần quyền quản trị hệ thống.','error');
             try {
                 const raw=document.getElementById('paste-json-textarea').value.replace(/^\uFEFF/,'').trim();
@@ -14998,6 +14830,7 @@
         }
 
         function resetAllDatabaseToSample() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên (Admin) mới có quyền đặt lại dữ liệu!', 'error');
                 return;
@@ -15087,7 +14920,7 @@
                     }
 
                     currentAccountId = acc.id;
-                    currentUserRole = (acc.isSuperAdmin || (acc.permissions && acc.permissions.settings_manage)) ? 'admin' : 'staff';
+                    currentUserRole = rbacGlobalAdmin(acc) ? 'admin' : 'staff';
                     if (loginModal) loginModal.classList.add('hidden');
 
                     // Nếu phiên trước đang ở trạng thái Khóa màn hình, kích hoạt lại màn hình khóa ngay cả khi bấm F5
@@ -15281,7 +15114,7 @@
             if (errorBox) errorBox.classList.add('hidden');
 
             currentAccountId = acc.id;
-            currentUserRole = (acc.isSuperAdmin || (acc.permissions && acc.permissions.settings_manage)) ? 'admin' : 'staff';
+            currentUserRole = rbacGlobalAdmin(acc) ? 'admin' : 'staff';
             acc.lastLogin = new Date().toLocaleString('vi-VN');
 
             saveAccountsToStorage(true);
@@ -15311,6 +15144,8 @@
             renderPermissionsMatrix();
             populateAccountSwitcher();
             showToast(`Đăng nhập thành công! Xin chào ${escapeHtml(acc.name)} (${escapeHtml(acc.roleTitle)}).`);
+        
+            refreshAllUiViewsSafely(false);
         }
 
         function handleFailedLogin(errorBox, errorMsg, defaultMessage, attempts) {
@@ -15559,7 +15394,7 @@
 
             // Chuyển thành công
             currentAccountId = targetAcc.id;
-            currentUserRole = (targetAcc.isSuperAdmin || (targetAcc.permissions && targetAcc.permissions.settings_manage)) ? 'admin' : 'staff';
+            currentUserRole = rbacGlobalAdmin(targetAcc) ? 'admin' : 'staff';
             targetAcc.lastLogin = new Date().toLocaleString('vi-VN');
 
             saveAccountsToStorage(true);
@@ -15588,11 +15423,14 @@
             renderPermissionsMatrix();
 
             showToast(`Đã chuyển sang tài khoản: ${escapeHtml(targetAcc.name)} (${escapeHtml(targetAcc.roleTitle)})`);
+        
+            refreshAllUiViewsSafely(false);
         }
 
         // ================= ADMIN ĐẶT LẠI MẬT KHẨU CHO NHÂN SỰ =================
         function openAdminResetPasswordModal(accId) {
-            if (!hasPermission('settings_manage')) {
+            if(!(rbacCanManageAccount(accounts.find(a=>a.id===accId)) || rbacDeny()))return;
+            if (!hasPermission('accounts_manage')) {
                 showToast('Tài khoản của bạn không có quyền đặt lại mật khẩu người khác!', 'error');
                 return;
             }
@@ -15613,10 +15451,11 @@
         }
 
         function handleAdminResetPassword(e) {
+            if(!(rbacCanManageAccount(accounts.find(a=>a.id===document.getElementById('admin-reset-acc-id').value)) || rbacDeny()))return;
             return safetyRunMutation(()=>{
 
             e.preventDefault();
-            if (!hasPermission('settings_manage')) {
+            if (!hasPermission('accounts_manage')) {
                 showToast('Không có quyền quản trị để thực hiện!', 'error');
                 return;
             }
@@ -15646,7 +15485,8 @@
         }
 
         function toggleAccountLock(accId) {
-            if (!hasPermission('settings_manage')) {
+            if(!(rbacCanManageAccount(accounts.find(a=>a.id===accId)) || rbacDeny()))return;
+            if (!hasPermission('accounts_manage')) {
                 showToast('Không có quyền quản trị để khóa/mở khóa tài khoản!', 'error');
                 return;
             }
@@ -15722,27 +15562,27 @@
             const atEl = document.getElementById('quick-kpi-attendance');
             const tuEl = document.getElementById('quick-kpi-tuition');
 
-            if (stEl) stEl.innerText = `${students.length} võ sinh`;
-            const activeCls = classes.filter(c => c.status !== 'paused').length;
-            if (clEl) clEl.innerText = `${activeCls}/${classes.length} lớp`;
-            if (atEl) atEl.innerText = `${Object.keys(attendanceRecords).length} buổi tập`;
+            if (stEl) stEl.innerText = `${rbacStudents().length} võ sinh`;
+            const activeCls = rbacClasses().filter(c => c.status !== 'paused').length;
+            if (clEl) clEl.innerText = `${activeCls}/${rbacClasses().length} lớp`;
+            if (atEl) atEl.innerText = `${Object.keys(rbacAttendanceRecords()).length} buổi tập`;
 
             const monthInput = document.getElementById('tuition-month');
             const curMonth = monthInput ? monthInput.value : '';
-            const monthMap = (curMonth && tuitionRecords[curMonth]) ? tuitionRecords[curMonth] : {};
-            const paidCount = students.filter(s => safetyTuitionRecord(curMonth, s) && safetyTuitionRecord(curMonth, s).status === 'paid').length;
-            if (tuEl) tuEl.innerText = `${paidCount}/${students.length} đã đóng`;
+            const monthMap = (curMonth && rbacTuitionRecords()[curMonth]) ? rbacTuitionRecords()[curMonth] : {};
+            const paidCount = rbacStudents().filter(s => safetyTuitionRecord(curMonth, s) && safetyTuitionRecord(curMonth, s).status === 'paid').length;
+            if (tuEl) tuEl.innerText = `${paidCount}/${rbacStudents().length} đã đóng`;
 
             const gearEl = document.getElementById('quick-kpi-gear');
             if (gearEl) {
-                const paidGearCount = gearOrders.filter(o => o.paymentStatus === 'paid').length;
-                gearEl.innerText = `${gearOrders.length} đơn (${paidGearCount} đã đóng)`;
+                const paidGearCount = rbacGearOrders().filter(o => o.paymentStatus === 'paid').length;
+                gearEl.innerText = `${rbacGearOrders().length} đơn (${paidGearCount} đã đóng)`;
             }
 
             const tourEl = document.getElementById('quick-kpi-tournaments');
             if (tourEl) {
-                const fullDossierCount = tournamentEntries.filter(t => evaluateDossier(t.dossier).isComplete).length;
-                tourEl.innerText = `${tournamentEntries.length} VĐV (${fullDossierCount} đủ HS)`;
+                const fullDossierCount = rbacTournamentEntries().filter(t => evaluateDossier(t.dossier).isComplete).length;
+                tourEl.innerText = `${rbacTournamentEntries().length} VĐV (${fullDossierCount} đủ HS)`;
             }
         }
 
@@ -15838,11 +15678,12 @@
 
         // --- Xử lý Modal Đổi Ảnh Đại Diện Cá Nhân / Từng Tài Khoản (#personal-avatar-modal) ---
         function openPersonalAvatarModal(targetAccId = null) {
+            if(!((!targetAccId || targetAccId===currentAccountId || rbacCanManageAccount(accounts.find(a=>a.id===targetAccId))) || rbacDeny()))return;
             const accId = targetAccId || currentAccountId;
             const acc = accounts.find(a => a.id === accId) || getCurrentAccount();
             if (!acc) return;
 
-            if (acc.id !== currentAccountId && !hasPermission('settings_manage')) {
+            if (acc.id !== currentAccountId && !hasPermission('accounts_manage')) {
                 showToast('Bạn chỉ có thể đổi ảnh đại diện của chính mình (cần quyền Hệ thống để đổi cho tài khoản khác)!', 'error');
                 return;
             }
@@ -15937,12 +15778,13 @@
         }
 
         function savePersonalAvatar(e) {
+            if(!((document.getElementById('personal-avatar-acc-id').value===currentAccountId || rbacCanManageAccount(accounts.find(a=>a.id===document.getElementById('personal-avatar-acc-id').value))) || rbacDeny()))return;
             e.preventDefault();
             const accId = document.getElementById('personal-avatar-acc-id').value || currentAccountId;
             const idx = accounts.findIndex(a => a.id === accId);
             if (idx === -1) return;
 
-            if (accId !== currentAccountId && !hasPermission('settings_manage')) {
+            if (accId !== currentAccountId && !hasPermission('accounts_manage')) {
                 showToast('Không có quyền thay đổi ảnh của tài khoản khác!', 'error');
                 return;
             }
@@ -16139,11 +15981,13 @@
         }
 
         async function pingBackendServer(manual=false) {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             const res=await callBackendApi('GET','/api/health');refreshServerDashboardUI(res.status===200?res.data:null);
             if(manual)showToast(res.status===200?'Máy chủ thật đã phản hồi.':'Chưa kết nối máy chủ thật.',res.status===200?'success':'error');
         }
 
         async function syncFromBackendServer(manual=false) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if(!hasPermission('settings_manage'))return;
             const res=await callBackendApi('GET','/api/bootstrap');
             if(res.status!==200 || !res.data)return;
@@ -16154,10 +15998,12 @@
         }
 
         async function syncToBackendServer(manual=false) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if(manual)showToast('Chưa gửi: API máy chủ này chưa có giao thức kiểm soát phiên bản. Dùng Firebase có kiểm tra xung đột hoặc xuất JSON.','info');
         }
 
         async function triggerServerBackupSnapshot() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if(!hasPermission('settings_manage'))return;
             const res=await callBackendApi('POST','/api/backups',{});
             if([200,201].includes(res.status) && res.data?.ok) {showToast('Máy chủ đã xác nhận tạo bản sao lưu.','success');exportFullDatabaseJSON();}
@@ -16165,6 +16011,7 @@
         }
 
         function saveBackendServerUrl() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được cấu hình địa chỉ Máy chủ Backend!', 'error');
                 return;
@@ -16185,6 +16032,7 @@
         }
 
         function resetServerUrlToAuto() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được đặt lại địa chỉ Máy chủ!', 'error');
                 return;
@@ -16195,6 +16043,7 @@
         }
 
         async function testServerEndpoint(method, apiPath) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             const res = await callBackendApi(method, apiPath);
             const viewer = document.getElementById('srv-api-response-viewer');
             const label = document.getElementById('srv-api-test-label');
@@ -16211,12 +16060,14 @@
         }
 
         function clearServerRequestLogs() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
             backendServerState.requestLogs = [];
             renderServerRequestLogsUI();
             showToast('Đã làm sạch nhật ký truy vấn API!');
         }
 
         function renderServerRequestLogsUI() {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return;
             const tbody = document.getElementById('srv-request-log-body');
             if (!tbody) return;
             if (backendServerState.requestLogs.length === 0) {
@@ -16243,6 +16094,7 @@
         }
 
         function refreshServerDashboardUI(healthData = null) {
+            if(!rbacGlobalAdmin() || !safetyAuthenticated())return;
             const engineEl = document.getElementById('srv-stat-engine');
             const uptimeEl = document.getElementById('srv-stat-uptime');
             const latencyEl = document.getElementById('srv-stat-latency');
@@ -16283,6 +16135,7 @@
 
 
         async function safetyDownloadWeeklyBackup() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if(!hasPermission('settings_manage'))return showToast('Cần quyền quản trị hệ thống.','error');
             const backup=await idbGetItem('vovinam_weekly_backup');
             if(!backup?.payload)return showToast('Chưa có bản dự phòng định kỳ.','info');
@@ -16352,7 +16205,7 @@
                 for (const r of p[k]) {
                     if (k === 'students' && (typeof r.id !== 'string' || !r.id.trim() || typeof r.name !== 'string' || !r.name.trim())) throw new Error('Hồ sơ võ sinh phải có mã và họ tên dạng chữ.');
                     if (k === 'classes' && (typeof r.name !== 'string' || !r.name.trim())) throw new Error('Lớp học thiếu tên.');
-                    if(k==='accounts'){if(r.isSuperAdmin!==undefined && typeof r.isSuperAdmin!=='boolean')throw new Error('Cờ quản trị không hợp lệ.');if(r.permissions!==undefined && (!safetyPlain(r.permissions) || Object.values(r.permissions).some(v=>typeof v!=='boolean')))throw new Error('Quyền tài khoản phải có giá trị đúng/sai.');}
+                    if(k==='accounts'){if(r.allClasses!==undefined && typeof r.allClasses!=='boolean')throw new Error('Phạm vi tất cả lớp phải là đúng/sai.');if(r.assignedClassIds!==undefined && (!Array.isArray(r.assignedClassIds) || r.assignedClassIds.some(id=>typeof id!=='string')))throw new Error('Danh sách mã lớp được giao không hợp lệ.');if(r.isSuperAdmin!==undefined && typeof r.isSuperAdmin!=='boolean')throw new Error('Cờ quản trị không hợp lệ.');if(r.permissions!==undefined && (!safetyPlain(r.permissions) || Object.values(r.permissions).some(v=>typeof v!=='boolean')))throw new Error('Quyền tài khoản phải có giá trị đúng/sai.');}
                     if (k === 'accounts' && (typeof r.username !== 'string' || typeof r.passwordHash !== 'string' || !r.id)) throw new Error('Tài khoản thiếu mã, tên đăng nhập hoặc mật khẩu.');
                     if (r[key] !== undefined) {
                         if (typeof r[key] !== 'string' || !r[key] || seen.has(r[key])) throw new Error(`${k}: mã ${key} thiếu hoặc bị trùng.`);
@@ -16399,6 +16252,7 @@
             return Boolean(r && s && (r.studentUid ? r.studentUid===s._uid : r.studentId===s.id && students.filter(x=>x.id===s.id).length===1));
         }
         function safetyTuitionRecord(month,s) {
+            if(!hasPermission('tuition_manage') || !rbacCanStudent(s))return null;
             const map=tuitionRecords[month] || {};
             return map[s._uid] || (students.filter(x=>x.id===s.id).length===1 ? map[s.id] : null);
         }
@@ -16458,6 +16312,7 @@
             return payload;
         }
         async function safetyRecoverPrevious() {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if(!hasPermission('settings_manage'))return showToast('Cần quyền quản trị hệ thống.','error');
             const saved=await idbGetItem('vovinam_recovery_before_change');
             if(!saved?.payload)return showToast('Chưa có bản phục hồi trước thay đổi.','info');
@@ -16466,6 +16321,7 @@
             });
         }
         async function safetyRestore(raw,mode) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if(!hasPermission('settings_manage'))throw new Error('Cần quyền quản trị hệ thống.');
             if(safetyRestoreInProgress)throw new Error('Đang có thao tác khôi phục khác.');
             const p=safetyValidate(raw,mode);safetyAssertCompleteMedia(p);
@@ -16486,6 +16342,7 @@
             } finally { safetyRestoreInProgress=false; }
         }
         function safetyConfirmImport(raw,mode,label) {
+            if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             const p=safetyValidate(raw,mode);
             const missing=[...DATA_COLLECTIONS,...DATA_OBJECTS].filter(k=>!Object.hasOwn(raw,k));
             const note=mode==='replace'&&missing.length?' Các phần thiếu sẽ được đặt rỗng/mặc định; tài khoản được giữ nếu file không có accounts.':'';
@@ -16682,10 +16539,10 @@
             const status=document.getElementById('attendance-save-status');
             if(status){status.textContent=label;status.className='text-xs font-semibold '+(dirty?'text-amber-800':synced?'text-emerald-700':'text-slate-600');}
             const summary=document.getElementById('attendance-save-summary');
-            const temporaryButton=document.getElementById('attendance-save-temporary');if(temporaryButton)temporaryButton.disabled=!hasPermission('attendance_manage') || !document.querySelectorAll('#attendance-table-body tr[data-id]').length;
+            const temporaryButton=document.getElementById('attendance-save-temporary');if(temporaryButton)temporaryButton.disabled=(!hasPermission('attendance_manage') || !rbacCanClassName(document.getElementById('attendance-class')?.value||'')) || !document.querySelectorAll('#attendance-table-body tr[data-id]').length;
             if(summary)summary.textContent=(document.getElementById('attendance-class')?.value||'Chọn lớp')+' · '+(document.getElementById('attendance-date')?.value||'Chọn ngày');
             const button=document.getElementById('attendance-dock-save');
-            if(button)button.disabled=!hasPermission('attendance_manage') || document.querySelectorAll('#attendance-table-body tr[data-id]').length===0;
+            if(button)button.disabled=(!hasPermission('attendance_manage') || !rbacCanClassName(document.getElementById('attendance-class')?.value||'')) || document.querySelectorAll('#attendance-table-body tr[data-id]').length===0;
         }
         function uxAttendanceSaved(key) {
             uxRemoveAttendanceTemporary(key);
@@ -16710,7 +16567,7 @@
             const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
         }
         function uxOpenTodayClass(classId) {
-            const cls=classes.find(c=>c.id===classId);if(!cls)return;
+            const cls=rbacClasses().find(c=>c.id===classId);if(!cls)return;
             document.getElementById('attendance-date').value=uxTodayDate();
             document.getElementById('attendance-class').value=cls.name;
             switchTab('attendance');
@@ -16719,15 +16576,15 @@
         function uxRenderTodayTasks() {
             const host=document.getElementById('overview-today-tasks');if(!host)return;
             const now=new Date(),day=['CN','T2','T3','T4','T5','T6','T7'][now.getDay()],time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-            const today=classes.filter(c=>c.status!=='paused' && (Array.isArray(c.daysArr)?c.daysArr.includes(day):String(c.days||'').includes(day==='CN'?'Chủ Nhật':'Thứ '+day.slice(1))));
+            const today=rbacClasses().filter(c=>c.status!=='paused' && (Array.isArray(c.daysArr)?c.daysArr.includes(day):String(c.days||'').includes(day==='CN'?'Chủ Nhật':'Thứ '+day.slice(1))));
             today.sort((a,b)=>String(a.startTime||'').localeCompare(String(b.startTime||'')));
-            const month=uxTodayDate().slice(0,7),unpaid=students.filter(s=>{const r=safetyTuitionRecord(month,s);return !r || r.status==='unpaid';}).length;
+            const month=uxTodayDate().slice(0,7),unpaid=rbacStudents().filter(s=>{const r=safetyTuitionRecord(month,s);return !r || r.status==='unpaid';}).length;
             const next=today.find(c=>!c.endTime || c.endTime>=time);
             const classesHtml=today.length?today.map(c=>{
                 const finished=Boolean(c.endTime && c.endTime<time),active=c.startTime && c.endTime && c.startTime<=time && c.endTime>=time;
-                return '<button type="button" onclick="uxOpenTodayClass(\''+escapeJsAttr(c.id)+'\')" class="ux-today-class'+(next?.id===c.id?' ux-today-next':'')+'"><span class="min-w-0"><strong class="block break-words">'+escapeHtml(c.name)+'</strong><span class="text-xs text-slate-500">'+escapeHtml(c.time||'Chưa có giờ tập')+' · '+students.filter(s=>s.className===c.name).length+' võ sinh</span></span><span class="text-xs whitespace-nowrap '+(active?'text-emerald-700':'text-slate-500')+'">'+(finished?'Đã kết thúc':active?'Đang tập':'Điểm danh →')+'</span></button>';
+                return '<button type="button" onclick="uxOpenTodayClass(\''+escapeJsAttr(c.id)+'\')" class="ux-today-class'+(next?.id===c.id?' ux-today-next':'')+'"><span class="min-w-0"><strong class="block break-words">'+escapeHtml(c.name)+'</strong><span class="text-xs text-slate-500">'+escapeHtml(c.time||'Chưa có giờ tập')+' · '+rbacStudents().filter(s=>s.className===c.name).length+' võ sinh</span></span><span class="text-xs whitespace-nowrap '+(active?'text-emerald-700':'text-slate-500')+'">'+(finished?'Đã kết thúc':active?'Đang tập':'Điểm danh →')+'</span></button>';
             }).join(''):'<p class="text-sm text-slate-500 py-2">Hôm nay chưa có lớp theo lịch đã tạo.</p>';
-            host.innerHTML='<div class="flex items-center justify-between gap-2 mb-3"><h3 class="text-base font-bold text-slate-900">Việc hôm nay</h3><span class="text-xs text-slate-500">'+now.toLocaleDateString('vi-VN')+'</span></div><div class="ux-today-layout"><div>'+classesHtml+'</div><div class="grid grid-cols-2 gap-2 content-start"><button type="button" onclick="uxOpenCurrentTuition()" class="ux-task-tile"><span class="text-2xl font-bold text-slate-900">'+unpaid+'</span><span class="text-xs text-slate-500">Chưa ghi nhận học phí tháng này</span></button><button type="button" onclick="switchTab(\'approvals\')" class="ux-task-tile"><span class="text-2xl font-bold text-slate-900">'+pendingRequests.length+'</span><span class="text-xs text-slate-500">Yêu cầu chờ duyệt</span></button></div></div>';
+            host.innerHTML='<div class="flex items-center justify-between gap-2 mb-3"><h3 class="text-base font-bold text-slate-900">Việc hôm nay</h3><span class="text-xs text-slate-500">'+now.toLocaleDateString('vi-VN')+'</span></div><div class="ux-today-layout"><div>'+classesHtml+'</div><div class="grid grid-cols-2 gap-2 content-start"><button type="button" onclick="uxOpenCurrentTuition()" class="ux-task-tile"><span class="text-2xl font-bold text-slate-900">'+unpaid+'</span><span class="text-xs text-slate-500">Chưa ghi nhận học phí tháng này</span></button><button type="button" onclick="switchTab(\'approvals\')" class="ux-task-tile"><span class="text-2xl font-bold text-slate-900">'+rbacPendingRequests().length+'</span><span class="text-xs text-slate-500">Yêu cầu chờ duyệt</span></button></div></div>';
         }
         window.addEventListener('beforeunload',event=>{
             if(uxAttendanceHasUnsavedChanges()){event.preventDefault();event.returnValue='';}
@@ -16735,6 +16592,7 @@
 
         // Render the report from its data, never from a cropped/filtered screen capture.
         let sessionImagePages=[];
+        let sessionImageSourceClass='';
         let sessionImagePageIndex=0;
         let sessionImageJob=0;
         let sessionImageBusy=false;
@@ -16862,12 +16720,13 @@
             document.getElementById('session-image-download-all').hidden=sessionImagePages.length===1;
         }
         async function exportCurrentSessionImage() {
+            if(!(rbacCanClassName(document.getElementById('attendance-class')?.value||'') && hasPermission('reports_export') || rbacDeny()))return;
             if(!hasPermission('reports_export'))return showToast('Tài khoản chưa có quyền xuất báo cáo.','error');
             if(sessionImageBusy)return;
             const report=collectCurrentSessionReportData();
             if(!report.items.length)return showToast('Chưa có võ sinh trong buổi học để xuất ảnh.','info');
             if(!report.date || !report.className)return showToast('Hãy chọn ngày và lớp trước khi xuất.','info');
-            closeSessionImageReport();const job=++sessionImageJob;sessionImageBusy=true;
+            closeSessionImageReport();sessionImageSourceClass=report.className;const job=++sessionImageJob;sessionImageBusy=true;
             sessionImageReturnFocus=document.activeElement;
             const modal=document.getElementById('session-image-modal');modal.classList.remove('hidden');
             document.getElementById('session-image-close').focus();
@@ -16898,11 +16757,13 @@
             }finally{if(job===sessionImageJob){sessionImageBusy=false;document.querySelectorAll('[data-export-session-image]').forEach(b=>b.disabled=false);}}
         }
         function downloadSessionImage() {
+            if(!hasPermission('reports_export') || !rbacCanClassName(sessionImageSourceClass))return rbacDeny();
             const page=sessionImagePages[sessionImagePageIndex];if(!page)return;
             const a=document.createElement('a');a.href=page.url;a.download=page.fileName;document.body.appendChild(a);a.click();a.remove();
             showToast('Đã yêu cầu tải ảnh PNG. Kiểm tra mục tải xuống trên thiết bị.','info');
         }
         async function shareSessionImage() {
+            if(!hasPermission('reports_export') || !rbacCanClassName(sessionImageSourceClass))return rbacDeny();
             const page=sessionImagePages[sessionImagePageIndex];if(!page)return;
             try{
                 const file=new File([page.blob],page.fileName,{type:'image/png'});
@@ -16927,6 +16788,7 @@
             return new Blob([...chunks,...central,end],{type:'application/zip'});
         }
         async function downloadAllSessionImages() {
+            if(!hasPermission('reports_export') || !rbacCanClassName(sessionImageSourceClass))return rbacDeny();
             if(!sessionImagePages.length)return;
             if(sessionImagePages.length===1)return downloadSessionImage();
             const pages=sessionImagePages.slice(),button=document.getElementById('session-image-download-all');button.disabled=true;
@@ -16965,6 +16827,7 @@
                 const store=JSON.parse(raw);
                 if(store.version!==1 || !safetyPlain(store.drafts))throw new Error('Bản lưu tạm không đúng cấu trúc.');
                 for(const [key,value] of Object.entries(store.drafts)) {
+                    if(!rbacCanClassName(key.slice(11)))continue;
                     if(!safetyPlain(value) || !safetyPlain(value.rows) || !Array.isArray(value.guests) || !Array.isArray(value.removed))throw new Error('Bản lưu tạm bị lỗi.');
                     const rows={};
                     for(const [uid,row] of Object.entries(value.rows)) {
@@ -16989,12 +16852,16 @@
         }
         function uxWriteAttendanceDraftStore(drafts,selection) {
             const key=uxAttendanceDraftStorageKey();
+            const previous=JSON.parse(localStorage.getItem(key)||'{"drafts":{}}');
+            const preserved=Object.entries(previous.drafts||{}).filter(([session])=>!rbacCanClassName(session.slice(11)));
+            drafts=new Map([...preserved,...drafts]);
             if(!drafts.size){localStorage.removeItem(key);return;}
             const json=JSON.stringify({version:1,updatedAt:Date.now(),selection,drafts:Object.fromEntries(drafts)});
             localStorage.setItem(key,json);
             if(localStorage.getItem(key)!==json)throw new Error('Trình duyệt chưa xác nhận ghi bản lưu tạm.');
         }
         function uxSaveAttendanceTemporary() {
+            if(!(rbacAttendanceWriteAllowed()))return;
             if(!hasPermission('attendance_manage'))return showToast('Cần quyền điểm danh để lưu tạm.','error');
             if(!uxEnsureAttendanceDraftStore())return showToast('Không đọc được kho lưu tạm. Bản cũ được giữ nguyên; hãy xuất JSON/ảnh để bảo vệ dữ liệu đang nhập.','error');
             const date=document.getElementById('attendance-date').value,className=document.getElementById('attendance-class').value,key=getAttendanceKey();
@@ -17014,7 +16881,7 @@
             uxEnsureAttendanceDraftStore();
             const selection=uxPendingDraftSelection;if(!selection)return;
             uxPendingDraftSelection=null;
-            if(!classes.some(c=>c.name===selection.className))return;
+            if(!rbacCanClassName(selection.className))return;
             document.getElementById('attendance-date').value=selection.date;
             document.getElementById('attendance-class').value=selection.className;
         }
@@ -17033,6 +16900,185 @@
         }
         function uxAttendanceHasUnsavedChanges() {
             return [...uxAttendanceDrafts.entries()].some(([key,draft])=>draft.dirty && !uxIsAttendanceTemporarilySaved(key,draft));
+        }
+
+        // Functional permissions and stable class IDs are checked independently.
+        const RBAC_PERMISSIONS={
+            students_view:'Xem danh sách võ sinh',students_request:'Gửi yêu cầu thêm / sửa / xóa võ sinh',students_direct:'Thêm / sửa / xóa võ sinh trực tiếp',
+            classes_view:'Xem lớp học',classes_manage:'Quản lý lớp được giao',attendance_manage:'Điểm danh và lưu tạm',
+            makeup_cross_class:'Xem hồ sơ và chọn học bù từ lớp khác',tuition_manage:'Quản lý học phí',gear_manage:'Quản lý võ phục / đồ tập',
+            tournaments_manage:'Quản lý thi đấu / hồ sơ giải',approvals_manage:'Phê duyệt yêu cầu trong lớp được giao',reports_view:'Xem báo cáo',reports_export:'Xuất CSV / PNG / in báo cáo',
+            settings_manage:'Cài đặt giao diện CLB',accounts_manage:'Quản lý tài khoản trong phạm vi được cấp',full_access:'TOÀN QUYỀN: mọi chức năng và tất cả lớp'
+        };
+        const RBAC_TAB_PERMISSIONS={overview:[],students:['students_view','students_request','students_direct'],classes:['classes_view','classes_manage'],attendance:['attendance_manage'],tuition:['tuition_manage'],gear:['gear_manage'],tournaments:['tournaments_manage'],approvals:['approvals_manage'],reports:['reports_view','reports_export'],permissions:['accounts_manage'],settings:['settings_manage'],server:['full_access']};
+        Object.assign(PERMISSION_LABELS,Object.fromEntries(Object.entries(RBAC_PERMISSIONS).map(([key,name])=>[key,{name,icon:'fa-lock'}])));
+        let rbacCurrentTab='overview';
+        let rbacLastAuthority='';
+        function rbacGlobalAdmin(account=getCurrentAccount()) {return Boolean(account && (account.isSuperAdmin || account.permissions?.full_access===true));}
+        function rbacAllClasses(account=getCurrentAccount()) {
+            return Boolean(account && (rbacGlobalAdmin(account) || account.allClasses===true || account.allClasses===undefined && !Array.isArray(account.assignedClassIds) && account.assignedClasses==='Tất cả các lớp'));
+        }
+        function rbacAssignedIds(account=getCurrentAccount()) {
+            if(!account)return [];
+            if(rbacAllClasses(account))return classes.map(c=>c.id);
+            if(Array.isArray(account.assignedClassIds))return [...new Set(account.assignedClassIds.filter(id=>typeof id==='string' && classes.some(c=>c.id===id)))];
+            const text=String(account.assignedClasses||'').trim();
+            return classes.filter(c=>c.name===text || text.split(/[,;\n]/).map(x=>x.trim()).includes(c.name)).map(c=>c.id);
+        }
+        function rbacClassByName(name) {return classes.find(c=>c.name===name) || classes.find(c=>Array.isArray(c.previousNames) && c.previousNames.includes(name));}
+        function rbacCanClassId(id) {return Boolean(safetyAuthenticated() && (rbacAllClasses() || rbacAssignedIds().includes(id)));}
+        function rbacCanClassName(name) {const cls=rbacClassByName(name);return Boolean(safetyAuthenticated() && (rbacAllClasses() || cls && rbacCanClassId(cls.id)));}
+        function rbacSameClass(a,b) {return a===b || Boolean(rbacClassByName(a)?.id && rbacClassByName(a)?.id===rbacClassByName(b)?.id);}
+        function rbacStudentClassId(student) {return rbacClassByName(student?.className)?.id || (classes.some(c=>c.id===student?.classId)?student.classId:'');}
+        function rbacCanStudent(student) {return Boolean(student && safetyAuthenticated() && (rbacAllClasses() || rbacCanClassId(rbacStudentClassId(student))));}
+        function rbacCanCrossMakeup() {return hasPermission('attendance_manage') && hasPermission('makeup_cross_class') && rbacCanClassName(document.getElementById('attendance-class')?.value||'');}
+        function rbacClasses() {return safetyAuthenticated()?classes.filter(c=>rbacCanClassId(c.id)):[];}
+        function rbacStudents() {return safetyAuthenticated()?students.filter(rbacCanStudent):[];}
+        function rbacMakeupStudents() {return rbacCanCrossMakeup()?students:rbacStudents();}
+        function rbacMakeupClasses() {return rbacCanCrossMakeup()?classes:rbacClasses();}
+        function rbacLookupFull(ref) {return students.find(s=>s._uid===ref) || safetyResolve(ref);}
+        function rbacEntityStudent(entity) {return entity?.studentUid?students.find(s=>s._uid===entity.studentUid):safetyResolve(entity?.studentId);}
+        function rbacCanEntity(entity) {
+            if(!entity)return false;
+            if(rbacAllClasses() && safetyAuthenticated())return true;
+            const student=rbacEntityStudent(entity);
+            return student?rbacCanStudent(student):rbacCanClassId(entity.classId||entity.data?.classId||'') || rbacCanClassName(entity.className||entity.data?.className||'');
+        }
+        function rbacAttendanceRecords() {return Object.fromEntries(Object.entries(attendanceRecords).filter(([key])=>rbacCanClassName(parseAttendanceKey(key).className)));}
+        function rbacTuitionRecords() {
+            if(!hasPermission('tuition_manage'))return {};
+            return Object.fromEntries(Object.entries(tuitionRecords).map(([month,map])=>[month,Object.fromEntries(Object.entries(map).filter(([ref,r])=>rbacCanStudent(r.studentUid?students.find(s=>s._uid===r.studentUid):rbacLookupFull(ref))))]));
+        }
+        function rbacGearOrders() {return hasPermission('gear_manage')?gearOrders.filter(rbacCanEntity):[];}
+        function rbacTournamentEntries() {return hasPermission('tournaments_manage')?tournamentEntries.filter(rbacCanEntity):[];}
+        function rbacPendingRequests() {return hasPermission('approvals_manage')?pendingRequests.filter(r=>rbacCanEntity(r) && (!r.data?.className || rbacCanClassName(r.data.className))):[];}
+        function rbacSessionStudents() {
+            const name=document.getElementById('attendance-class')?.value||'';
+            if(!rbacCanClassName(name))return [];
+            const key=getAttendanceKey(),saved=attendanceRecords[key]||[];
+            return students.filter(s=>rbacCanStudent(s) || rbacCanCrossMakeup() || saved.some(r=>safetyRecordMatches(r,s)));
+        }
+        function rbacSessionStudentByRef(ref) {return rbacSessionStudents().find(s=>s._uid===ref || s.id===ref) || null;}
+        function rbacCanTab(tab) {return safetyAuthenticated() && Boolean(RBAC_TAB_PERMISSIONS[tab] && (tab==='overview' || rbacGlobalAdmin() || RBAC_TAB_PERMISSIONS[tab].some(hasPermission)));}
+        function rbacDeny(message='Tài khoản không có quyền hoặc lớp này không thuộc phạm vi được giao.') {showToast(message,'error');return false;}
+        function rbacRequire(permission,className=null) {return (hasPermission(permission) && (className===null || rbacCanClassName(className))) || rbacDeny();}
+        function rbacRequireStudent(ref,permission) {return (hasPermission(permission) && rbacCanStudent(rbacLookupFull(ref))) || rbacDeny();}
+        function rbacRequireEntity(kind,id,permission) {const rows=kind==='gear'?gearOrders:tournamentEntries;return (hasPermission(permission) && rbacCanEntity(rows.find(r=>r.id===id))) || rbacDeny();}
+        function rbacStudentWriteAllowed(ref,className) {
+            if(!hasPermission('students_direct') && !hasPermission('students_request'))return rbacDeny();
+            if(!rbacCanClassName(className))return rbacDeny('Không được thêm hoặc chuyển võ sinh sang lớp ngoài phạm vi được giao.');
+            if(ref && !rbacCanStudent(rbacLookupFull(ref)))return rbacDeny();
+            return true;
+        }
+        function rbacAttendanceWriteAllowed() {
+            if(!rbacRequire('attendance_manage',document.getElementById('attendance-class')?.value||''))return false;
+            const allowed=new Set(rbacSessionStudents().map(s=>s._uid));
+            for(const row of document.querySelectorAll('#attendance-table-body tr[data-id]'))if(!allowed.has(row.getAttribute('data-id')))return rbacDeny('Danh sách chứa võ sinh chưa được phép điểm danh trong lớp này.');
+            return true;
+        }
+        function rbacAccountScopeLabel(account) {return rbacAllClasses(account)?'Tất cả các lớp':rbacAssignedIds(account).map(id=>classes.find(c=>c.id===id)?.name).filter(Boolean).join(', ')||'Chưa được giao lớp';}
+        function rbacCanManageAccount(target) {
+            if(!hasPermission('accounts_manage'))return false;
+            if(!target)return true;
+            if(target.isSuperAdmin)return Boolean(getCurrentAccount()?.isSuperAdmin);
+            if(rbacGlobalAdmin())return true;
+            if(rbacGlobalAdmin(target) || rbacAllClasses(target) && !rbacAllClasses())return false;
+            if(rbacAssignedIds(target).some(id=>!rbacAssignedIds().includes(id)))return false;
+            return Object.entries(target.permissions||{}).every(([key,value])=>!value || hasPermission(key));
+        }
+        function rbacAccountsForManagement() {return accounts.filter(a=>a.id===currentAccountId || rbacCanManageAccount(a));}
+        function rbacValidateAccountGrant(id,permissions,ids,allClasses) {
+            const target=accounts.find(a=>a.id===id);
+            if(!rbacCanManageAccount(target))return rbacDeny('Không được chỉnh sửa tài khoản có quyền hoặc phạm vi lớn hơn mình.');
+            if(!rbacGlobalAdmin()) {
+                if(allClasses && !rbacAllClasses())return rbacDeny('Bạn không được cấp phạm vi tất cả lớp.');
+                if(ids.some(classId=>!rbacAssignedIds().includes(classId)))return rbacDeny();
+                if(Object.entries(permissions).some(([key,value])=>value && !hasPermission(key)))return rbacDeny('Không được cấp quyền mà tài khoản của bạn chưa có.');
+            }
+            return true;
+        }
+        function rbacAuthorityFingerprint() {const a=getCurrentAccount();return JSON.stringify(a?[a.id,a.status,a.isSuperAdmin,a.permissions,a.allClasses,rbacAssignedIds(a)]:null);}
+        function rbacRefreshVisibility() {
+            const authority=rbacAuthorityFingerprint();
+            if(rbacLastAuthority && authority!==rbacLastAuthority) {
+                for(const id of ['detail-modal','student-modal','class-modal','class-students-modal','tuition-modal','gear-modal','gear-receipt-modal','tournament-modal','dossier-checklist-modal','account-modal','session-report-modal'])document.getElementById(id)?.classList.add('hidden');
+                if(typeof closeSessionImageReport==='function')closeSessionImageReport();
+                currentGuestList=[];lastLoadedAttendanceKey='';selectedStudentUids.clear();
+            }
+            const changed=Boolean(rbacLastAuthority && authority!==rbacLastAuthority);
+            rbacLastAuthority=authority;
+            if(changed && safetyAuthenticated()){uxEnsureAttendanceDraftStore();setTimeout(()=>refreshAllUiViewsSafely(false),0);}
+            for(const tab of Object.keys(RBAC_TAB_PERMISSIONS))for(const id of ['tab-btn-'+tab,'mobile-tab-'+tab]){
+                const el=document.getElementById(id);if(el)el.classList.toggle('rbac-denied',!rbacCanTab(tab));
+            }
+            for(const el of document.querySelectorAll('[onclick]')) {
+                const code=el.getAttribute('onclick')||'';
+                let actionAllowed=true;
+                if(/(?:openStudentModal|editStudent|deleteStudent|bulkDeleteSelectedStudents|toggleSelectStudent|toggleSelectAllStudents)\(/.test(code))actionAllowed=hasPermission('students_direct')||hasPermission('students_request');
+                if(/(?:confirmStudentDuplicate|confirmDuplicateGroup|confirmAllStudentDuplicates|resetConfirmedDuplicates|quickCreateAndAddMakeupStudent|quickCreateNewMakeupFromModal)\(/.test(code))actionAllowed=hasPermission('students_direct');
+                if(/(?:openGearOrderModal|toggleGear|deleteGearOrder|clearAllGearOrders)\(/.test(code))actionAllowed=hasPermission('gear_manage');
+                if(/(?:openTournamentModal|toggleTournament|deleteTournamentEntry|clearAllTournamentEntries|openDossierModal)\(/.test(code))actionAllowed=hasPermission('tournaments_manage');
+                if(/(?:export|printSessionReport|printReport|printTournamentTeamList|copySessionReportText)\w*\(/.test(code))actionAllowed=hasPermission('reports_export');
+                el.classList.toggle('rbac-action-denied',!actionAllowed);
+                const target=code.match(/switchTab\(['"]([a-z]+)['"]\)/)?.[1];
+                if(target && Object.hasOwn(RBAC_TAB_PERMISSIONS,target))el.classList.toggle('rbac-denied',!rbacCanTab(target));
+            }
+            const systemAllowed=['permissions','settings','server'].some(rbacCanTab);
+            document.getElementById('system-nav-wrapper')?.classList.toggle('rbac-denied',!systemAllowed);
+            for(const [id,permission] of [['detail-btn-gear','gear_manage'],['detail-btn-tour','tournaments_manage'],['detail-btn-tuition','tuition_manage']])document.getElementById(id)?.classList.toggle('rbac-denied',!hasPermission(permission));
+            for(const [id,permission] of [['detail-tuition-status','tuition_manage'],['detail-recent-gear','gear_manage'],['detail-recent-tour','tournaments_manage']])document.getElementById(id)?.parentElement?.classList.toggle('rbac-denied',!hasPermission(permission));
+            for(const el of document.querySelectorAll('#tab-settings button,#tab-settings input,#tab-settings textarea,#tab-settings select')){
+                const branding=Boolean(el.closest('#settings-form'));
+                if(!branding)el.classList.toggle('rbac-denied',!rbacGlobalAdmin());
+            }
+            const addClass=document.getElementById('btn-add-class');if(addClass)addClass.disabled=!hasPermission('classes_manage')||!rbacAllClasses();
+            rbacApplyActionVisibility();
+            const notice=document.getElementById('perm-matrix-notice');if(notice)notice.textContent=hasPermission('accounts_manage')?'Sửa quyền và lớp trong phạm vi được cấp':'Chưa có quyền quản lý tài khoản';
+            const addAccount=document.getElementById('btn-add-account');if(addAccount)addAccount.disabled=!hasPermission('accounts_manage');
+            if(!rbacCanTab(rbacCurrentTab)){
+                for(const tab of Object.keys(RBAC_TAB_PERMISSIONS))document.getElementById('tab-'+tab)?.classList.toggle('hidden',tab!=='overview');
+                rbacCurrentTab='overview';
+            }
+        }
+        function rbacRenderAccountControls(account=null) {
+            const host=document.getElementById('rbac-permission-options');if(!host)return;
+            host.innerHTML=Object.entries(RBAC_PERMISSIONS).map(([key,label])=>'<label class="flex items-start gap-2 border rounded-xl p-3 text-xs '+(key==='full_access'?'bg-amber-50 border-amber-300 sm:col-span-2':'bg-white border-slate-200')+'"><input type="checkbox" id="perm-'+key.replace(/_/g,'-')+'" class="w-4 h-4 mt-0.5" '+((account?.isSuperAdmin || account?.permissions?.[key])?'checked ':'')+((!hasPermission(key) || account?.isSuperAdmin)?'disabled ':'')+'><span>'+escapeHtml(label)+'</span></label>').join('');
+            const all=document.getElementById('rbac-all-classes');all.checked=Boolean(account && rbacAllClasses(account));all.disabled=Boolean(account?.isSuperAdmin || !rbacAllClasses());
+            const chosen=new Set(rbacAssignedIds(account));
+            document.getElementById('rbac-class-options').innerHTML=rbacClasses().map(c=>'<label class="flex items-center gap-2 text-xs p-2 rounded-lg border bg-white"><input type="checkbox" name="rbac-class-id" value="'+escapeHtml(c.id)+'" '+(chosen.has(c.id)?'checked':'')+' '+(account?.isSuperAdmin?'disabled':'')+'><span>'+escapeHtml(c.name)+'</span></label>').join('')||'<p class="text-xs text-slate-500">Chưa có lớp được phép phân công.</p>';
+        }
+        function rbacReadAccountControls() {
+            const permissions=Object.fromEntries(Object.keys(RBAC_PERMISSIONS).map(key=>[key,Boolean(document.getElementById('perm-'+key.replace(/_/g,'-'))?.checked)]));
+            const assignedClassIds=[...document.querySelectorAll('input[name="rbac-class-id"]:checked')].map(el=>el.value).filter(id=>classes.some(c=>c.id===id));
+            const allClasses=Boolean(document.getElementById('rbac-all-classes')?.checked);
+            return {permissions,assignedClassIds,allClasses};
+        }
+        function rbacApplyRolePreset(preset) {
+            const sets={full_admin:Object.keys(RBAC_PERMISSIONS),training_manager:['students_view','students_direct','classes_view','classes_manage','attendance_manage','approvals_manage','reports_view','reports_export'],coach:['students_view','students_request','attendance_manage','reports_view','reports_export'],accountant:['students_view','tuition_manage','gear_manage','reports_view','reports_export'],assistant:['attendance_manage']};
+            const wanted=new Set(sets[preset]||[]);
+            for(const key of Object.keys(RBAC_PERMISSIONS)){const el=document.getElementById('perm-'+key.replace(/_/g,'-'));if(el && !el.disabled)el.checked=wanted.has(key) && hasPermission(key);}
+            if(preset==='full_admin' && rbacGlobalAdmin()){const all=document.getElementById('rbac-all-classes');if(all && !all.disabled)all.checked=true;}
+            if(preset==='full_admin' && !rbacGlobalAdmin())rbacDeny('Chỉ tài khoản toàn quyền được cấp toàn quyền cho người khác.');
+        }
+
+
+        function rbacApplyActionVisibility() {
+            for(const el of document.querySelectorAll('[onclick]')){
+                const code=el.getAttribute('onclick')||'';let allowed=true;
+                if(/(?:openStudentModal|editStudent|deleteStudent|bulkDeleteSelectedStudents)\(/.test(code))allowed=hasPermission('students_direct')||hasPermission('students_request');
+                if(/(?:confirmStudentDuplicate|confirmDuplicateGroup|confirmAllStudentDuplicates|resetConfirmedDuplicates|quickCreateAndAddMakeupStudent|quickCreateNewMakeupFromModal)\(/.test(code))allowed=hasPermission('students_direct');
+                if(/(?:openClassModal|editClass|deleteClass|toggleClassStatus)\(/.test(code))allowed=hasPermission('classes_manage');
+                if(/(?:openGearOrderModal|toggleGear\w*|deleteGearOrder|clearAllGearOrders)\(/.test(code))allowed=hasPermission('gear_manage');
+                if(/(?:openTournamentModal|toggleTournament\w*|deleteTournamentEntry|clearAllTournamentEntries|openDossierModal)\(/.test(code))allowed=hasPermission('tournaments_manage');
+                if(/(?:openAccountModal|openAdminResetPasswordModal|deleteAccount|toggleAccountLock)\(/.test(code))allowed=hasPermission('accounts_manage');
+                if(/uxOpenCurrentTuition\(/.test(code))allowed=hasPermission('tuition_manage');
+                if(/(?:export\w*|printSessionReport|printReport|printTournamentTeamList|copySessionReportText)\(/.test(code))allowed=hasPermission('reports_export');
+                if(/(?:exportFullDatabaseJSON|copyFullDatabaseJSONText|importFullDatabaseJSON|applyPastedDatabaseJSON|safetyRecoverPrevious|safetyDownloadWeeklyBackup|openProtectedCloudSync|openCloudSyncSettingsSection|pushToCloud|pullFromCloud|copyCloudSyncShareCode|copyCloudSyncShareUrl)\(/.test(code))allowed=rbacGlobalAdmin()&&safetyAuthenticated();
+                const tab=code.match(/switchTab\(['"]([a-z]+)['"]\)/)?.[1];if(tab)allowed=allowed&&rbacCanTab(tab);
+                el.classList.toggle('rbac-action-denied',!allowed);
+            }
+            for(const el of document.querySelectorAll('#tab-students .student-select-checkbox,#select-all-students-cb')){el.disabled=!hasPermission('students_direct')&&!hasPermission('students_request');el.classList.toggle('rbac-action-denied',el.disabled);}
+            for(const section of document.querySelectorAll('#tab-settings > div'))section.classList.toggle('rbac-denied',!rbacGlobalAdmin()&&!section.querySelector('#settings-form'));
         }
 
 </script>
