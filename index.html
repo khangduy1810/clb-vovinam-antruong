@@ -1216,6 +1216,7 @@
                             <i class="fa-solid fa-file-lines"></i>
                             <span>Xem Báo Cáo Buổi Học</span>
                         </button>
+                        <button type="button" data-export-session-image onclick="exportCurrentSessionImage()" class="px-4 py-2 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 min-h-[44px] disabled:opacity-50"><i class="fa-solid fa-image" aria-hidden="true"></i><span>Xuất ảnh PNG</span></button>
                         <button onclick="exportCurrentSessionCSV()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
                             <i class="fa-solid fa-file-excel"></i>
                             <span>Xuất Báo Cáo (CSV)</span>
@@ -3623,6 +3624,7 @@
                                     <th class="py-2.5 px-3 w-12 text-center">STT</th>
                                     <th class="py-2.5 px-3">Mã Số</th>
                                     <th class="py-2.5 px-3">Họ và Tên Võ Sinh</th>
+                                    <th class="py-2.5 px-3">Năm Sinh</th>
                                     <th class="py-2.5 px-3">Cấp Đai</th>
                                     <th class="py-2.5 px-3">Hình Thức (Lớp Chính / Học Thêm)</th>
                                     <th class="py-2.5 px-3 text-center">Trạng Thái Điểm Danh</th>
@@ -3667,10 +3669,37 @@
                         <i class="fa-solid fa-print"></i>
                         <span>In Phiếu Báo Cáo</span>
                     </button>
+                    <button type="button" data-export-session-image onclick="exportCurrentSessionImage()" class="px-4 py-2 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 min-h-[44px] disabled:opacity-50"><i class="fa-solid fa-image" aria-hidden="true"></i><span>Xuất ảnh PNG</span></button>
                     <button type="button" onclick="exportCurrentSessionCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md">
                         <i class="fa-solid fa-file-excel"></i>
                         <span>Tải Báo Cáo Excel (CSV)</span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image report preview: all rows are rendered into numbered PNG pages. -->
+    <div id="session-image-modal" class="fixed inset-0 z-[70] hidden bg-slate-900/70 flex items-center justify-center p-2 sm:p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="session-image-title">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[94dvh] flex flex-col overflow-hidden">
+            <div class="px-4 py-3 border-b flex items-center justify-between gap-3">
+                <div><h3 id="session-image-title" class="font-bold text-slate-900">Báo cáo điểm danh bằng ảnh</h3><p class="text-xs text-slate-500">Bấm vào ảnh để mở kích thước gốc, hoặc lưu và gửi qua Zalo.</p></div>
+                <button type="button" id="session-image-close" onclick="closeSessionImageReport()" aria-label="Đóng báo cáo ảnh" class="w-11 h-11 rounded-xl bg-slate-100 text-slate-700 shrink-0"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <p id="session-image-message" class="px-4 py-3 text-xs text-slate-600" role="status" aria-live="polite"></p>
+            <div class="flex-1 min-h-0 overflow-auto bg-slate-100 p-2 sm:p-4">
+                <a id="session-image-original" target="_blank" rel="noopener"><img id="session-image-preview" alt="Ảnh báo cáo sẽ hiển thị tại đây" class="w-full h-auto bg-white shadow-sm rounded-lg"></a>
+            </div>
+            <div class="border-t p-3 space-y-3 bg-white" style="padding-bottom: max(12px, env(safe-area-inset-bottom))">
+                <div class="flex items-center justify-center gap-3">
+                    <button type="button" id="session-image-prev" onclick="showSessionImagePage(sessionImagePageIndex-1)" class="min-h-[44px] px-3 rounded-xl border disabled:opacity-30">← Trước</button>
+                    <span id="session-image-page-label" class="text-sm font-semibold text-slate-700">Đang tạo ảnh…</span>
+                    <button type="button" id="session-image-next" onclick="showSessionImagePage(sessionImagePageIndex+1)" class="min-h-[44px] px-3 rounded-xl border disabled:opacity-30">Sau →</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button type="button" id="session-image-download" onclick="downloadSessionImage()" disabled class="min-h-[44px] px-4 rounded-xl bg-vovinam-blue text-white font-bold text-sm disabled:opacity-40">Lưu ảnh PNG</button>
+                    <button type="button" id="session-image-share" onclick="shareSessionImage()" disabled class="min-h-[44px] px-4 rounded-xl border border-blue-200 text-vovinam-blue font-bold text-sm disabled:opacity-40">Chia sẻ ảnh</button>
+                    <button type="button" id="session-image-download-all" onclick="downloadAllSessionImages()" disabled class="min-h-[44px] px-4 rounded-xl border text-slate-700 font-semibold text-sm disabled:opacity-40">Tải tất cả (ZIP)</button>
                 </div>
             </div>
         </div>
@@ -10562,8 +10591,8 @@
                 let categoryText = 'Lớp chính';
                 if (isExtra) {
                     categoryText = (s.className && s.className !== className)
-                        ? `Học thêm (Lớp gốc: ${s.className})`
-                        : 'Học thêm (Tăng cường/Bù)';
+                        ? `Học bù (Lớp gốc: ${s.className})`
+                        : 'Học bù / tăng cường';
                     extraClassCount++;
                 } else {
                     mainClassCount++;
@@ -10585,9 +10614,10 @@
                     stt: index + 1,
                     id: s.id,
                     name: s.name,
+                    birthYear: String(s.dob || '').match(/^(\d{4})(?:-|$)/)?.[1] || '',
                     belt: s.belt,
                     isExtra,
-                    categoryShort: isExtra ? 'Học thêm' : 'Lớp chính',
+                    categoryShort: isExtra ? 'Học bù' : 'Lớp chính',
                     categoryText,
                     status,
                     statusText,
@@ -10708,6 +10738,7 @@
                         <td class="py-2.5 px-3 text-center font-bold text-slate-400">${item.stt}</td>
                         <td class="py-2.5 px-3 font-mono font-bold text-slate-700">${escapeHtml(item.id)}</td>
                         <td class="py-2.5 px-3 font-bold text-slate-800">${escapeHtml(item.name)}</td>
+                        <td class="py-2.5 px-3">${escapeHtml(item.birthYear || '—')}</td>
                         <td class="py-2.5 px-3">${getBeltBadge(item.belt)}</td>
                         <td class="py-2.5 px-3">${typeBadge}</td>
                         <td class="py-2.5 px-3 text-center">${statusBadge}</td>
@@ -10720,7 +10751,7 @@
             const tfoot = document.getElementById('sr-table-foot');
             tfoot.innerHTML = `
                 <tr>
-                    <td colspan="4" class="py-3 px-4 text-right uppercase text-xs tracking-wider text-slate-600">TỔNG KẾT BUỔI HỌC:</td>
+                    <td colspan="5" class="py-3 px-4 text-right uppercase text-xs tracking-wider text-slate-600">TỔNG KẾT BUỔI HỌC:</td>
                     <td class="py-3 px-3 text-xs text-slate-700">Tổng: <strong>${report.total}</strong> (Chính: ${report.mainClassCount}, Thêm: ${report.extraClassCount})</td>
                     <td class="py-3 px-3 text-center text-xs">
                         <span class="text-emerald-600 mr-2">Có mặt: ${report.presentCount}</span> |
@@ -10746,7 +10777,7 @@
             report.items.forEach(item => {
                 const icon = item.status === 'present' ? '✅' : (item.status === 'absent' ? '❌' : '⚠️');
                 const notePart = item.note ? ` - Ghi chú: ${item.note}` : '';
-                lines.push(`${item.stt}. ${item.name} [${item.categoryShort}] ➔ ${icon} ${item.statusText}${notePart}`);
+                lines.push(`${item.stt}. ${item.name} (${item.birthYear || 'Chưa có năm sinh'}) [${item.categoryShort}] ➔ ${icon} ${item.statusText}${notePart}`);
             });
 
             document.getElementById('sr-text-summary').value = lines.join('\n');
@@ -10818,13 +10849,14 @@
             csv += `Số võ sinh Vắng:,"${report.totalAbsent} võ sinh (Vắng không phép: ${report.absentUnexcusedCount} | Có phép/Trễ: ${report.absentExcusedCount})"\n\n`;
 
             csv += `DANH SÁCH CHI TIẾT VÕ SINH\n`;
-            csv += `STT,Mã Định Danh,Họ và Tên Võ Sinh,Cấp Đai,Lớp Chính / Học Thêm,Trạng Thái (Có Mặt / Vắng),Ghi Chú Buổi Học\n`;
+            csv += `STT,Mã Định Danh,Họ và Tên Võ Sinh,Năm Sinh,Cấp Đai,Lớp Chính / Học Thêm,Trạng Thái (Có Mặt / Vắng),Ghi Chú Buổi Học\n`;
 
             report.items.forEach(item => {
                 const row = [
                     sanitizeCsvCell(item.stt),
                     sanitizeCsvCell(item.id),
                     sanitizeCsvCell(item.name),
+                    sanitizeCsvCell(item.birthYear || ''),
                     sanitizeCsvCell(item.belt),
                     sanitizeCsvCell(item.categoryText),
                     sanitizeCsvCell(item.statusText),
@@ -10834,7 +10866,7 @@
             });
             logSecurityEvent('Xuất file an toàn', `Xuất báo cáo buổi học lớp ${report.className} ra CSV (Đã khử Formula Injection)`, 'info');
 
-            csv += `\n"TỔNG CỘNG","","Tổng số: ${report.total} võ sinh","","Lớp chính: ${report.mainClassCount} | Học thêm: ${report.extraClassCount}","Có mặt: ${report.presentCount} | Vắng: ${report.totalAbsent}","Tỷ lệ có mặt: ${report.presentRate}%"\n`;
+            csv += `\n"TỔNG CỘNG","","Tổng số: ${report.total} võ sinh","","","Lớp chính: ${report.mainClassCount} | Học thêm: ${report.extraClassCount}","Có mặt: ${report.presentCount} | Vắng: ${report.totalAbsent}","Tỷ lệ có mặt: ${report.presentRate}%"\n`;
 
             const safeClassName = report.className.replace(/[^a-zA-Z0-9_-]/g, '_');
             downloadFile(csv, `Bao_Cao_Diem_Danh_${safeClassName}_${report.date}.csv`, 'text/csv;charset=utf-8;');
@@ -16698,6 +16730,212 @@
         window.addEventListener('beforeunload',event=>{
             if([...uxAttendanceDrafts.values()].some(d=>d.dirty)){event.preventDefault();event.returnValue='';}
         });
+
+        // Render the report from its data, never from a cropped/filtered screen capture.
+        let sessionImagePages=[];
+        let sessionImagePageIndex=0;
+        let sessionImageJob=0;
+        let sessionImageBusy=false;
+        let sessionImageReturnFocus=null;
+        const SESSION_IMAGE_WIDTH=1280;
+        const SESSION_IMAGE_MAX_HEIGHT=3000;
+        const SESSION_IMAGE_COLUMNS=[60,290,100,220,210,320];
+        function sessionImageWrap(ctx,text,width,font) {
+            ctx.font=font;const output=[];
+            for(const paragraph of String(text??'').replace(/\r/g,'').split('\n')) {
+                let line='';
+                for(const word of paragraph.split(/\s+/).filter(Boolean)) {
+                    const candidate=line?line+' '+word:word;
+                    if(ctx.measureText(candidate).width<=width){line=candidate;continue;}
+                    if(line){output.push(line);line='';}
+                    for(const char of Array.from(word)){
+                        if(line && ctx.measureText(line+char).width>width){output.push(line);line='';}
+                        line+=char;
+                    }
+                }
+                output.push(line);
+            }return output;
+        }
+        function sessionImageCell(ctx,text,width,font='20px Arial, sans-serif',color='#334155') {
+            return sessionImageWrap(ctx,text,width-24,font).map(text=>({text,font,color}));
+        }
+        function sessionImageLayout(report,meta) {
+            const probe=document.createElement('canvas');probe.width=SESSION_IMAGE_WIDTH;probe.height=1;
+            const ctx=probe.getContext('2d');if(!ctx)throw new Error('Trình duyệt không hỗ trợ tạo ảnh Canvas.');
+            const top=[];let y=32;
+            const add=(text,font,color,width=1200,lineHeight=28)=>{
+                const lines=sessionImageWrap(ctx,text,width,font);for(const text of lines){top.push({text,font,color,x:40,y,lineHeight});y+=lineHeight;}
+            };
+            add(meta.clubTitle,'700 30px Arial, sans-serif','#ffffff',1200,38);
+            add('BÁO CÁO ĐIỂM DANH BUỔI HỌC','700 25px Arial, sans-serif','#dbeafe',1200,34);
+            const bandHeight=y+16;y=bandHeight+24;
+            add('Lớp: '+report.className,'700 25px Arial, sans-serif','#0f172a',1200,34);
+            add('Ngày: '+report.dateFormatted+(report.timeStr?'  ·  Giờ tập: '+report.timeStr:''),'20px Arial, sans-serif','#475569');
+            add('Người điểm danh: '+meta.recorder,'20px Arial, sans-serif','#475569');
+            add(meta.saveLabel,'18px Arial, sans-serif',meta.draft?'#92400e':'#64748b',1200,26);
+            const summaryY=y+8; y=summaryY+100;
+            const mainPresent=report.items.filter(r=>!r.isExtra && r.status==='present').length;
+            const extraPresent=report.items.filter(r=>r.isExtra && r.status==='present').length;
+            add(`Vắng không phép: ${report.absentUnexcusedCount}  ·  Có phép / Trễ: ${report.absentExcusedCount}`,'20px Arial, sans-serif','#475569');
+            add(`Lớp chính: ${mainPresent} có mặt / ${report.mainClassCount-mainPresent} vắng  ·  Lớp bù: ${extraPresent} có mặt / ${report.extraClassCount-extraPresent} vắng`,'18px Arial, sans-serif','#64748b',1200,26);
+            y+=14;const tableY=y,headerHeight=52,bodyTop=tableY+headerHeight,footerHeight=100;
+            const capacity=SESSION_IMAGE_MAX_HEIGHT-bodyTop-footerHeight;
+            if(capacity<140)throw new Error('Thông tin tiêu đề quá dài để bố trí báo cáo. Hãy rút gọn tên lớp hoặc thông tin CLB.');
+            const maxLines=Math.max(1,Math.floor((capacity-24)/28));
+            const pages=[];let page={rows:[],height:0};
+            const flush=()=>{if(page.rows.length){pages.push(page);page={rows:[],height:0};}};
+            for(const item of report.items) {
+                const name=sessionImageCell(ctx,item.name,SESSION_IMAGE_COLUMNS[1],'700 21px Arial, sans-serif','#0f172a');
+                if(item.id)name.push(...sessionImageCell(ctx,'Mã: '+item.id,SESSION_IMAGE_COLUMNS[1],'16px Arial, sans-serif','#64748b'));
+                const color=item.status==='present'?'#047857':item.status==='absent'?'#b91c1c':'#92400e';
+                const cells=[sessionImageCell(ctx,item.stt,60),name,sessionImageCell(ctx,item.birthYear||'—',100),sessionImageCell(ctx,item.categoryText,220),sessionImageCell(ctx,item.statusText,210,'700 20px Arial, sans-serif',color),sessionImageCell(ctx,item.note||'—',320)];
+                const totalLines=Math.max(...cells.map(c=>c.length));
+                for(let offset=0;offset<totalLines;offset+=maxLines) {
+                    const count=Math.min(maxLines,totalLines-offset),height=Math.max(68,count*28+24);
+                    if(page.height+height>capacity)flush();
+                    const visible=cells.map((cell,column)=>column===0?cell:cell.length<=maxLines && offset>0 && column!==5?cell:cell.slice(offset,offset+maxLines));
+                    page.rows.push({cells:visible,height,stt:item.stt,continuation:offset>0});page.height+=height;
+                }
+            }
+            flush();probe.width=1;probe.height=1;
+            return {pages,top,bandHeight,summaryY,tableY,bodyTop,headerHeight,footerHeight};
+        }
+        function renderSessionReportImagePage(report,meta,layout,pageIndex) {
+            const page=layout.pages[pageIndex],canvas=document.createElement('canvas');
+            canvas.width=SESSION_IMAGE_WIDTH;canvas.height=Math.ceil(layout.bodyTop+page.height+layout.footerHeight);
+            if(canvas.height>SESSION_IMAGE_MAX_HEIGHT)throw new Error('Ảnh vượt giới hạn kích thước an toàn.');
+            const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Không đủ bộ nhớ để tạo ảnh.');
+            ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textBaseline='top';
+            ctx.fillStyle='#06386b';ctx.fillRect(0,0,canvas.width,layout.bandHeight);
+            for(const line of layout.top){ctx.font=line.font;ctx.fillStyle=line.color;ctx.fillText(line.text,line.x,line.y);}
+            const cards=[['TỔNG SỐ',report.total,'#0f172a'],['LỚP CHÍNH',report.mainClassCount,'#0056b3'],['LỚP BÙ',report.extraClassCount,'#6d28d9'],['CÓ MẶT',report.presentCount,'#047857'],['VẮNG',report.totalAbsent,'#b91c1c'],['TỶ LỆ CÓ MẶT',report.presentRate+'%','#0056b3']];
+            for(let i=0;i<cards.length;i++){
+                const x=40+i*202;ctx.fillStyle='#f1f5f9';ctx.fillRect(x,layout.summaryY,190,84);
+                ctx.font='700 15px Arial, sans-serif';ctx.fillStyle='#64748b';ctx.fillText(cards[i][0],x+12,layout.summaryY+12);
+                ctx.font='700 32px Arial, sans-serif';ctx.fillStyle=cards[i][2];ctx.fillText(String(cards[i][1]),x+12,layout.summaryY+36);
+            }
+            let x=40;ctx.fillStyle='#e8f0fa';ctx.fillRect(40,layout.tableY,1200,layout.headerHeight);
+            const headings=['STT','HỌ VÀ TÊN','NĂM SINH','PHÂN LOẠI','TRẠNG THÁI','GHI CHÚ'];
+            headings.forEach((heading,i)=>{ctx.font='700 18px Arial, sans-serif';ctx.fillStyle='#334155';if(i===2){ctx.font='700 16px Arial, sans-serif';ctx.fillText('NĂM',x+12,layout.tableY+7);ctx.fillText('SINH',x+12,layout.tableY+28);}else ctx.fillText(heading,x+10,layout.tableY+16);x+=SESSION_IMAGE_COLUMNS[i];});
+            let y=layout.bodyTop;
+            for(const row of page.rows){
+                ctx.fillStyle=row.stt%2===0?'#f8fafc':'#ffffff';ctx.fillRect(40,y,1200,row.height);
+                x=40;
+                row.cells.forEach((cell,column)=>{
+                    cell.forEach((line,index)=>{ctx.font=line.font;ctx.fillStyle=line.color;ctx.fillText(line.text,x+12,y+12+index*28);});
+                    if(column===0 && row.continuation){ctx.font='12px Arial, sans-serif';ctx.fillStyle='#64748b';ctx.fillText('(tiếp)',x+8,y+40);}
+                    ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+row.height);ctx.stroke();x+=SESSION_IMAGE_COLUMNS[column];
+                });
+                ctx.beginPath();ctx.moveTo(1240,y);ctx.lineTo(1240,y+row.height);ctx.stroke();
+                y+=row.height;ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(1240,y);ctx.stroke();
+            }
+            ctx.font='700 18px Arial, sans-serif';ctx.fillStyle='#334155';
+            ctx.fillText(`Toàn buổi: ${report.total} võ sinh  ·  Có mặt: ${report.presentCount}  ·  Vắng: ${report.totalAbsent}`,40,y+20);
+            ctx.font='16px Arial, sans-serif';ctx.fillStyle='#64748b';ctx.fillText('Lập báo cáo: '+meta.generatedAt,40,y+52);
+            ctx.textAlign='right';ctx.fillText(`Trang ${pageIndex+1}/${layout.pages.length} · STT theo toàn bộ danh sách`,1240,y+52);ctx.textAlign='left';
+            return canvas;
+        }
+        function closeSessionImageReport() {
+            sessionImageJob++;sessionImageBusy=false;
+            const preview=document.getElementById('session-image-preview');if(preview)preview.removeAttribute('src');
+            document.getElementById('session-image-original')?.removeAttribute('href');
+            for(const page of sessionImagePages)URL.revokeObjectURL(page.url);
+            sessionImagePages=[];sessionImagePageIndex=0;
+            document.getElementById('session-image-modal')?.classList.add('hidden');
+            document.querySelectorAll('[data-export-session-image]').forEach(b=>b.disabled=false);
+            sessionImageReturnFocus?.focus?.();
+        }
+        function showSessionImagePage(index) {
+            if(!sessionImagePages.length)return;
+            sessionImagePageIndex=Math.max(0,Math.min(index,sessionImagePages.length-1));
+            const page=sessionImagePages[sessionImagePageIndex],preview=document.getElementById('session-image-preview');
+            document.getElementById('session-image-original').href=page.url;
+            preview.src=page.url;preview.alt=`Báo cáo điểm danh — trang ${sessionImagePageIndex+1}/${sessionImagePages.length}`;
+            document.getElementById('session-image-page-label').textContent=`Trang ${sessionImagePageIndex+1} / ${sessionImagePages.length}`;
+            document.getElementById('session-image-prev').disabled=sessionImagePageIndex===0;
+            document.getElementById('session-image-next').disabled=sessionImagePageIndex===sessionImagePages.length-1;
+            document.getElementById('session-image-download').disabled=false;
+            document.getElementById('session-image-share').disabled=false;
+            document.getElementById('session-image-download-all').disabled=false;
+            document.getElementById('session-image-download-all').hidden=sessionImagePages.length===1;
+        }
+        async function exportCurrentSessionImage() {
+            if(!hasPermission('reports_export'))return showToast('Tài khoản chưa có quyền xuất báo cáo.','error');
+            if(sessionImageBusy)return;
+            const report=collectCurrentSessionReportData();
+            if(!report.items.length)return showToast('Chưa có võ sinh trong buổi học để xuất ảnh.','info');
+            if(!report.date || !report.className)return showToast('Hãy chọn ngày và lớp trước khi xuất.','info');
+            closeSessionImageReport();const job=++sessionImageJob;sessionImageBusy=true;
+            sessionImageReturnFocus=document.activeElement;
+            const modal=document.getElementById('session-image-modal');modal.classList.remove('hidden');
+            document.getElementById('session-image-close').focus();
+            const message=document.getElementById('session-image-message');message.textContent='Đang tạo ảnh đầy đủ danh sách…';
+            document.getElementById('session-image-page-label').textContent='Đang tạo ảnh…';
+            document.querySelectorAll('[data-export-session-image]').forEach(b=>b.disabled=true);
+            for(const id of ['session-image-download','session-image-share','session-image-download-all','session-image-prev','session-image-next'])document.getElementById(id).disabled=true;
+            const key=getAttendanceKey(),draft=Boolean(uxAttendanceDrafts.get(key)?.dirty) || !Object.hasOwn(attendanceRecords,key);
+            const meta={clubTitle:siteConfig.title||'VOVINAM VIỆT VÕ ĐẠO',recorder:getCurrentAccountName(),generatedAt:new Date().toLocaleString('vi-VN'),draft,saveLabel:draft?'BẢN NHÁP · Có thay đổi chưa lưu':Object.hasOwn(attendanceRecords,key)?'Dữ liệu đã lưu trên máy':'BẢN NHÁP · Buổi học chưa được lưu'};
+            try{
+                const layout=sessionImageLayout(report,meta);
+                for(let index=0;index<layout.pages.length;index++){
+                    if(job!==sessionImageJob)return;
+                    const canvas=renderSessionReportImagePage(report,meta,layout,index);
+                    const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Không tạo được tệp PNG.')),'image/png'));
+                    canvas.width=1;canvas.height=1;
+                    if(job!==sessionImageJob)return;
+                    sessionImagePages.push({blob,url:URL.createObjectURL(blob),fileName:`BaoCao_DiemDanh_${report.date}_trang-${String(index+1).padStart(2,'0')}.png`});
+                    message.textContent=`Đang tạo ảnh ${index+1}/${layout.pages.length}…`;
+                }
+                showSessionImagePage(0);
+                message.textContent=`Đủ ${report.total} võ sinh · ${sessionImagePages.length} ảnh PNG. `+(sessionImagePages.length>1?'Danh sách dài được chia trang, giữ nguyên STT. Bạn có thể tải tất cả trong một tệp ZIP.':'Bấm Lưu ảnh PNG hoặc Chia sẻ để gửi báo cáo.');
+                logSecurityEvent('Xuất báo cáo PNG',`Lớp ${report.className}, ngày ${report.date}, ${report.total} võ sinh, ${sessionImagePages.length} trang`,'info');
+            }catch(error){
+                if(job!==sessionImageJob)return;
+                for(const page of sessionImagePages)URL.revokeObjectURL(page.url);sessionImagePages=[];
+                message.textContent='Chưa xuất được ảnh: '+error.message;showToast(message.textContent,'error');
+            }finally{if(job===sessionImageJob){sessionImageBusy=false;document.querySelectorAll('[data-export-session-image]').forEach(b=>b.disabled=false);}}
+        }
+        function downloadSessionImage() {
+            const page=sessionImagePages[sessionImagePageIndex];if(!page)return;
+            const a=document.createElement('a');a.href=page.url;a.download=page.fileName;document.body.appendChild(a);a.click();a.remove();
+            showToast('Đã yêu cầu tải ảnh PNG. Kiểm tra mục tải xuống trên thiết bị.','info');
+        }
+        async function shareSessionImage() {
+            const page=sessionImagePages[sessionImagePageIndex];if(!page)return;
+            try{
+                const file=new File([page.blob],page.fileName,{type:'image/png'});
+                if(!navigator.canShare?.({files:[file]}) || !navigator.share)return downloadSessionImage();
+                await navigator.share({files:[file],title:'Báo cáo điểm danh buổi học'});
+            }catch(error){if(error.name!=='AbortError')showToast('Không chia sẻ được. Hãy bấm Lưu ảnh PNG rồi gửi tệp từ thiết bị.','error');}
+        }
+        async function buildSessionImagesZip(pages) {
+            const chunks=[],central=[];let offset=0;
+            const crcTable=Array.from({length:256},(_,n)=>{for(let k=0;k<8;k++)n=(n&1)?0xedb88320^(n>>>1):n>>>1;return n>>>0;});
+            for(const page of pages){
+                const bytes=new Uint8Array(await page.blob.arrayBuffer()),name=new TextEncoder().encode(page.fileName);
+                let crc=0xffffffff;for(const byte of bytes)crc=crcTable[(crc^byte)&255]^(crc>>>8);crc=(crc^0xffffffff)>>>0;
+                const local=new Uint8Array(30+name.length),lv=new DataView(local.buffer);
+                lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x800,true);lv.setUint16(12,0x21,true);lv.setUint32(14,crc,true);lv.setUint32(18,bytes.length,true);lv.setUint32(22,bytes.length,true);lv.setUint16(26,name.length,true);local.set(name,30);
+                const header=new Uint8Array(46+name.length),v=new DataView(header.buffer);
+                v.setUint32(0,0x02014b50,true);v.setUint16(4,20,true);v.setUint16(6,20,true);v.setUint16(8,0x800,true);v.setUint16(14,0x21,true);v.setUint32(16,crc,true);v.setUint32(20,bytes.length,true);v.setUint32(24,bytes.length,true);v.setUint16(28,name.length,true);v.setUint32(42,offset,true);header.set(name,46);
+                chunks.push(local,bytes);central.push(header);offset+=local.length+bytes.length;
+            }
+            const size=central.reduce((sum,b)=>sum+b.length,0),end=new Uint8Array(22),view=new DataView(end.buffer);
+            view.setUint32(0,0x06054b50,true);view.setUint16(8,pages.length,true);view.setUint16(10,pages.length,true);view.setUint32(12,size,true);view.setUint32(16,offset,true);
+            return new Blob([...chunks,...central,end],{type:'application/zip'});
+        }
+        async function downloadAllSessionImages() {
+            if(!sessionImagePages.length)return;
+            if(sessionImagePages.length===1)return downloadSessionImage();
+            const pages=sessionImagePages.slice(),button=document.getElementById('session-image-download-all');button.disabled=true;
+            try{
+                const zip=await buildSessionImagesZip(pages),url=URL.createObjectURL(zip),a=document.createElement('a');
+                a.href=url;a.download='BaoCao_DiemDanh_TatCaAnh.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+                showToast('Đã yêu cầu tải tệp ZIP chứa đầy đủ ảnh báo cáo.','info');
+            }catch(error){showToast('Không tạo được ZIP. Bạn có thể lưu từng ảnh PNG.','error');}
+            finally{button.disabled=false;}
+        }
+        document.addEventListener('keydown',event=>{if(event.key==='Escape' && !document.getElementById('session-image-modal')?.classList.contains('hidden'))closeSessionImageReport();});
 
 </script>
 </body>
