@@ -895,7 +895,7 @@
                                 <th class="py-3 px-3 w-10 text-center">
                                     <input type="checkbox" id="select-all-students-cb" onchange="toggleSelectAllStudents(this.checked)" title="Chọn / Bỏ chọn tất cả học viên đang hiển thị" class="w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue cursor-pointer">
                                 </th>
-                                <th class="py-3 px-4">Số định danh</th>
+                                <th class="py-3 px-3 w-12 text-center">STT</th>
                                 <th class="py-3 px-4">Võ sinh</th>
                                 <th class="py-3 px-4">Ngày sinh / Tuổi</th>
                                 <th class="py-3 px-4">Cấp Đai Vovinam</th>
@@ -9314,7 +9314,7 @@
 
             emptyMsg.classList.add('hidden');
             if (gridContainer) {
-                gridContainer.innerHTML = filtered.map(s => {
+                gridContainer.innerHTML = filtered.map((s, index) => {
                     const age = calculateAge(s.dob);
                     const isGuest = s.type === 'guest';
                     const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 120);
@@ -9338,12 +9338,13 @@
                                 <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsRef}')" class="w-14 h-14 rounded-2xl object-cover border-2 ${isUnconf ? 'border-red-500 ring-2 ring-red-200' : 'border-vovinam-blue/20'} shadow-xs cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition flex-shrink-0">
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center justify-between gap-1">
-                                        <span class="text-[11px] font-mono font-bold ${dupInfo.isDupIdUnconfirmed ? 'text-white bg-red-600 px-1.5 py-0.5 rounded animate-pulse' : (isUnconf ? 'text-red-700' : 'text-slate-400')}">${safeId}</span>
+                                        <span class="text-[11px] font-semibold text-slate-400 tabular-nums" data-student-number="${index + 1}">STT ${index + 1}</span>
                                         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isUnconf ? 'bg-red-600 text-white animate-pulse' : (isGuest ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-vovinam-blue')}">${isUnconf ? escapeHtml(dupInfo.shortReason) : (isGuest ? 'Học ghép/bù' : 'Chính thức')}</span>
                                     </div>
                                     <button type="button" onclick="viewStudentDetail('${safeJsRef}')" class="font-black ${isUnconf ? 'text-red-600 hover:text-red-800' : 'text-slate-800 hover:text-vovinam-blue'} text-sm truncate block text-left w-full mt-0.5">
                                         ${isUnconf ? '<i class="fa-solid fa-triangle-exclamation text-red-600 mr-1 animate-bounce"></i>' : ''}${safeName}
                                     </button>
+                                    <div class="text-[10px] leading-tight font-mono break-all mt-0.5 ${dupInfo.isDupIdUnconfirmed ? 'text-red-600' : 'text-slate-400'}" data-student-identifier title="Mã định danh">${safeId}</div>
                                     <div class="mt-1">${getBeltBadge(s.belt)}</div>
                                 </div>
                             </div>
@@ -9391,7 +9392,7 @@
                     `;
                 }).join('');
             }
-            tbody.innerHTML = filtered.map(s => {
+            tbody.innerHTML = filtered.map((s, index) => {
                 const age = calculateAge(s.dob);
                 const isGuest = s.type === 'guest';
                 const avatarSrc = sanitizeImageUrl(s.avatar) || generateAvatarDataUri(s.name, 100);
@@ -9438,13 +9439,7 @@
                         <td class="py-3 px-3 text-center">
                             <input type="checkbox" data-uid="${safeUid}" ${isChecked ? 'checked' : ''} onchange="toggleSelectStudent('${safeJsRef}', this.checked)" class="student-select-checkbox w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue cursor-pointer" title="Tích chọn để xoá hàng loạt">
                         </td>
-                        <td class="py-3 px-4 font-mono font-bold text-xs ${dupInfo.isDupIdUnconfirmed ? 'text-red-600 font-black' : (isUnconf ? 'text-red-700' : 'text-slate-700')}">
-                            <div class="flex items-center space-x-1.5">
-                                ${dupInfo.isDupIdUnconfirmed ? '<i class="fa-solid fa-triangle-exclamation text-red-600 animate-pulse" title="Trùng mã định danh"></i>' : ''}
-                                <span class="${dupInfo.isDupIdUnconfirmed ? 'px-2 py-0.5 rounded-lg bg-red-100 border border-red-300 text-red-700 font-black' : ''}">${safeId}</span>
-                            </div>
-                            ${dupInfo.isDupIdUnconfirmed ? '<div class="text-[10px] font-bold text-red-600 mt-0.5">Trùng mã ĐD!</div>' : ''}
-                        </td>
+                        <td class="py-3 px-3 text-center text-xs font-semibold text-slate-400 tabular-nums" data-student-number="${index + 1}">${index + 1}</td>
                         <td class="py-3 px-4">
                             <div class="flex items-center space-x-3">
                                 <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsRef}')" class="w-10 h-10 rounded-xl object-cover border-2 ${isUnconf ? 'border-red-500 ring-2 ring-red-200' : 'border-slate-200'} shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
@@ -9454,6 +9449,7 @@
                                         <span class="group-hover:underline">${safeName}</span>
                                         <i class="fa-solid fa-arrow-up-right-from-square text-[11px] ${isUnconf ? 'text-red-400 group-hover:text-red-700' : 'text-slate-400 group-hover:text-vovinam-blue'} transition"></i>
                                     </button>
+                                    <div class="text-[10px] leading-tight font-mono break-all max-w-[220px] mt-0.5 ${dupInfo.isDupIdUnconfirmed ? 'text-red-600' : 'text-slate-400'}" data-student-identifier title="Mã định danh">${safeId}</div>
                                     <div class="text-[11px] text-slate-400 flex flex-wrap items-center gap-1 mt-0.5">
                                         ${isGuest ? '<span class="px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 font-bold">Học ghép/bù</span>' : '<span>Võ sinh chính thức</span>'}
                                         ${dupInfo.isDupNameUnconfirmed ? `<span class="px-1.5 py-0.2 rounded bg-red-600 text-white font-black text-[10px]">⚠️ Trùng tên (${dupInfo.nameCount})</span>` : ''}
