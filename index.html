@@ -1079,11 +1079,7 @@
                     </div>
                     <div>
                         <select id="attendance-makeup-class-filter" onchange="renderAttendanceMakeupSearchResults()" class="w-full px-3 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none bg-white">
-                            <option value="">-- Tìm trong tất cả lớp khác --</option>
-                            <option value="Sáng T2-T4-T6">Lớp Sáng T2-T4-T6</option>
-                            <option value="Chiều T2-T4-T6">Lớp Chiều T2-T4-T6</option>
-                            <option value="Tối T3-T5-T7">Lớp Tối T3-T5-T7</option>
-                            <option value="Cuối tuần T7-CN">Lớp Cuối Tuần (T7-CN)</option>
+                            <option value="">-- Tất cả lớp khác --</option>
                             <option value="ALL_CLASSES">Toàn bộ võ sinh CLB (kể cả lớp chính)</option>
                         </select>
                     </div>
@@ -3257,10 +3253,6 @@
                     <div class="sm:col-span-2">
                         <select id="guest-modal-class-filter" onchange="renderGuestModalStudentList()" class="w-full px-2.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none">
                             <option value="">-- Tất cả lớp khác --</option>
-                            <option value="Sáng T2-T4-T6">Lớp Sáng T2-T4-T6</option>
-                            <option value="Chiều T2-T4-T6">Lớp Chiều T2-T4-T6</option>
-                            <option value="Tối T3-T5-T7">Lớp Tối T3-T5-T7</option>
-                            <option value="Cuối tuần T7-CN">Lớp Cuối Tuần (T7-CN)</option>
                         </select>
                     </div>
                 </div>
@@ -7740,6 +7732,20 @@
         }
 
         // ================= ĐỒNG BỘ HÓA DROPDOWN LỚP HỌC TRÊN TOÀN HỆ THỐNG =================
+        function populateMakeupClassFilters() {
+            const currentClass=document.getElementById('attendance-class')?.value || '';
+            const names=[...new Set(classes.map(c=>c && c.name).filter(Boolean))];
+            for(const [id,inline] of [['attendance-makeup-class-filter',true],['guest-modal-class-filter',false]]) {
+                const select=document.getElementById(id);if(!select)continue;
+                const previous=select.value;
+                const available=inline?names:names.filter(name=>name!==currentClass);
+                select.innerHTML='<option value="">'+(inline?'-- Tìm trong tất cả lớp khác --':'-- Tất cả lớp khác --')+'</option>'+
+                    available.map(name=>'<option value="'+escapeHtml(name)+'">'+escapeHtml(name)+'</option>').join('')+
+                    (inline?'<option value="ALL_CLASSES">Toàn bộ võ sinh CLB (kể cả lớp chính)</option>':'');
+                select.value=available.includes(previous) || (inline && previous==='ALL_CLASSES')?previous:'';
+            }
+        }
+
         function populateClassDropdowns() {
             // 1. Dropdown lọc ở tab Võ Sinh (#filter-class)
             const filterClass = document.getElementById('filter-class');
@@ -7789,6 +7795,7 @@
                 `;
                 if (curVal) reportClass.value = curVal;
             }
+            populateMakeupClassFilters();
         }
 
         // ================= TÍNH NĂNG ADMIN: QUẢN LÝ LỚP HỌC & THỜI GIAN HỌC =================
@@ -10880,6 +10887,7 @@
         }
 
         function renderAttendanceMakeupSearchResults() {
+            populateMakeupClassFilters();
             const container = document.getElementById('attendance-makeup-search-results');
             const input = document.getElementById('attendance-makeup-search-input');
             const classFilterEl = document.getElementById('attendance-makeup-class-filter');
@@ -11146,6 +11154,7 @@
         }
 
         function openAddGuestModal() {
+            populateMakeupClassFilters();
             const currentClass = document.getElementById('attendance-class').value;
             const otherStudents = sortStudentsArray(students.filter(s => s.className !== currentClass));
 
@@ -11194,6 +11203,7 @@
         }
 
         function renderGuestModalStudentList() {
+            populateMakeupClassFilters();
             const currentClass = document.getElementById('attendance-class').value;
             const select = document.getElementById('guest-select-student');
             const listEl = document.getElementById('guest-modal-results-list');
