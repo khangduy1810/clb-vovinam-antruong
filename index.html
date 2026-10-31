@@ -2225,10 +2225,9 @@
                                 <i class="fa-solid fa-gauge-high text-vovinam-blue text-xs"></i>
                                 <label for="cloud-sync-interval" class="text-[11px] font-bold text-slate-600">Tốc độ:</label>
                                 <select id="cloud-sync-interval" onchange="changeCloudSyncInterval(this.value)" class="text-xs font-bold text-vovinam-blue bg-transparent focus:outline-none cursor-pointer">
-                                    <option value="1000">1 giây (Siêu tốc)</option>
-                                    <option value="1500" selected>1.5 giây (Khuyến nghị)</option>
-                                    <option value="3000">3 giây (Nhanh)</option>
-                                    <option value="5000">5 giây (Tiết kiệm)</option>
+                                    <option value="5000" selected>5 giây (Khuyến nghị)</option>
+                                    <option value="10000">10 giây (Cân bằng)</option>
+                                    <option value="15000">15 giây (Tiết kiệm)</option>
                                 </select>
                             </div>
                             <button type="button" onclick="saveAndTestCloudConfig()" class="px-4 py-2 bg-vovinam-blue hover:bg-vovinam-darkblue text-white rounded-xl text-xs font-bold shadow-sm transition whitespace-nowrap flex items-center space-x-1.5">
@@ -5897,7 +5896,7 @@
             secret: '',
             encryptionKey: '',
             autoSync: true,
-            syncIntervalMs: 1500,
+            syncIntervalMs: 5000,
             lastSync: ''
         };
         let cloudConfig = { ...DEFAULT_CLOUD_CONFIG };
@@ -5906,6 +5905,7 @@
         let isCloudSyncing = false;
         let isCloudPushing = false;
         let hasPendingCloudPush = false;
+        let autoCloudSyncTimer = null;
         let activePullAbortController = null;
         let lastSyncedUpdatedAt = '';
         let lastLocalMutationIso = '';
@@ -6179,7 +6179,36 @@
             setOverviewCloudCardVisibility(!hideStored);
         }
 
-        window.onload = function() {
+        async function restorePrimaryDataFromIndexedDBBeforeLoad() {
+            try {
+                const db = await openVovinamIndexedDB();
+                if (!db) return;
+                const keys = [
+                    'vovinam_deleted_registry', 'vovinam_classes', 'vovinam_students',
+                    'vovinam_confirmed_duplicates', 'vovinam_attendance',
+                    'vovinam_pending_requests', 'vovinam_tuition', 'vovinam_gear_orders',
+                    'vovinam_tournaments', 'vovinam_site_config', 'vovinam_accounts'
+                ];
+                for (const key of keys) {
+                    if (localStorage.getItem(key) !== null) continue;
+                    const stored = await idbGetItem(key);
+                    if (stored === null || stored === undefined) continue;
+                    try {
+                        localStorage.setItem(key, JSON.stringify(stored));
+                    } catch (quotaErr) {
+                        // Không ghi được vào LocalStorage: giữ dữ liệu trong IndexedDB, không tạo dữ liệu mẫu ghi đè.
+                        console.warn(`Không thể phục hồi ${key} vào LocalStorage; bản IndexedDB vẫn được giữ.`, quotaErr);
+                    }
+                }
+            } catch (err) {
+                console.warn('Không thể kiểm tra bản lưu IndexedDB trước khi khởi động:', err);
+            }
+        }
+
+        window.onload = async function() {
+            // Khôi phục bản IndexedDB trước khi loadData() tạo dữ liệu mặc định.
+            // Tránh việc một LocalStorage bị xóa/không ghi được khiến dữ liệu thật trong IndexedDB bị thay bằng dữ liệu mẫu.
+            await restorePrimaryDataFromIndexedDBBeforeLoad();
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('attendance-date').value = today;
 
@@ -13187,7 +13216,7 @@
             if (secEl) secEl.value = cloudConfig.secret || '';
             if (encEl) encEl.value = cloudConfig.encryptionKey || '';
             if (autoEl) autoEl.checked = cloudConfig.autoSync !== false;
-            if (intervalEl) intervalEl.value = String(cloudConfig.syncIntervalMs || 1500);
+            if (intervalEl) intervalEl.value = String(cloudConfig.syncIntervalMs || 5000);
         }
 
         function openCloudSyncSettingsSection() {
@@ -13637,7 +13666,7 @@
             cloudConfig.secret = secEl ? secEl.value.trim() : '';
             cloudConfig.encryptionKey = encEl ? encEl.value.trim() : '';
             cloudConfig.autoSync = autoEl ? autoEl.checked : true;
-            cloudConfig.syncIntervalMs = intervalEl ? (parseInt(intervalEl.value, 10) || 1500) : 1500;
+            cloudConfig.syncIntervalMs = intervalEl ? (parseInt(intervalEl.value, 10) || 5000) : 5000;
 
             saveCloudConfigToStorage();
             showToast(`Đang kết nối Phòng Đồng Bộ Đa Máy [${cloudConfig.clubKey}]...`, 'info');
@@ -13955,7 +13984,6 @@
             }
             try {
                 const payload = buildFullDatabasePayload();
-                lastSyncedUpdatedAt = payload.updatedAt;
 
                 let rawJson = JSON.stringify(payload);
                 // Nếu dữ liệu lớn hơn 64KB (do đính kèm nhiều ảnh/hồ sơ) và đã có Firebase URL, gửi gói tin gọn qua MQTT để không bị Broker ngắt kết nối
@@ -14099,7 +14127,7 @@
                 k: clubKey,
                 s: (secEl && secEl.value.trim()) ? secEl.value.trim() : (cloudConfig.secret || ''),
                 e: (encEl && encEl.value.trim()) ? encEl.value.trim() : (cloudConfig.encryptionKey || ''),
-                i: cloudConfig.syncIntervalMs || 1500
+                i: cloudConfig.syncIntervalMs || 5000
             };
             const jsonStr = JSON.stringify(cfgObj);
             return 'VVN-SYNC-' + btoa(encodeURIComponent(jsonStr));
@@ -14184,7 +14212,7 @@
                 cloudConfig.secret = cfgObj.s || '';
                 cloudConfig.encryptionKey = cfgObj.e || '';
                 cloudConfig.autoSync = true;
-                cloudConfig.syncIntervalMs = cfgObj.i || 1500;
+                cloudConfig.syncIntervalMs = cfgObj.i || 5000;
 
                 saveCloudConfigToStorage();
                 loadCloudConfigForm();
@@ -14267,10 +14295,8 @@
                 lastLocalMutationIso = new Date(logicalNow).toISOString();
                 try {
                     localStorage.setItem('vovinam_last_mutation_iso', lastLocalMutationIso);
-                    localStorage.setItem('vovinam_last_synced_iso', lastLocalMutationIso);
                 } catch (e) {}
                 const payload = buildFullDatabasePayload();
-                lastSyncedUpdatedAt = payload.updatedAt;
 
                 let outgoingBody = payload;
                 if (cloudConfig.encryptionKey && cloudConfig.encryptionKey.trim()) {
@@ -14300,6 +14326,9 @@
                     throw statusError;
                 }
 
+                // Chỉ cập nhật mốc đã đồng bộ sau khi máy chủ xác nhận PUT thành công.
+                lastSyncedUpdatedAt = payload.updatedAt;
+                try { localStorage.setItem('vovinam_last_synced_iso', lastSyncedUpdatedAt); } catch (e) {}
                 const elapsedMs = Math.max(1, Math.round(performance.now() - t0));
                 const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 cloudConfig.lastSync = timeNow;
@@ -14497,12 +14526,15 @@
                 scheduleBackendServerSync();
             }
 
-            // 3. Đẩy ngay lập tức lên Kênh Đám Mây Tự Động (MQTT WebSocket Relay) & Firebase Cloud Database
+            // 3. Gộp các lần lưu liên tiếp để tránh mã hóa/JSON.stringify và upload cả DB sau từng thao tác nhỏ.
+            // Mốc lastSyncedUpdatedAt không bị thay đổi ở đây: chỉ cập nhật sau khi server xác nhận nhận dữ liệu.
             if (cloudConfig.autoSync !== false) {
-                publishStateToMqttRelay(false);
-                if (cloudConfig.url) {
-                    pushToCloud(false);
-                }
+                if (autoCloudSyncTimer) clearTimeout(autoCloudSyncTimer);
+                autoCloudSyncTimer = setTimeout(() => {
+                    autoCloudSyncTimer = null;
+                    publishStateToMqttRelay(false);
+                    if (cloudConfig.url) pushToCloud(false);
+                }, 650);
             }
         }
 
@@ -14557,7 +14589,7 @@
                 // 2. Nếu có thêm URL Firebase / REST riêng thì kích hoạt song song luồng SSE + Turbo Polling
                 if (cloudConfig.url) {
                     startCloudRealtimeStream();
-                    const intervalMs = Math.max(800, parseInt(cloudConfig.syncIntervalMs, 10) || 1500);
+                    const intervalMs = Math.max(5000, parseInt(cloudConfig.syncIntervalMs, 10) || 5000);
                     cloudPollTimer = setInterval(() => {
                         if (!isCloudPushing && !isCloudSyncing && cloudConfig.url && cloudConfig.autoSync) {
                             pullFromCloud(false, true, false);
@@ -14679,6 +14711,7 @@
         const IDB_STORE_MEDIA = 'media_vault';
 
         let vovinamIdbInstance = null;
+        let storageWriteQueue = Promise.resolve();
         let storageEngineConfig = {
             quotaTierMB: 5120, // Mặc định mở rộng 5.0 GB (5.120 MB)
             autoCompress: true,
@@ -14810,38 +14843,38 @@
             });
         }
 
-        // Lưu trữ kép thông minh: Ghi đồng thời vào IndexedDB (không giới hạn) và LocalStorage (tự động giảm tải tệp nặng nếu chạm mốc 5MB)
+        // Lưu trữ kép: LocalStorage được ghi đồng bộ trước; IndexedDB được ghi theo hàng đợi.
+        // Khi LocalStorage đầy, chỉ ghi các con trỏ media sau khi ảnh/tài liệu đã được ghi xong vào IndexedDB.
         function safeSetStorageItem(key, dataObj) {
-            // 1. Luôn lưu bản đầy đủ 100% (kể cả ảnh HD và tệp hồ sơ) vào Kho IndexedDB dung lượng lớn
-            idbSetItem(key, dataObj).then(() => {
-                if (typeof updateStorageStatsUI === 'function') updateStorageStatsUI(false);
-            });
-
-            // 2. Lưu vào LocalStorage để khởi động tức thì; nếu vượt 5MB thì tự động chuyển ảnh/tệp sang kho IndexedDB
             const jsonStr = JSON.stringify(dataObj);
             try {
                 localStorage.setItem(key, jsonStr);
-                return true;
             } catch (quotaErr) {
                 if (!storageEngineConfig.autoOffload) {
-                    showToast('Bộ nhớ đệm LocalStorage đã đầy! Hệ thống đã lưu an toàn vào Kho Mở Rộng IndexedDB.', 'info');
-                    return true;
+                    showToast('LocalStorage đã đầy. Dữ liệu chưa được xác nhận lưu; hãy xuất bản sao lưu và giải phóng dung lượng.', 'error');
+                    return false;
                 }
-                try {
-                    // Tự động tách ảnh & tài liệu nặng sang media_vault của IndexedDB và lưu bản nhẹ vào LocalStorage
+
+                // Không tạo con trỏ @idb_media trước khi media được lưu thành công.
+                const offloadTask = async () => {
+                    const fullSaved = await idbSetItem(key, dataObj);
+                    if (!fullSaved) throw new Error('Không ghi được bản dữ liệu đầy đủ vào IndexedDB');
+
+                    let lightData = null;
+                    const mediaTasks = [];
                     if (key === 'vovinam_students' && Array.isArray(dataObj)) {
-                        const lightStudents = dataObj.map(s => {
-                            const copy = { ...s };
+                        lightData = dataObj.map(st => {
+                            const copy = { ...st };
                             if (copy.avatar && copy.avatar.length > 2048) {
                                 const mKey = `student_avatar_${copy.id}`;
-                                idbSetMedia(mKey, copy.avatar);
+                                mediaTasks.push(idbSetMedia(mKey, copy.avatar));
                                 copy.avatar = `@idb_media:${mKey}`;
                             }
-                            if (Array.isArray(copy.documents) && copy.documents.length > 0) {
+                            if (Array.isArray(copy.documents)) {
                                 copy.documents = copy.documents.map(doc => {
                                     if (doc && doc.dataUrl && doc.dataUrl.length > 1024) {
                                         const docKey = `student_doc_${copy.id}_${doc.id}`;
-                                        idbSetMedia(docKey, doc.dataUrl);
+                                        mediaTasks.push(idbSetMedia(docKey, doc.dataUrl));
                                         return { ...doc, dataUrl: `@idb_media:${docKey}` };
                                     }
                                     return doc;
@@ -14849,33 +14882,48 @@
                             }
                             return copy;
                         });
-                        localStorage.setItem(key, JSON.stringify(lightStudents));
                     } else if (key === 'vovinam_site_config' && dataObj && typeof dataObj === 'object') {
-                        const lightCfg = { ...dataObj };
-                        if (lightCfg.logo && lightCfg.logo.length > 2048) {
-                            idbSetMedia('site_logo_main', lightCfg.logo);
-                            lightCfg.logo = '@idb_media:site_logo_main';
+                        lightData = { ...dataObj };
+                        if (lightData.logo && lightData.logo.length > 2048) {
+                            mediaTasks.push(idbSetMedia('site_logo_main', lightData.logo));
+                            lightData.logo = '@idb_media:site_logo_main';
                         }
-                        localStorage.setItem(key, JSON.stringify(lightCfg));
                     } else if (key === 'vovinam_accounts' && Array.isArray(dataObj)) {
-                        const lightAccs = dataObj.map(a => {
+                        lightData = dataObj.map(a => {
                             const copy = { ...a };
                             if (copy.avatar && copy.avatar.length > 2048) {
                                 const mKey = `acc_avatar_${copy.id}`;
-                                idbSetMedia(mKey, copy.avatar);
+                                mediaTasks.push(idbSetMedia(mKey, copy.avatar));
                                 copy.avatar = `@idb_media:${mKey}`;
                             }
                             return copy;
                         });
-                        localStorage.setItem(key, JSON.stringify(lightAccs));
                     }
-                    logSecurityEvent('Tự động mở rộng IndexedDB', `Đã chuyển tải dữ liệu đa phương tiện của [${key}] sang Kho IndexedDB 5GB`, 'info');
+
+                    const mediaResults = await Promise.all(mediaTasks);
+                    if (mediaResults.some(ok => !ok)) throw new Error('Không ghi đủ ảnh/tài liệu vào IndexedDB');
+                    if (!lightData) throw new Error('Dữ liệu vượt giới hạn LocalStorage và không hỗ trợ tách media');
+                    localStorage.setItem(key, JSON.stringify(lightData));
+                    logSecurityEvent('Tự động mở rộng IndexedDB', `Đã chuyển tải dữ liệu đa phương tiện của [${key}] sang IndexedDB`, 'info');
                     return true;
-                } catch (fallbackErr) {
-                    // Ngay cả khi LocalStorage hoàn toàn kín, dữ liệu vẫn nằm an toàn 100% trong IndexedDB
-                    return true;
-                }
+                };
+
+                storageWriteQueue = storageWriteQueue.then(offloadTask).then(() => {
+                    if (typeof updateStorageStatsUI === 'function') updateStorageStatsUI(false);
+                }).catch(err => {
+                    console.error('Lỗi lưu dữ liệu IndexedDB/offload:', err);
+                    showToast('Không thể lưu đầy đủ dữ liệu do bộ nhớ trình duyệt bị giới hạn. Hãy xuất bản sao lưu ngay.', 'error');
+                });
+                return true;
             }
+
+            // Snapshot JSON tránh việc object bị thay đổi trong lúc IndexedDB đang mở transaction.
+            storageWriteQueue = storageWriteQueue.then(async () => {
+                const saved = await idbSetItem(key, JSON.parse(jsonStr));
+                if (!saved) console.warn(`IndexedDB chưa xác nhận ghi khóa ${key}; LocalStorage vẫn đang giữ bản dữ liệu.`);
+                if (typeof updateStorageStatsUI === 'function') updateStorageStatsUI(false);
+            }).catch(err => console.warn('IndexedDB write queue:', err));
+            return true;
         }
 
         async function initHighCapacityStorageEngine() {
