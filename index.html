@@ -13386,6 +13386,23 @@
             // Khử khuẩn toàn diện dữ liệu đầu vào chống Stored XSS
             const payload = sanitizeObjectStrings(rawPayload);
 
+            // Khi người dùng chọn GHI ĐÈ, sổ xóa của máy hiện tại không được phép
+            // chặn bản ghi trong file backup. Chỉ sử dụng tombstone đi kèm chính backup.
+            if (mode === 'replace') {
+                const incomingRegistry = payload.deletedRegistry && typeof payload.deletedRegistry === 'object'
+                    ? payload.deletedRegistry : {};
+                deletedRegistry = {
+                    students: { ...(incomingRegistry.students || {}) },
+                    classes: { ...(incomingRegistry.classes || {}) },
+                    accounts: { ...(incomingRegistry.accounts || {}) },
+                    requests: { ...(incomingRegistry.requests || {}) },
+                    gear: { ...(incomingRegistry.gear || {}) },
+                    tournaments: { ...(incomingRegistry.tournaments || {}) },
+                    restored: { ...(incomingRegistry.restored || {}) }
+                };
+                try { localStorage.setItem('vovinam_deleted_registry', JSON.stringify(deletedRegistry)); } catch (e) {}
+            }
+
             // 1. Đồng bộ sổ đăng ký khôi phục (restored) và sổ đăng ký xóa (Tombstone Registry)
             if (!deletedRegistry.restored) deletedRegistry.restored = {};
             if (payload.deletedRegistry && typeof payload.deletedRegistry === 'object') {
@@ -13435,7 +13452,7 @@
             const effectiveMode = (mode === 'replace' || !hasLocalUserEdits || (mode === 'smart_sync' && !isRecentLocalEdit)) ? 'authoritative_sync' : 'merge';
 
             if (effectiveMode === 'authoritative_sync') {
-                if (Array.isArray(payload.accounts) && payload.accounts.length > 0) {
+                if (Array.isArray(payload.accounts)) {
                     accounts = payload.accounts.filter(a => !(deletedRegistry.accounts && deletedRegistry.accounts[a.id]));
                 }
                 if (Array.isArray(payload.classes)) {
@@ -13446,6 +13463,9 @@
                     // Nếu đang là replace hoàn toàn thì lấy nguyên danh sách chuẩn; nếu là authoritative_sync thì giữ thêm học sinh vừa tạo cục bộ có _updatedAt mới hơn Cloud
                     const remoteMaxTs = remoteValid.reduce((mx, s) => Math.max(mx, s._updatedAt || 0), 0);
                     const mergedList = remoteValid.map(rs => {
+                        // Chế độ replace phải khôi phục đúng nguyên trạng file backup,
+                        // không trộn ngược bản ghi cũ hơn/khác từ thiết bị hiện tại.
+                        if (mode === 'replace') return rs;
                         const localMatch = students.find(ls => ls && ((ls._uid && rs._uid && ls._uid === rs._uid) || (!ls._isManualDuplicate && !rs._isManualDuplicate && normalizeDupId(ls.id) === normalizeDupId(rs.id))));
                         if (localMatch && (localMatch._updatedAt || 0) > (rs._updatedAt || 0)) {
                             return { ...rs, ...localMatch, _uid: rs._uid || localMatch._uid };
@@ -15668,45 +15688,74 @@
                 if (event && event.target) event.target.value = '';
                 return;
             }
-            const input = event.target;
-            if (!input.files || !input.files[0]) return;
+            const input = event && event.target;
+            const file = input && input.files && input.files[0];
+            if (!file) return;
 
-            const file = input.files[0];
+            const resetPicker = () => { if (input) input.value = ''; };
+            if (file.size > 100 * 1024 * 1024) {
+                showToast('File backup lớn hơn 100 MB. Vui lòng dùng file nhỏ hơn hoặc chia nhỏ dữ liệu.', 'error');
+                resetPicker();
+                return;
+            }
             const modeSelect = document.getElementById('import-mode-select');
-            const mode = modeSelect ? modeSelect.value : 'replace';
-
+            const mode = modeSelect && modeSelect.value === 'merge' ? 'merge' : 'replace';
             const reader = new FileReader();
+
+            reader.onerror = () => {
+                console.error('Không đọc được file backup JSON:', reader.error);
+                showToast('Không thể đọc file. Hãy tải lại file JSON rồi thử lại.', 'error');
+                resetPicker();
+            };
+            reader.onabort = () => {
+                showToast('Đã hủy thao tác đọc file JSON.', 'info');
+                resetPicker();
+            };
             reader.onload = function(e) {
                 try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (!parsed || (!parsed.students && !parsed.classes)) {
-                        showToast('File JSON không đúng định dạng sao lưu của hệ thống Vovinam!', 'error');
-                        input.value = '';
-                        return;
-                    }
+                    // Bỏ BOM UTF-8 thường xuất hiện ở file được tạo bởi một số ứng dụng Windows.
+                    const rawText = String(e && e.target ? e.target.result || '' : '').replace(/^\uFEFF/, '').trim();
+                    if (!rawText) throw new Error('File JSON đang trống.');
+                    const parsed = JSON.parse(rawText);
+                    const recognizedKeys = ['students', 'classes', 'accounts', 'attendanceRecords', 'tuitionRecords', 'gearOrders', 'tournamentEntries', 'pendingRequests', 'siteConfig'];
+                    const hasKnownData = parsed && typeof parsed === 'object' && !Array.isArray(parsed) && recognizedKeys.some(k => Object.prototype.hasOwnProperty.call(parsed, k));
+                    if (!hasKnownData) throw new Error('Không tìm thấy cấu trúc dữ liệu Vovinam trong file.');
+                    if (parsed.students !== undefined && !Array.isArray(parsed.students)) throw new Error('Danh sách võ sinh trong file không hợp lệ.');
+                    if (parsed.classes !== undefined && !Array.isArray(parsed.classes)) throw new Error('Danh sách lớp học trong file không hợp lệ.');
+                    if (parsed.accounts !== undefined && !Array.isArray(parsed.accounts)) throw new Error('Danh sách tài khoản trong file không hợp lệ.');
+                    if (parsed.attendanceRecords !== undefined && (!parsed.attendanceRecords || typeof parsed.attendanceRecords !== 'object' || Array.isArray(parsed.attendanceRecords))) throw new Error('Dữ liệu điểm danh trong file không hợp lệ.');
 
                     const stCount = Array.isArray(parsed.students) ? parsed.students.length : 0;
                     const clCount = Array.isArray(parsed.classes) ? parsed.classes.length : 0;
-                    const attCount = parsed.attendanceRecords ? Object.keys(parsed.attendanceRecords).length : 0;
+                    const attCount = parsed.attendanceRecords && typeof parsed.attendanceRecords === 'object' ? Object.keys(parsed.attendanceRecords).length : 0;
                     const modeName = mode === 'replace' ? 'GHI ĐÈ TOÀN BỘ' : 'GỘP DỮ LIỆU THÔNG MINH';
 
                     showConfirm(
                         `Xác Nhận Khôi Phục Dữ Liệu (${modeName})`,
-                        `File sao lưu chứa ${stCount} võ sinh, ${clCount} lớp học và ${attCount} buổi điểm danh. Bạn có chắc muốn nạp dữ liệu này vào hệ thống?`,
-                        () => {
-                            applyFullDatabasePayload(parsed, mode, false);
-                            triggerAutoCloudSync();
-                            showToast(`Đã khôi phục thành công ${stCount} võ sinh và ${clCount} lớp học!`);
-                            input.value = '';
+                        `File: ${file.name}\nCó ${stCount} võ sinh, ${clCount} lớp học và ${attCount} nhóm điểm danh. ${mode === 'replace' ? 'Dữ liệu hiện tại sẽ được thay bằng nội dung trong file.' : 'Dữ liệu hiện tại sẽ được giữ và gộp với file.'} Bạn có chắc muốn tiếp tục?`,
+                        async () => {
+                            try {
+                                const applied = applyFullDatabasePayload(parsed, mode, false);
+                                if (!applied) throw new Error('Hệ thống không áp dụng được dữ liệu từ file.');
+                                // Chờ hàng đợi IndexedDB hoàn tất trước khi phát lệnh đồng bộ Cloud.
+                                if (typeof storageWriteQueue !== 'undefined') await storageWriteQueue;
+                                if (typeof triggerAutoCloudSync === 'function') triggerAutoCloudSync();
+                                showToast(`Khôi phục thành công: ${stCount} võ sinh, ${clCount} lớp học.`, 'success');
+                            } catch (restoreErr) {
+                                console.error('Lỗi áp dụng file backup:', restoreErr);
+                                showToast(`Khôi phục chưa hoàn tất: ${restoreErr.message || 'Lỗi lưu dữ liệu'}. Hãy kiểm tra dung lượng và thử lại.`, 'error');
+                            } finally {
+                                resetPicker();
+                            }
                         }
                     );
                 } catch (err) {
-                    console.error('Lỗi đọc file JSON:', err);
-                    showToast('File JSON bị lỗi hoặc không hợp lệ!', 'error');
-                    input.value = '';
+                    console.error('Lỗi đọc/kiểm tra file JSON:', err);
+                    showToast(err && err.message ? err.message : 'File JSON bị lỗi hoặc không hợp lệ!', 'error');
+                    resetPicker();
                 }
             };
-            reader.readAsText(file);
+            reader.readAsText(file, 'UTF-8');
         }
 
         function applyPastedDatabaseJSON() {
