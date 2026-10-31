@@ -378,7 +378,7 @@
         </div>
 
         <!-- Thanh Tổng Quan Tài Khoản & Chỉ Số Nhanh (Quick Workspace Bar) -->
-        <div id="quick-workspace-bar" class="mb-6 bg-white rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 no-print">
+        <div id="quick-workspace-bar" class="hidden mb-6 bg-white rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-200/80 flex-col lg:flex-row lg:items-center justify-between gap-3.5 no-print">
             <div class="flex items-center space-x-3 min-w-0">
                 <div onclick="openPersonalAvatarModal()" title="Bấm để thay đổi ảnh đại diện riêng của tài khoản" class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-vovinam-blue to-vovinam-navy text-vovinam-gold font-black text-lg flex items-center justify-center shadow-sm border-2 border-vovinam-gold/70 cursor-pointer group overflow-hidden flex-shrink-0">
                     <img id="workspace-bar-avatar-img" src="" alt="Account Avatar" class="w-full h-full object-cover hidden">
@@ -5912,8 +5912,97 @@
         let lastLocalMutationTimeMs = 0;
         let localBroadcastChannel = null;
         let hasLocalUserEdits = false;
+        let hasCompletedInitialCloudPull = false;
         let lastHardResetAt = 0;
-        let deletedRegistry = { students: {}, classes: {}, accounts: {}, requests: {}, gear: {}, tournaments: {} };
+        let deletedRegistry = { students: {}, classes: {}, accounts: {}, requests: {}, gear: {}, tournaments: {}, restored: {} };
+
+        let pendingUiRefreshAfterEdit = false;
+
+        function parseAttendanceKey(key) {
+            const str = String(key || '');
+            const idx = str.indexOf('_');
+            if (idx === -1) return { date: str, className: '' };
+            return { date: str.slice(0, idx), className: str.slice(idx + 1) };
+        }
+
+        function getMonotonicLogicalNowMs() {
+            const wallMs = Date.now();
+            const lastSyncMs = lastSyncedUpdatedAt ? (Date.parse(lastSyncedUpdatedAt) || 0) : 0;
+            const lastMutMs = lastLocalMutationIso ? (Date.parse(lastLocalMutationIso) || 0) : 0;
+            return Math.max(wallMs, lastSyncMs + 1, lastMutMs + 1);
+        }
+
+        function isIncomingTimestampNewer(incomingIso, currentIso) {
+            if (!incomingIso || typeof incomingIso !== 'string') return false;
+            if (!currentIso || typeof currentIso !== 'string') return true;
+            if (incomingIso === currentIso) return false;
+            const inMs = Date.parse(incomingIso);
+            const curMs = Date.parse(currentIso);
+            if (!isNaN(inMs) && !isNaN(curMs)) {
+                return inMs > curMs;
+            }
+            return incomingIso > currentIso;
+        }
+
+        function computeDataFingerprint() {
+            try {
+                return JSON.stringify({
+                    s: students,
+                    c: classes,
+                    a: attendanceRecords,
+                    t: tuitionRecords,
+                    g: gearOrders,
+                    tr: tournamentEntries,
+                    p: pendingRequests,
+                    cfg: siteConfig,
+                    cd: confirmedDuplicates
+                });
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function isUserActivelyEditingUI() {
+            const openModalIds = [
+                'student-modal', 'class-modal', 'tuition-modal', 'guest-modal',
+                'confirm-modal', 'account-modal', 'gear-modal', 'tournament-modal',
+                'dossier-checklist-modal', 'personal-avatar-modal', 'change-password-modal',
+                'switch-account-modal', 'admin-reset-password-modal'
+            ];
+            for (const mId of openModalIds) {
+                const el = document.getElementById(mId);
+                if (el && !el.classList.contains('hidden')) return true;
+            }
+            const active = document.activeElement;
+            if (active && active.tagName) {
+                const tag = active.tagName.toUpperCase();
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function refreshAllUiViewsSafely(isSilent = false) {
+            applySiteConfig();
+            if (!isSilent) {
+                loadSettingsForm();
+            }
+            populateClassDropdowns();
+            populateAccountSwitcher();
+            updateRoleUI();
+            renderStudents();
+            renderClasses();
+            renderPendingApprovals();
+            loadAttendanceSheet(true);
+            renderTuitionTable();
+            renderGearOrders();
+            renderTournaments();
+            renderPermissionsMatrix();
+            renderQuickLoginList();
+            updateBackupStatsUI();
+            if (typeof renderOverviewDashboard === 'function') renderOverviewDashboard();
+        }
         let mqttRelayWs = null;
         let mqttRelayConnected = false;
         let mqttRelayBrokerIndex = 0;
@@ -6155,29 +6244,61 @@
         };
 
         // Lưu trữ và lấy dữ liệu LocalStorage (bọc trong try/catch an toàn)
-        function loadData() {
+        function loadData(isSilentReload = false) {
             try {
-                // Tải lớp học (Truyền skipCloud = true để khi mở máy mới lần đầu KHÔNG đẩy dữ liệu mẫu đè lên Cloud)
+                // 1. Đọc deletedRegistry và các cờ trạng thái TRƯỚC TIÊN để lọc chính xác mọi danh sách
+                const rawDel = localStorage.getItem('vovinam_deleted_registry');
+                if (rawDel) {
+                    const parsedDel = JSON.parse(rawDel);
+                    deletedRegistry = {
+                        students: (parsedDel && parsedDel.students) || {},
+                        classes: (parsedDel && parsedDel.classes) || {},
+                        accounts: (parsedDel && parsedDel.accounts) || {},
+                        requests: (parsedDel && parsedDel.requests) || {},
+                        gear: (parsedDel && parsedDel.gear) || {},
+                        tournaments: (parsedDel && parsedDel.tournaments) || {},
+                        restored: (parsedDel && parsedDel.restored) || {}
+                    };
+                }
+                hasLocalUserEdits = localStorage.getItem('vovinam_has_user_edits') === '1';
+                lastLocalMutationIso = localStorage.getItem('vovinam_last_mutation_iso') || '';
+                lastSyncedUpdatedAt = localStorage.getItem('vovinam_last_synced_iso') || lastLocalMutationIso || '';
+                lastHardResetAt = parseInt(localStorage.getItem('vovinam_hard_reset_at') || '0', 10) || 0;
+
+                // 2. Tải lớp học
                 const c = localStorage.getItem('vovinam_classes');
                 if (c) {
                     classes = JSON.parse(c);
                 } else {
                     classes = [...DEFAULT_CLASSES];
-                    saveClassesToStorage(true);
+                    if (!isSilentReload) saveClassesToStorage(true);
                 }
+                classes = classes.filter(cls => !(deletedRegistry.classes && (deletedRegistry.classes[cls.id] || deletedRegistry.classes[cls.name])));
 
-                // Tải võ sinh (Truyền skipCloud = true để tránh gán mốc thời gian ảo chặn pullFromCloud)
+                // 3. Tải võ sinh & Tự động làm sạch các mã _uid STU_DET_ bị đánh dấu xóa nhầm từ phiên bản cũ
                 const s = localStorage.getItem('vovinam_students');
                 if (s) {
                     students = JSON.parse(s);
                 } else {
                     students = [...SAMPLE_STUDENTS];
-                    saveStudentsToStorage(true);
+                    if (!isSilentReload) saveStudentsToStorage(true);
                 }
-                // Luôn thanh lọc các võ sinh hoặc mã định danh cũ đã bị đổi/xóa trong deletedRegistry
-                if (deletedRegistry.students && Object.keys(deletedRegistry.students).length > 0) {
-                    students = students.filter(item => !(deletedRegistry.students && deletedRegistry.students[item.id]));
+                if (localStorage.getItem('vovinam_sync_schema_v32') !== '1') {
+                    if (deletedRegistry && deletedRegistry.students) {
+                        Object.keys(deletedRegistry.students).forEach(k => {
+                            if (k.startsWith('STU_DET_')) {
+                                delete deletedRegistry.students[k];
+                            }
+                        });
+                        saveDeletedRegistryToStorage();
+                    }
+                    lastSyncedUpdatedAt = '';
+                    try {
+                        localStorage.removeItem('vovinam_last_synced_iso');
+                        localStorage.setItem('vovinam_sync_schema_v32', '1');
+                    } catch (e) {}
                 }
+                students = students.filter(item => item && !isStudentDeletedByRegistry(item));
 
                 // Chuẩn hóa tên lớp cũ nếu cần
                 students.forEach(st => {
@@ -6218,7 +6339,7 @@
                 } else {
                     if (!hasLocalUserEdits && Object.keys(deletedRegistry.gear || {}).length === 0) {
                         gearOrders = JSON.parse(JSON.stringify(DEFAULT_GEAR_ORDERS));
-                        saveGearOrdersToStorage(true);
+                        if (!isSilentReload) saveGearOrdersToStorage(true);
                     } else {
                         gearOrders = [];
                     }
@@ -6230,7 +6351,7 @@
                 } else {
                     if (!hasLocalUserEdits && Object.keys(deletedRegistry.tournaments || {}).length === 0) {
                         tournamentEntries = JSON.parse(JSON.stringify(DEFAULT_TOURNAMENTS));
-                        saveTournamentsToStorage(true);
+                        if (!isSilentReload) saveTournamentsToStorage(true);
                     } else {
                         tournamentEntries = [];
                     }
@@ -6240,7 +6361,6 @@
                 gearOrders = gearOrders.filter(o => !(deletedRegistry.gear && deletedRegistry.gear[o.id]));
                 tournamentEntries = tournamentEntries.filter(t => !(deletedRegistry.tournaments && deletedRegistry.tournaments[t.id]));
 
-
                 const cfg = localStorage.getItem('vovinam_site_config');
                 if (cfg) {
                     siteConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg) };
@@ -6249,10 +6369,14 @@
                 const acc = localStorage.getItem('vovinam_accounts');
                 if (acc) {
                     accounts = JSON.parse(acc);
-                    // Đảm bảo tài khoản được chuẩn hóa username và mã hóa mật khẩu an toàn
+                    let accModified = false;
                     accounts.forEach(a => {
-                        if (a.username) a.username = a.username.replace(/^@+/, '');
+                        if (a.username && a.username.startsWith('@')) {
+                            a.username = a.username.replace(/^@+/, '');
+                            accModified = true;
+                        }
                         if (!a.passwordHash) {
+                            accModified = true;
                             if (a.password) {
                                 a.passwordHash = hashPasswordSync(a.password);
                                 delete a.password;
@@ -6264,8 +6388,8 @@
                                 else a.passwordHash = hashPasswordSync(a.username ? `${a.username}123` : '123456');
                             }
                         }
-                        if (!a.status) a.status = 'active';
-                        if (!a.passwordChangedAt) a.passwordChangedAt = '2026-10-22';
+                        if (!a.status) { a.status = 'active'; accModified = true; }
+                        if (!a.passwordChangedAt) { a.passwordChangedAt = '2026-10-22'; accModified = true; }
                         if (a.id === 'ACC-ADMIN' || a.username === 'admin' || a.isSuperAdmin) {
                             a.isSuperAdmin = true;
                             a.permissions = {
@@ -6278,6 +6402,7 @@
                                 settings_manage: true
                             };
                         } else if (!a.permissions) {
+                            accModified = true;
                             a.permissions = {
                                 students_direct: false,
                                 classes_manage: false,
@@ -6289,33 +6414,18 @@
                             };
                         }
                     });
-                    saveAccountsToStorage(true);
+                    if (accModified && !isSilentReload) saveAccountsToStorage(true);
                 } else {
                     accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
-                    saveAccountsToStorage(true);
+                    if (!isSilentReload) saveAccountsToStorage(true);
                 }
-
-                const rawDel = localStorage.getItem('vovinam_deleted_registry');
-                if (rawDel) {
-                    const parsedDel = JSON.parse(rawDel);
-                    deletedRegistry = {
-                        students: (parsedDel && parsedDel.students) || {},
-                        classes: (parsedDel && parsedDel.classes) || {},
-                        accounts: (parsedDel && parsedDel.accounts) || {},
-                        requests: (parsedDel && parsedDel.requests) || {},
-                        gear: (parsedDel && parsedDel.gear) || {},
-                        tournaments: (parsedDel && parsedDel.tournaments) || {}
-                    };
-                }
-                hasLocalUserEdits = localStorage.getItem('vovinam_has_user_edits') === '1';
-                lastHardResetAt = parseInt(localStorage.getItem('vovinam_hard_reset_at') || '0', 10) || 0;
 
                 // Tự động dọn sạch các bản ghi bị nhân đôi do đồng bộ (sync clones) và chuẩn hóa _uid cố định
                 if (typeof cleanAutoDoubledSyncClones === 'function') {
                     const cleanRes = cleanAutoDoubledSyncClones(students);
                     if (cleanRes.removedCount > 0) {
                         students = cleanRes.cleanedList;
-                        saveStudentsToStorage(true);
+                        if (!isSilentReload) saveStudentsToStorage(true);
                     }
                 }
                 if (typeof ensureStudentUids === 'function') ensureStudentUids();
@@ -6341,17 +6451,25 @@
 
         function markEntityDeleted(category, id) {
             if (!category || !id) return;
+            const now = getMonotonicLogicalNowMs();
             if (!deletedRegistry[category]) deletedRegistry[category] = {};
-            deletedRegistry[category][id] = Date.now();
+            deletedRegistry[category][id] = now;
+            if (deletedRegistry.restored && deletedRegistry.restored[category]) {
+                delete deletedRegistry.restored[category][id];
+            }
             saveDeletedRegistryToStorage();
         }
 
         function unmarkEntityDeleted(category, id) {
-            if (!category || !id || !deletedRegistry[category]) return;
-            if (deletedRegistry[category][id]) {
+            if (!category || !id) return;
+            const now = getMonotonicLogicalNowMs();
+            if (!deletedRegistry.restored) deletedRegistry.restored = {};
+            if (!deletedRegistry.restored[category]) deletedRegistry.restored[category] = {};
+            deletedRegistry.restored[category][id] = now;
+            if (deletedRegistry[category] && deletedRegistry[category][id]) {
                 delete deletedRegistry[category][id];
-                saveDeletedRegistryToStorage();
             }
+            saveDeletedRegistryToStorage();
         }
 
         function saveClassesToStorage(skipCloud = false) {
@@ -7130,11 +7248,7 @@
 
             const quickWorkspaceBar = document.getElementById('quick-workspace-bar');
             if (quickWorkspaceBar) {
-                if (tabName === 'overview') {
-                    quickWorkspaceBar.classList.remove('hidden');
-                } else {
-                    quickWorkspaceBar.classList.add('hidden');
-                }
+                quickWorkspaceBar.classList.add('hidden');
             }
 
             if (tabName === 'overview') renderOverviewDashboard();
@@ -7611,9 +7725,11 @@
                 filterClass.value = curVal;
             }
 
-            // 2. Dropdown chọn lớp trong Modal Thêm/Sửa võ sinh (#student-class)
+            // 2. Dropdown chọn lớp trong Modal Thêm/Sửa võ sinh (#student-class) - Không ghi đè nếu Modal đang mở
+            const studentModal = document.getElementById('student-modal');
+            const isStudentModalOpen = studentModal && !studentModal.classList.contains('hidden');
             const studentClass = document.getElementById('student-class');
-            if (studentClass) {
+            if (studentClass && !isStudentModalOpen) {
                 const curVal = studentClass.value;
                 studentClass.innerHTML = classes.map(c => `
                     <option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.time)})</option>
@@ -8212,35 +8328,47 @@
                 : `STU_DUP_${nId}__${nName}_${occIndex}`;
         }
 
-        // Loại bỏ tự động các bản ghi bị nhân đôi ngoài ý muốn do đồng bộ (cùng cả Mã định danh + Họ tên mà không phải do người dùng chủ đích tạo trùng)
+        // Loại bỏ tự động các bản ghi bị nhân đôi ngoài ý muốn do đồng bộ (KHÔNG đánh dấu xóa _uid gốc vào deletedRegistry)
         function cleanAutoDoubledSyncClones(list) {
             if (!Array.isArray(list)) return { cleanedList: [], removedCount: 0 };
-            const seenExactPairs = new Set();
-            const seenUids = new Set();
+            const seenExactPairs = new Map();
+            const seenUids = new Map();
             const cleanedList = [];
             let removedCount = 0;
 
             list.forEach(s => {
                 if (!s || typeof s !== 'object') return;
                 if (deletedRegistry && deletedRegistry.students) {
-                    if (deletedRegistry.students[s.id] || (s._uid && deletedRegistry.students[s._uid])) {
+                    const delIdTs = deletedRegistry.students[s.id] || 0;
+                    const delUidTs = (s._uid && deletedRegistry.students[s._uid]) || 0;
+                    const maxDelTs = Math.max(delIdTs, delUidTs);
+                    if (maxDelTs > 0 && !(s._updatedAt && s._updatedAt > maxDelTs)) {
                         removedCount++;
                         return;
                     }
                 }
                 const pairKey = normalizeDupId(s.id) + '||' + normalizeDupName(s.name);
-                // Nếu trùng hoàn toàn cả Mã định danh VÀ Họ tên mà không có cờ _isManualDuplicate -> Bản sao bị nhân đôi do sync
                 if (!s._isManualDuplicate && seenExactPairs.has(pairKey)) {
-                    if (s._uid) markEntityDeleted('students', s._uid);
+                    const existingIdx = seenExactPairs.get(pairKey);
+                    const existingObj = cleanedList[existingIdx];
+                    if ((s._updatedAt || 0) > (existingObj._updatedAt || 0)) {
+                        cleanedList[existingIdx] = { ...existingObj, ...s, _uid: existingObj._uid || s._uid };
+                    }
                     removedCount++;
                     return;
                 }
                 if (s._uid && seenUids.has(s._uid) && !s._isManualDuplicate) {
+                    const existingIdx = seenUids.get(s._uid);
+                    const existingObj = cleanedList[existingIdx];
+                    if ((s._updatedAt || 0) > (existingObj._updatedAt || 0)) {
+                        cleanedList[existingIdx] = { ...existingObj, ...s };
+                    }
                     removedCount++;
                     return;
                 }
-                seenExactPairs.add(pairKey);
-                if (s._uid) seenUids.add(s._uid);
+                const newIdx = cleanedList.length;
+                seenExactPairs.set(pairKey, newIdx);
+                if (s._uid) seenUids.set(s._uid, newIdx);
                 cleanedList.push(s);
             });
 
@@ -8258,19 +8386,15 @@
                 pairCounts[pairKey] = (pairCounts[pairKey] || 0) + 1;
                 const occ = pairCounts[pairKey];
 
-                // Gán _uid cố định (deterministic) cho bản ghi gốc để không bao giờ bị lệch _uid khi đồng bộ đa thiết bị
-                if (!s._isManualDuplicate && occ === 1) {
-                    const detUid = buildDeterministicStudentUid(s, 1);
-                    if (!seenUids.has(detUid)) {
-                        s._uid = detUid;
-                    }
+                // Giữ nguyên _uid đã có của học sinh để khi đổi tên hoặc đổi mã định danh không bị tạo bản sao mới
+                if (s._uid && !seenUids.has(s._uid)) {
+                    seenUids.add(s._uid);
+                    return;
                 }
-                if (!s._uid || seenUids.has(s._uid)) {
-                    const fallbackUid = buildDeterministicStudentUid(s, occ);
-                    s._uid = seenUids.has(fallbackUid)
-                        ? `${fallbackUid}_${Date.now()}_${Math.floor(Math.random() * 1000)}`
-                        : fallbackUid;
-                }
+                const fallbackUid = buildDeterministicStudentUid(s, occ);
+                s._uid = seenUids.has(fallbackUid)
+                    ? `${fallbackUid}_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+                    : fallbackUid;
                 seenUids.add(s._uid);
             });
         }
@@ -9497,9 +9621,9 @@
             let recentList = [];
 
             allKeys.forEach(key => {
-                const parts = key.split('_');
-                const date = parts[0];
-                const className = parts[1];
+                const parsedKey = parseAttendanceKey(key);
+                const date = parsedKey.date;
+                const className = parsedKey.className;
                 const records = attendanceRecords[key] || [];
                 const rec = records.find(r => r.studentId === s.id);
 
@@ -10022,13 +10146,18 @@
             if (dupNamePeers.length > 0) dupReasons.push(`Trùng tên "${name}"`);
             if (dupIdPeers.length > 0) dupReasons.push(`Trùng mã định danh "${idNumber}"`);
 
+            const nowTs = getMonotonicLogicalNowMs();
+            const resolvedUid = editingUid || (hasAnyDup ? ('STU_MAN_' + nowTs + '_' + Math.random().toString(36).slice(2, 7)) : buildDeterministicStudentUid({ id: idNumber, name }, 1));
             const studentData = {
-                _uid: editingUid || (hasAnyDup ? ('STU_MAN_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)) : buildDeterministicStudentUid({ id: idNumber, name }, 1)),
+                _uid: resolvedUid,
+                _updatedAt: nowTs,
                 _isManualDuplicate: Boolean(hasAnyDup),
                 id: idNumber,
                 name, dob, belt, className, type, joinDate, parent, phone, address, avatar,
                 documents: attachedDocs
             };
+            unmarkEntityDeleted('students', idNumber);
+            unmarkEntityDeleted('students', resolvedUid);
 
             if (hasPermission('students_direct')) {
                 if (editingUid || originalId) {
@@ -10040,7 +10169,9 @@
                         const prevName = students[idx].name;
                         const prevId = students[idx].id;
                         studentData._uid = students[idx]._uid;
-                        students[idx] = { ...students[idx], ...studentData, id: idNumber };
+                        unmarkEntityDeleted('students', studentData._uid);
+                        unmarkEntityDeleted('students', idNumber);
+                        students[idx] = { ...students[idx], ...studentData, id: idNumber, _updatedAt: getMonotonicLogicalNowMs() };
 
                         if (hasAnyDup || normalizeDupName(prevName) !== normalizeDupName(name) || normalizeDupId(prevId) !== normalizeDupId(idNumber)) {
                             invalidateDuplicateConfirmation(name, idNumber);
@@ -11123,7 +11254,7 @@
                 return;
             }
 
-            const currentClass = document.getElementById('attendance-class').value;
+            const currentClass = document.getElementById('attendance-class').value || (classes[0] ? classes[0].name : 'Lớp Sáng T2-T4-T6');
             const newId = 'HB' + Date.now().toString().slice(-5);
             const newGuestStudent = {
                 id: newId,
@@ -11133,13 +11264,16 @@
                 phone: '',
                 parent: '',
                 belt: 'Lam đai',
-                className: 'Học bù / Tăng cường',
+                className: currentClass,
                 type: 'guest',
                 joinDate: new Date().toISOString().split('T')[0],
                 status: 'Đang học',
-                avatar: ''
+                avatar: '',
+                _updatedAt: Date.now()
             };
             newGuestStudent._uid = buildDeterministicStudentUid(newGuestStudent, 1);
+            unmarkEntityDeleted('students', newId);
+            unmarkEntityDeleted('students', newGuestStudent._uid);
 
             students.push(newGuestStudent);
             sortStudentsInPlace();
@@ -12721,11 +12855,14 @@
                 if (req.data) {
                     const hasCollision = students.some(s => s && (normalizeDupId(s.id) === normalizeDupId(req.data.id) || normalizeDupName(s.name) === normalizeDupName(req.data.name)));
                     req.data._isManualDuplicate = Boolean(hasCollision);
+                    req.data._updatedAt = Date.now();
                     if (!req.data._uid) {
                         req.data._uid = hasCollision
                             ? ('STU_MAN_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7))
                             : buildDeterministicStudentUid(req.data, 1);
                     }
+                    unmarkEntityDeleted('students', req.data.id);
+                    unmarkEntityDeleted('students', req.data._uid);
                     invalidateDuplicateConfirmation(req.data.name, req.data.id);
                     students.push(req.data);
                 }
@@ -12792,9 +12929,9 @@
 
             const allKeys = Object.keys(attendanceRecords);
             const filteredKeys = allKeys.filter(key => {
-                const parts = key.split('_');
-                const date = parts[0];
-                const className = parts[1];
+                const parsedKey = parseAttendanceKey(key);
+                const date = parsedKey.date;
+                const className = parsedKey.className;
 
                 const inDateRange = (!startDate || date >= startDate) && (!endDate || date <= endDate);
                 const inClass = (filterClass === 'all') || (className === filterClass);
@@ -12926,7 +13063,7 @@
             csvContent += "Mã Số,Họ và Tên,Lớp Học,Tổng Buổi,Có Mặt,Vắng K.Phép,Có Phép / Trễ,Tỷ Lệ Chuyên Cần (%)\n";
 
             const allKeys = Object.keys(attendanceRecords).filter(key => {
-                const date = key.split('_')[0];
+                const date = parseAttendanceKey(key).date;
                 return (!startDate || date >= startDate) && (!endDate || date <= endDate);
             });
 
@@ -13175,13 +13312,13 @@
         }
 
         function buildFullDatabasePayload() {
-            const nowIso = lastLocalMutationIso || new Date().toISOString();
+            const stableIso = lastLocalMutationIso || lastSyncedUpdatedAt || '2026-01-01T00:00:00.000Z';
             return {
-                version: '3.0',
+                version: '3.1',
                 deviceId: clientDeviceId,
                 hasUserEdits: hasLocalUserEdits,
                 hardResetAt: lastHardResetAt,
-                updatedAt: nowIso,
+                updatedAt: stableIso,
                 updatedAtDisplay: new Date().toLocaleString('vi-VN'),
                 updatedBy: getCurrentAccountName(),
                 deletedRegistry: deletedRegistry,
@@ -13198,22 +13335,57 @@
             };
         }
 
+        function isStudentDeletedByRegistry(s) {
+            if (!s || !deletedRegistry || !deletedRegistry.students) return false;
+            const delIdTs = deletedRegistry.students[s.id] || 0;
+            const rawUidTs = (s._uid && deletedRegistry.students[s._uid]) || 0;
+            // Nếu _uid là mã tự động STU_DET_ nhưng mã định danh chính (s.id) KHÔNG nằm trong sổ xóa -> Đó là vết lỗi từ bộ lọc cũ, tự động gỡ bỏ
+            const delUidTs = (s._uid && String(s._uid).startsWith('STU_DET_') && !delIdTs) ? 0 : rawUidTs;
+            const maxDelTs = Math.max(delIdTs, delUidTs);
+            if (!maxDelTs) return false;
+            const restMap = (deletedRegistry.restored && deletedRegistry.restored.students) || {};
+            const restTs = Math.max(restMap[s.id] || 0, (s._uid && restMap[s._uid]) || 0, s._updatedAt || 0);
+            return restTs <= maxDelTs;
+        }
+
         function applyFullDatabasePayload(rawPayload, mode = 'smart_sync', silent = false) {
             if (!rawPayload || typeof rawPayload !== 'object') {
                 if (!silent) showToast('Dữ liệu không hợp lệ!', 'error');
                 return false;
             }
+            const beforeFingerprint = silent ? computeDataFingerprint() : '';
             // Khử khuẩn toàn diện dữ liệu đầu vào chống Stored XSS
             const payload = sanitizeObjectStrings(rawPayload);
 
-            // 1. Đồng bộ sổ đăng ký các mục đã xóa (Tombstone Registry) để mục đã xóa trên máy A cũng tự động xóa trên máy B
+            // 1. Đồng bộ sổ đăng ký khôi phục (restored) và sổ đăng ký xóa (Tombstone Registry)
+            if (!deletedRegistry.restored) deletedRegistry.restored = {};
             if (payload.deletedRegistry && typeof payload.deletedRegistry === 'object') {
+                if (payload.deletedRegistry.restored && typeof payload.deletedRegistry.restored === 'object') {
+                    ['students', 'classes', 'accounts', 'requests', 'gear', 'tournaments'].forEach(cat => {
+                        const incomingRest = payload.deletedRegistry.restored[cat];
+                        if (incomingRest && typeof incomingRest === 'object') {
+                            if (!deletedRegistry.restored[cat]) deletedRegistry.restored[cat] = {};
+                            Object.entries(incomingRest).forEach(([id, ts]) => {
+                                const curTs = deletedRegistry.restored[cat][id] || 0;
+                                if (ts > curTs) deletedRegistry.restored[cat][id] = ts;
+                            });
+                        }
+                    });
+                }
+
                 ['students', 'classes', 'accounts', 'requests', 'gear', 'tournaments'].forEach(cat => {
                     if (payload.deletedRegistry[cat] && typeof payload.deletedRegistry[cat] === 'object') {
                         if (!deletedRegistry[cat]) deletedRegistry[cat] = {};
+                        const restCat = (deletedRegistry.restored && deletedRegistry.restored[cat]) || {};
                         Object.entries(payload.deletedRegistry[cat]).forEach(([id, ts]) => {
                             const existingTs = deletedRegistry[cat][id] || 0;
-                            if (ts > existingTs) deletedRegistry[cat][id] = ts;
+                            const maxDel = Math.max(existingTs, ts);
+                            const restTs = restCat[id] || 0;
+                            if (restTs > maxDel) {
+                                delete deletedRegistry[cat][id];
+                            } else {
+                                deletedRegistry[cat][id] = maxDel;
+                            }
                         });
                     }
                 });
@@ -13227,10 +13399,13 @@
                 mode = 'replace';
             }
 
-            // Nếu máy hiện tại mới mở lần đầu (chưa có chỉnh sửa thực tế nào, chỉ đang giữ 4 võ sinh mẫu) -> Chuyển sang replace để nhận nguyên vẹn dữ liệu từ máy chính
-            const effectiveMode = (!hasLocalUserEdits || mode === 'replace') ? 'replace' : 'merge';
+            // Đảm bảo đồng nhất 100% sĩ số giữa các thiết bị:
+            // Khi nhận bản đồng bộ từ Cloud (smart_sync) mà máy hiện tại không đang có thay đổi cục bộ vừa diễn ra trong 2 giây qua,
+            // sử dụng danh sách chuẩn từ Cloud làm gốc và chỉ giữ lại các bản ghi cục bộ có _updatedAt mới hơn bản Cloud.
+            const isRecentLocalEdit = (Date.now() - lastLocalMutationTimeMs) < 2500;
+            const effectiveMode = (mode === 'replace' || !hasLocalUserEdits || (mode === 'smart_sync' && !isRecentLocalEdit)) ? 'authoritative_sync' : 'merge';
 
-            if (effectiveMode === 'replace') {
+            if (effectiveMode === 'authoritative_sync') {
                 if (Array.isArray(payload.accounts) && payload.accounts.length > 0) {
                     accounts = payload.accounts.filter(a => !(deletedRegistry.accounts && deletedRegistry.accounts[a.id]));
                 }
@@ -13238,14 +13413,38 @@
                     classes = payload.classes.filter(c => !(deletedRegistry.classes && (deletedRegistry.classes[c.id] || deletedRegistry.classes[c.name])));
                 }
                 if (Array.isArray(payload.students)) {
-                    const filteredReplace = payload.students.filter(s => s && !(deletedRegistry.students && (deletedRegistry.students[s.id] || (s._uid && deletedRegistry.students[s._uid]))));
-                    students = cleanAutoDoubledSyncClones(filteredReplace).cleanedList;
+                    const remoteValid = payload.students.filter(s => s && !isStudentDeletedByRegistry(s));
+                    // Nếu đang là replace hoàn toàn thì lấy nguyên danh sách chuẩn; nếu là authoritative_sync thì giữ thêm học sinh vừa tạo cục bộ có _updatedAt mới hơn Cloud
+                    const remoteMaxTs = remoteValid.reduce((mx, s) => Math.max(mx, s._updatedAt || 0), 0);
+                    const mergedList = remoteValid.map(rs => {
+                        const localMatch = students.find(ls => ls && ((ls._uid && rs._uid && ls._uid === rs._uid) || (!ls._isManualDuplicate && !rs._isManualDuplicate && normalizeDupId(ls.id) === normalizeDupId(rs.id))));
+                        if (localMatch && (localMatch._updatedAt || 0) > (rs._updatedAt || 0)) {
+                            return { ...rs, ...localMatch, _uid: rs._uid || localMatch._uid };
+                        }
+                        return rs;
+                    });
+                    if (mode !== 'replace' && hasLocalUserEdits) {
+                        students.forEach(ls => {
+                            if (!ls || isStudentDeletedByRegistry(ls)) return;
+                            const existsInRemote = mergedList.some(rs => (ls._uid && rs._uid && ls._uid === rs._uid) || (!ls._isManualDuplicate && !rs._isManualDuplicate && normalizeDupId(ls.id) === normalizeDupId(rs.id)));
+                            if (!existsInRemote && ls._updatedAt && ls._updatedAt > remoteMaxTs && (Date.now() - ls._updatedAt < 15000)) {
+                                mergedList.push(ls);
+                            }
+                        });
+                    }
+                    students = cleanAutoDoubledSyncClones(mergedList).cleanedList;
                 }
                 if (payload.attendanceRecords && typeof payload.attendanceRecords === 'object') {
-                    attendanceRecords = payload.attendanceRecords;
+                    attendanceRecords = mode === 'replace' ? payload.attendanceRecords : { ...attendanceRecords, ...payload.attendanceRecords };
                 }
                 if (payload.tuitionRecords && typeof payload.tuitionRecords === 'object') {
-                    tuitionRecords = payload.tuitionRecords;
+                    if (mode === 'replace') {
+                        tuitionRecords = payload.tuitionRecords;
+                    } else {
+                        Object.keys(payload.tuitionRecords).forEach(month => {
+                            tuitionRecords[month] = { ...(tuitionRecords[month] || {}), ...payload.tuitionRecords[month] };
+                        });
+                    }
                 }
                 if (Array.isArray(payload.gearOrders)) {
                     gearOrders = payload.gearOrders.filter(o => !(deletedRegistry.gear && deletedRegistry.gear[o.id]));
@@ -13263,7 +13462,7 @@
                     } catch (e) {}
                 }
             } else {
-                // Chế độ gộp dữ liệu thông minh không xung đột (Smart Multi-Device Merge)
+                // Chế độ gộp dữ liệu thông minh không xung đột (Khi người dùng chọn Import Merge hoặc đang gõ sửa đồng thời)
                 if (Array.isArray(payload.accounts)) {
                     payload.accounts.forEach(a => {
                         if (deletedRegistry.accounts && deletedRegistry.accounts[a.id]) return;
@@ -13285,8 +13484,7 @@
                 if (Array.isArray(payload.students)) {
                     const incomingCleaned = cleanAutoDoubledSyncClones(payload.students).cleanedList;
                     incomingCleaned.forEach(s => {
-                        if (!s) return;
-                        if (deletedRegistry.students && (deletedRegistry.students[s.id] || (s._uid && deletedRegistry.students[s._uid]))) return;
+                        if (!s || isStudentDeletedByRegistry(s)) return;
                         const idx = students.findIndex(item => {
                             if (!item) return false;
                             if (s._uid && item._uid && item._uid === s._uid) return true;
@@ -13297,13 +13495,15 @@
                             return false;
                         });
                         if (idx !== -1) {
-                            const keepUid = students[idx]._uid;
-                            students[idx] = { ...students[idx], ...s, _uid: keepUid || s._uid };
+                            const keepUid = students[idx]._uid || s._uid;
+                            if ((s._updatedAt || 0) >= (students[idx]._updatedAt || 0)) {
+                                students[idx] = { ...students[idx], ...s, _uid: keepUid };
+                            }
                         } else {
                             students.push(s);
                         }
                     });
-                    students = cleanAutoDoubledSyncClones(students).cleanedList;
+                    students = cleanAutoDoubledSyncClones(students.filter(s => !isStudentDeletedByRegistry(s))).cleanedList;
                 }
                 if (payload.attendanceRecords && typeof payload.attendanceRecords === 'object') {
                     attendanceRecords = { ...attendanceRecords, ...payload.attendanceRecords };
@@ -13374,23 +13574,19 @@
             saveTournamentsToStorage(true);
             saveRequestsToStorage(true);
 
-            // Render lại toàn bộ giao diện (Bao gồm cả màn hình đăng nhập nếu đang mở)
-            applySiteConfig();
-            loadSettingsForm();
-            populateClassDropdowns();
-            populateAccountSwitcher();
-            updateRoleUI();
-            renderStudents();
-            renderClasses();
-            renderPendingApprovals();
-            loadAttendanceSheet();
-            renderTuitionTable();
-            renderGearOrders();
-            renderTournaments();
-            renderPermissionsMatrix();
-            renderQuickLoginList();
-            updateBackupStatsUI();
+            const afterFingerprint = silent ? computeDataFingerprint() : '';
+            // Nếu là đồng bộ ngầm và dữ liệu thực tế không có gì thay đổi -> Không vẽ lại DOM để tránh giật/nhảy giao diện
+            if (silent && beforeFingerprint && beforeFingerprint === afterFingerprint) {
+                return true;
+            }
 
+            // Nếu người dùng đang mở hộp thoại nhập liệu hoặc đang gõ phím -> Hoãn vẽ lại giao diện cho đến khi thao tác xong
+            if (silent && isUserActivelyEditingUI()) {
+                pendingUiRefreshAfterEdit = true;
+                return true;
+            }
+
+            refreshAllUiViewsSafely(silent);
             return true;
         }
 
@@ -13713,8 +13909,8 @@
                             }), false);
                             ws.send(reqPkt);
 
-                            // Nếu máy này đã có dữ liệu thực tế do người dùng chỉnh sửa, đẩy bản lưu lên kênh Retained
-                            if (hasLocalUserEdits) {
+                            // Chỉ phát dữ liệu lên MQTT sau khi đã tải xong bản mới nhất từ Cloud (hoặc khi không dùng Firebase URL riêng)
+                            if (hasLocalUserEdits && (hasCompletedInitialCloudPull || !cloudConfig.url)) {
                                 publishStateToMqttRelay(false);
                             }
 
@@ -13761,7 +13957,16 @@
                 const payload = buildFullDatabasePayload();
                 lastSyncedUpdatedAt = payload.updatedAt;
 
-                const rawJson = JSON.stringify(payload);
+                let rawJson = JSON.stringify(payload);
+                // Nếu dữ liệu lớn hơn 64KB (do đính kèm nhiều ảnh/hồ sơ) và đã có Firebase URL, gửi gói tin gọn qua MQTT để không bị Broker ngắt kết nối
+                if (rawJson.length > 65000 && cloudConfig.url) {
+                    const lightPayload = {
+                        ...payload,
+                        _isLightNotify: true,
+                        students: payload.students.map(st => ({ ...st, avatar: '', documents: [] }))
+                    };
+                    rawJson = JSON.stringify(lightPayload);
+                }
                 const mqttPassphrase = getMqttEffectivePassphrase();
                 const cipherData = await encryptPayloadAES(rawJson, mqttPassphrase);
                 let outgoingBody = {
@@ -13798,21 +14003,26 @@
                 if (!parsed || typeof parsed !== 'object') return;
 
                 if (topic.endsWith('/req')) {
-                    // Một máy khác vừa vào phòng và xin bản dữ liệu mới nhất -> Nếu máy này có dữ liệu thực tế, phát lại ngay
-                    if (parsed.senderId !== clientDeviceId && hasLocalUserEdits) {
-                        setTimeout(() => { publishStateToMqttRelay(false); }, 120);
+                    // Chỉ phản hồi yêu cầu trên MQTT khi KHÔNG dùng Firebase URL riêng
+                    if (!cloudConfig.url && parsed.senderId !== clientDeviceId && hasLocalUserEdits) {
+                        setTimeout(() => { publishStateToMqttRelay(false); }, 250);
                     }
                     return;
                 }
 
                 if (topic.endsWith('/state')) {
-                    // Bỏ qua nếu chính máy này vừa phát gói tin đó và không phải lệnh tải thủ công
-                    if (parsed.deviceId === clientDeviceId && parsed.updatedAt === lastSyncedUpdatedAt) {
+                    if (parsed.deviceId === clientDeviceId) {
                         return;
                     }
+                    // Nếu đã kết nối Firebase URL chuẩn: chỉ dùng MQTT làm tín hiệu báo có bản cập nhật mới hơn để tải từ Firebase (tránh xung đột 2 nguồn dữ liệu)
+                    if (cloudConfig.url) {
+                        if (parsed.updatedAt && isIncomingTimestampNewer(parsed.updatedAt, lastSyncedUpdatedAt)) {
+                            pullFromCloud(false, true, false);
+                        }
+                        return;
+                    }
+
                     if (!parsed.hasUserEdits && hasLocalUserEdits && !parsed.hardResetAt) {
-                        // Không để dữ liệu mẫu chưa chỉnh sửa từ máy mới ghi đè lên máy đã có dữ liệu thật; ngược lại phát dữ liệu thật cho máy mới
-                        setTimeout(() => { publishStateToMqttRelay(false); }, 150);
                         return;
                     }
 
@@ -13828,11 +14038,14 @@
                         }
                     }
 
-                    if (data.updatedAt && data.updatedAt === lastSyncedUpdatedAt && hasLocalUserEdits) {
+                    // Chỉ nhận gói dữ liệu có thời gian MỚI HƠN bản hiện tại trên máy
+                    const isHardResetNewer = Boolean(data.hardResetAt && data.hardResetAt > lastHardResetAt);
+                    if (hasLocalUserEdits && !isHardResetNewer && !isIncomingTimestampNewer(data.updatedAt, lastSyncedUpdatedAt)) {
                         return;
                     }
                     if (data.updatedAt) {
                         lastSyncedUpdatedAt = data.updatedAt;
+                        try { localStorage.setItem('vovinam_last_synced_iso', lastSyncedUpdatedAt); } catch (e) {}
                     }
 
                     applyFullDatabasePayload(data, 'smart_sync', true);
@@ -14049,8 +14262,13 @@
             updateCloudStatusUI('syncing');
 
             try {
+                const logicalNow = getMonotonicLogicalNowMs();
                 lastLocalMutationTimeMs = Date.now();
-                lastLocalMutationIso = new Date().toISOString();
+                lastLocalMutationIso = new Date(logicalNow).toISOString();
+                try {
+                    localStorage.setItem('vovinam_last_mutation_iso', lastLocalMutationIso);
+                    localStorage.setItem('vovinam_last_synced_iso', lastLocalMutationIso);
+                } catch (e) {}
                 const payload = buildFullDatabasePayload();
                 lastSyncedUpdatedAt = payload.updatedAt;
 
@@ -14127,7 +14345,7 @@
 
             // Khi kiểm tra tự động ngầm (silent = true), kiểm tra nhanh mốc thời gian updatedAt (chỉ ~30 byte) trước khi tải toàn bộ DB
             // LƯU Ý QUAN TRỌNG: So sánh khác nhau (remoteUpdatedAt !== lastSyncedUpdatedAt), TUYỆT ĐỐI KHÔNG dùng "<" vì đồng hồ giữa các máy tính/điện thoại có thể lệch nhau vài giây!
-            if (!manual && silent && !initIfEmpty && lastSyncedUpdatedAt) {
+            if (!manual && silent && !initIfEmpty && hasCompletedInitialCloudPull && lastSyncedUpdatedAt) {
                 try {
                     const metaUrl = getCloudEndpointUrl('updatedAt');
                     const sep = metaUrl.includes('?') ? '&' : '?';
@@ -14139,8 +14357,8 @@
                     if (metaRes.ok) {
                         const remoteUpdatedAt = await metaRes.json();
                         if (typeof remoteUpdatedAt === 'string' && remoteUpdatedAt) {
-                            if (remoteUpdatedAt === lastSyncedUpdatedAt) {
-                                // Dữ liệu trên Cloud giống hệt bản đang hiển thị trên máy -> Không cần tải lại
+                            if (!isIncomingTimestampNewer(remoteUpdatedAt, lastSyncedUpdatedAt)) {
+                                // Dữ liệu trên Cloud không mới hơn bản đang hiển thị trên máy -> Không cần tải lại
                                 return;
                             }
                         }
@@ -14217,14 +14435,17 @@
                     }
                 }
 
-                // Nếu bản dữ liệu tải về có cùng updatedAt với bản hiện tại và là chạy ngầm -> không cần render lại DOM
-                if (!manual && silent && data.updatedAt && data.updatedAt === lastSyncedUpdatedAt) {
+                // Nếu chạy ngầm và bản dữ liệu trên Cloud không mới hơn bản hiện tại trên máy (trừ lần tải đầu tiên khi vừa mở trang) -> không ghi đè
+                const isResetNewer = Boolean(data.hardResetAt && data.hardResetAt > lastHardResetAt);
+                if (!manual && silent && hasCompletedInitialCloudPull && !isResetNewer && data.updatedAt && !isIncomingTimestampNewer(data.updatedAt, lastSyncedUpdatedAt)) {
                     updateCloudStatusUI('connected', `• ${timeNow} (${elapsedMs}ms)`);
                     return;
                 }
 
+                hasCompletedInitialCloudPull = true;
                 if (data.updatedAt) {
                     lastSyncedUpdatedAt = data.updatedAt;
+                    try { localStorage.setItem('vovinam_last_synced_iso', lastSyncedUpdatedAt); } catch (e) {}
                 }
 
                 applyFullDatabasePayload(data, 'smart_sync', silent);
@@ -14258,10 +14479,15 @@
 
         function triggerAutoCloudSync() {
             hasLocalUserEdits = true;
-            try { localStorage.setItem('vovinam_has_user_edits', '1'); } catch (e) {}
+            const logicalNow = getMonotonicLogicalNowMs();
             lastLocalMutationTimeMs = Date.now();
-            lastLocalMutationIso = new Date().toISOString();
+            lastLocalMutationIso = new Date(logicalNow).toISOString();
             lastSyncedUpdatedAt = lastLocalMutationIso;
+            try {
+                localStorage.setItem('vovinam_has_user_edits', '1');
+                localStorage.setItem('vovinam_last_mutation_iso', lastLocalMutationIso);
+                localStorage.setItem('vovinam_last_synced_iso', lastSyncedUpdatedAt);
+            } catch (e) {}
 
             // 1. Phát tín hiệu đồng bộ tức thì (<10ms) sang các tab/cửa sổ khác trên cùng thiết bị
             broadcastLocalRealtimeUpdate();
@@ -14298,7 +14524,7 @@
                     try {
                         const parsed = JSON.parse(evt.data);
                         const remotePayload = (parsed && parsed.path === '/' && parsed.data) ? parsed.data : null;
-                        if (remotePayload && remotePayload.updatedAt && remotePayload.updatedAt !== lastSyncedUpdatedAt) {
+                        if (remotePayload && remotePayload.updatedAt && isIncomingTimestampNewer(remotePayload.updatedAt, lastSyncedUpdatedAt)) {
                             if (!remotePayload._encrypted && (remotePayload.students || remotePayload.classes)) {
                                 lastSyncedUpdatedAt = remotePayload.updatedAt;
                                 const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -14345,8 +14571,9 @@
             try {
                 const msg = {
                     type: 'VOVINAM_DATA_UPDATED',
+                    senderId: clientDeviceId,
                     updatedAt: lastLocalMutationIso || new Date().toISOString(),
-                    senderTab: window.name || 'tab'
+                    ts: Date.now()
                 };
                 if (localBroadcastChannel) {
                     localBroadcastChannel.postMessage(msg);
@@ -14356,12 +14583,13 @@
         }
 
         function initRealtimeMultiDeviceListeners() {
-            // 1. Đồng bộ tức thì (<10ms) giữa các tab trình duyệt bằng BroadcastChannel & Storage Event
+            // 1. Đồng bộ tức thì (<10ms) giữa các tab trình duyệt bằng BroadcastChannel & Storage Event (Chặn tự lặp)
             try {
                 if (typeof window.BroadcastChannel !== 'undefined') {
                     localBroadcastChannel = new BroadcastChannel('vovinam_realtime_channel');
                     localBroadcastChannel.onmessage = (event) => {
                         if (event && event.data && event.data.type === 'VOVINAM_DATA_UPDATED') {
+                            if (event.data.senderId === clientDeviceId) return;
                             reloadAllFromLocalStorageSilently();
                         }
                     };
@@ -14369,9 +14597,23 @@
             } catch (e) {}
 
             window.addEventListener('storage', (event) => {
-                if (!event || !event.key) return;
-                if (event.key.startsWith('vovinam_')) {
-                    reloadAllFromLocalStorageSilently();
+                if (!event || event.key !== 'vovinam_realtime_ping' || !event.newValue) return;
+                try {
+                    const msg = JSON.parse(event.newValue);
+                    if (msg && msg.senderId === clientDeviceId) return;
+                } catch (e) {}
+                reloadAllFromLocalStorageSilently();
+            });
+
+            // Khi người dùng vừa đóng Modal hoặc rời khỏi ô nhập liệu, nếu có bản cập nhật ngầm đang chờ thì làm mới giao diện
+            document.addEventListener('focusout', () => {
+                if (pendingUiRefreshAfterEdit) {
+                    setTimeout(() => {
+                        if (pendingUiRefreshAfterEdit && !isUserActivelyEditingUI()) {
+                            pendingUiRefreshAfterEdit = false;
+                            refreshAllUiViewsSafely(true);
+                        }
+                    }, 150);
                 }
             });
 
@@ -14395,21 +14637,15 @@
         }
 
         function reloadAllFromLocalStorageSilently() {
-            loadData();
-            applySiteConfig();
-            loadSettingsForm();
-            populateClassDropdowns();
-            populateAccountSwitcher();
-            updateRoleUI();
-            renderStudents();
-            renderClasses();
-            renderPendingApprovals();
-            loadAttendanceSheet();
-            renderTuitionTable();
-            renderGearOrders();
-            renderTournaments();
-            renderPermissionsMatrix();
-            updateBackupStatsUI();
+            const beforeFp = computeDataFingerprint();
+            loadData(true);
+            const afterFp = computeDataFingerprint();
+            if (beforeFp && beforeFp === afterFp) return;
+            if (isUserActivelyEditingUI()) {
+                pendingUiRefreshAfterEdit = true;
+                return;
+            }
+            refreshAllUiViewsSafely(true);
         }
 
         function triggerInstantForegroundSync() {
@@ -14692,13 +14928,28 @@
                 const mediaMap = await idbGetAllMedia();
                 let needReRender = false;
 
-                // Khôi phục dữ liệu từ kv_store nếu LocalStorage trống (và dọn sạch bản sao tự nhân đôi)
+                // Khôi phục dữ liệu từ kv_store nếu LocalStorage trống hoặc bị tràn dung lượng trước đó
                 const idbStudents = await idbGetItem('vovinam_students');
-                if (Array.isArray(idbStudents) && students.length === 0) {
-                    const cleanedIdb = cleanAutoDoubledSyncClones(idbStudents).cleanedList;
-                    if (cleanedIdb.length > 0) {
+                if (Array.isArray(idbStudents) && idbStudents.length > 0) {
+                    const cleanedIdb = cleanAutoDoubledSyncClones(idbStudents.filter(st => !isStudentDeletedByRegistry(st))).cleanedList;
+                    if (students.length === 0 && cleanedIdb.length > 0) {
                         students = cleanedIdb;
                         needReRender = true;
+                    } else if (cleanedIdb.length > 0) {
+                        // Đồng bộ bổ sung tài liệu/ảnh từ bản đầy đủ trong IndexedDB
+                        cleanedIdb.forEach(idbSt => {
+                            const localSt = students.find(ls => ls && ((ls._uid && idbSt._uid && ls._uid === idbSt._uid) || normalizeDupId(ls.id) === normalizeDupId(idbSt.id)));
+                            if (localSt) {
+                                if (!localSt.avatar && idbSt.avatar && !String(idbSt.avatar).startsWith('@idb_media:')) {
+                                    localSt.avatar = idbSt.avatar;
+                                    needReRender = true;
+                                }
+                                if ((!Array.isArray(localSt.documents) || localSt.documents.length === 0) && Array.isArray(idbSt.documents) && idbSt.documents.length > 0) {
+                                    localSt.documents = idbSt.documents;
+                                    needReRender = true;
+                                }
+                            }
+                        });
                     }
                 }
 
@@ -15075,7 +15326,7 @@
             // 1. Dọn dẹp các buổi điểm danh cũ hơn 6 tháng (key dạng 'YYYY-MM-DD_TênLớp')
             if (attendanceRecords && typeof attendanceRecords === 'object') {
                 Object.keys(attendanceRecords).forEach(sessionKey => {
-                    const datePart = sessionKey.split('_')[0];
+                    const datePart = parseAttendanceKey(sessionKey).date;
                     if (datePart && datePart < cutoff.dateStr) {
                         delete attendanceRecords[sessionKey];
                         prunedAttendance++;
@@ -15098,17 +15349,25 @@
             // 3. Dọn dẹp đơn mua đồ tập cũ hơn 6 tháng
             if (Array.isArray(gearOrders)) {
                 const initialCount = gearOrders.length;
-                gearOrders = gearOrders.filter(o => !o.orderDate || o.orderDate >= cutoff.dateStr);
+                gearOrders = gearOrders.filter(o => {
+                    const keep = !o.orderDate || o.orderDate >= cutoff.dateStr;
+                    if (!keep && o.id) markEntityDeleted('gear', o.id);
+                    return keep;
+                });
                 prunedGear = initialCount - gearOrders.length;
-                if (prunedGear > 0) saveGearOrdersToStorage(true);
+                if (prunedGear > 0) saveGearOrdersToStorage(!manual);
             }
 
             // 4. Dọn dẹp đăng ký thi đấu giải cũ hơn 6 tháng
             if (Array.isArray(tournamentEntries)) {
                 const initialCount = tournamentEntries.length;
-                tournamentEntries = tournamentEntries.filter(t => !t.registrationDate || t.registrationDate >= cutoff.dateStr);
+                tournamentEntries = tournamentEntries.filter(t => {
+                    const keep = !t.registrationDate || t.registrationDate >= cutoff.dateStr;
+                    if (!keep && t.id) markEntityDeleted('tournaments', t.id);
+                    return keep;
+                });
                 prunedTournaments = initialCount - tournamentEntries.length;
-                if (prunedTournaments > 0) saveTournamentsToStorage(true);
+                if (prunedTournaments > 0) saveTournamentsToStorage(!manual);
             }
 
             // 5. Dọn dẹp yêu cầu phê duyệt cũ hơn 6 tháng
@@ -15263,7 +15522,7 @@
             let att6m = 0;
             if (attendanceRecords && typeof attendanceRecords === 'object') {
                 Object.keys(attendanceRecords).forEach(k => {
-                    const d = k.split('_')[0];
+                    const d = parseAttendanceKey(k).date;
                     if (!d || d >= cutoff.dateStr) att6m++;
                 });
             }
