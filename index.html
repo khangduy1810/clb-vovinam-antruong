@@ -1221,9 +1221,9 @@
                             <i class="fa-solid fa-file-excel"></i>
                             <span>Xuất Báo Cáo (CSV)</span>
                         </button>
-                        <button onclick="saveAttendance(false)" class="bg-vovinam-blue hover:bg-vovinam-darkblue text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
-                            <i class="fa-solid fa-floppy-disk"></i>
-                            <span>Lưu Điểm Danh</span>
+                        <button type="button" id="attendance-save-temporary" onclick="uxSaveAttendanceTemporary()" title="Lưu bản tạm theo ngày và lớp trên thiết bị này để thoát trang rồi tiếp tục sau; chưa ghi điểm danh chính thức" class="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
+                            <i class="fa-solid fa-file-pen" aria-hidden="true"></i>
+                            <span>Lưu tạm</span>
                         </button>
                     </div>
                 </div>
@@ -1250,7 +1250,7 @@
                     <p id="attendance-save-status" class="text-xs font-semibold text-slate-600" role="status" aria-live="polite">Buổi học chưa được lưu</p>
                     <p id="attendance-save-summary" class="text-[11px] text-slate-400 mt-1"></p>
                 </div>
-                <button type="button" id="attendance-dock-save" onclick="saveAttendance(false)"><i class="fa-solid fa-floppy-disk mr-1.5" aria-hidden="true"></i>Lưu điểm danh</button>
+                <button type="button" id="attendance-dock-save" title="Lưu điểm danh chính thức và xóa bản tạm của buổi này" onclick="saveAttendance(false)"><i class="fa-solid fa-floppy-disk mr-1.5" aria-hidden="true"></i>Lưu chính thức</button>
             </div>
         </section>
 
@@ -7375,7 +7375,7 @@
 
             if (tabName === 'overview') renderOverviewDashboard();
             else if (tabName === 'classes') renderClasses();
-            else if (tabName === 'attendance') loadAttendanceSheet();
+            else if (tabName === 'attendance') {uxResumeAttendanceTemporary();loadAttendanceSheet();}
             else if (tabName === 'tuition') renderTuitionTable();
             else if (tabName === 'gear') renderGearOrders();
             else if (tabName === 'tournaments') renderTournaments();
@@ -10383,12 +10383,13 @@
         }
 
         function loadAttendanceSheet(preserveDomEdits=false) {
+            uxEnsureAttendanceDraftStore();
             uxRememberAttendanceDraft();
             ensureStudentUids();
             const date=document.getElementById('attendance-date').value,className=document.getElementById('attendance-class').value,key=getAttendanceKey();
             if(key!==lastLoadedAttendanceKey){currentGuestList=[];inlineMakeupCheckedIds.clear();lastLoadedAttendanceKey=key;}
             const draft=uxAttendanceDrafts.get(key);
-            if(draft?.dirty)currentGuestList=draft.guests.map(uid=>students.find(s=>s._uid===uid)).filter(Boolean);
+            if(draft?.dirty){currentGuestList=draft.guests.map(uid=>students.find(s=>s._uid===uid)).filter(Boolean);removedSavedGuestIdsByKey[key]=new Set(draft.removed||[]);}
             const dom=draft?.dirty?draft.rows:preserveDomEdits?captureCurrentAttendanceDomMap():{},saved=attendanceRecords[key]||[],removed=removedSavedGuestIdsByKey[key]||new Set();
             document.getElementById('current-class-display').innerText=`${className} - Ngày ${date?new Date(date).toLocaleDateString('vi-VN'):''}`;
             const official=sortStudentsArray(students.filter(s=>s.className===className)),included=new Set(),list=[];
@@ -10825,11 +10826,6 @@
                 showToast('Tài khoản của bạn chưa được cấp quyền Xuất báo cáo!', 'error');
                 return;
             }
-            // Lưu dữ liệu điểm danh hiện tại trước khi xuất (nếu có quyền điểm danh)
-            if (hasPermission('attendance_manage')) {
-                saveAttendance(false);
-            }
-
             const report = collectCurrentSessionReportData();
             if (report.total === 0) {
                 showToast('Không có dữ liệu võ sinh trong buổi học này để xuất!', 'error');
@@ -10837,11 +10833,13 @@
             }
 
             const recorderName = getCurrentAccountName();
+            const key=getAttendanceKey(),isDraft=Boolean(uxAttendanceDrafts.get(key)?.dirty) || !Object.hasOwn(attendanceRecords,key);
 
             let csv = `\uFEFF${sanitizeCsvCell('BÁO CÁO KẾT QUẢ ĐIỂM DANH BUỔI HỌC - ' + (siteConfig.title || 'VOVINAM VIỆT VÕ ĐẠO'))}\n`;
             csv += `Ngày điểm danh:,${sanitizeCsvCell(report.dateFormatted)}\n`;
             csv += `Lớp học:,${sanitizeCsvCell(report.className + (report.timeStr ? ' (' + report.timeStr + ')' : ''))}\n`;
-            csv += `Người điểm danh:,${sanitizeCsvCell(recorderName)}\n\n`;
+            csv += `Người điểm danh:,${sanitizeCsvCell(recorderName)}\n`;
+            csv += `Trạng thái dữ liệu:,${sanitizeCsvCell(isDraft?'Bản tạm - chưa lưu chính thức':'Đã lưu chính thức')}\n\n`;
 
             csv += `TỔNG KẾT SĨ SỐ BUỔI HỌC\n`;
             csv += `Tổng số võ sinh:,"${report.total} võ sinh (Lớp chính: ${report.mainClassCount} | Học thêm: ${report.extraClassCount})"\n`;
@@ -16665,12 +16663,13 @@
         function uxRememberAttendanceDraft() {
             const key=lastLoadedAttendanceKey;
             if(!key || !uxAttendanceDrafts.get(key)?.dirty)return;
-            uxAttendanceDrafts.set(key,{dirty:true,rows:captureCurrentAttendanceDomMap(),guests:currentGuestList.map(s=>s._uid)});
+            uxAttendanceDrafts.set(key,{...uxAttendanceDrafts.get(key),...uxCaptureAttendanceDraft(key)});
         }
         function uxAttendanceEdited() {
+            uxEnsureAttendanceDraftStore();
             const key=lastLoadedAttendanceKey || getAttendanceKey();
             if(!key || !document.getElementById('attendance-date')?.value || !document.getElementById('attendance-class')?.value || !document.querySelectorAll('#attendance-table-body tr[data-id]').length)return;
-            uxAttendanceDrafts.set(key,{dirty:true,rows:captureCurrentAttendanceDomMap(),guests:currentGuestList.map(s=>s._uid)});
+            uxAttendanceDrafts.set(key,{...uxAttendanceDrafts.get(key),...uxCaptureAttendanceDraft(key)});
             uxUpdateAttendanceSaveUI();
         }
         function uxUpdateAttendanceSaveUI() {
@@ -16678,15 +16677,18 @@
             const dirty=Boolean(uxAttendanceDrafts.get(key)?.dirty);
             const saved=Object.hasOwn(attendanceRecords,key);
             const synced=saved && uxSyncedAttendance.get(key)===JSON.stringify(attendanceRecords[key]);
-            const label=dirty?'Có thay đổi chưa lưu':synced?'Đã đồng bộ Cloud':saved?(uxAttendanceCloudError?'Đã lưu trên máy · Cloud chưa đồng bộ':'Đã lưu trên máy'):'Buổi học chưa được lưu';
+            const temporarilySaved=dirty && uxIsAttendanceTemporarilySaved(key);
+            const label=dirty?(temporarilySaved?'Đã lưu tạm trên thiết bị · chưa chốt điểm danh':'Có thay đổi chưa lưu'):synced?'Đã đồng bộ Cloud':saved?(uxAttendanceCloudError?'Đã lưu trên máy · Cloud chưa đồng bộ':'Đã lưu trên máy'):'Buổi học chưa được lưu';
             const status=document.getElementById('attendance-save-status');
             if(status){status.textContent=label;status.className='text-xs font-semibold '+(dirty?'text-amber-800':synced?'text-emerald-700':'text-slate-600');}
             const summary=document.getElementById('attendance-save-summary');
+            const temporaryButton=document.getElementById('attendance-save-temporary');if(temporaryButton)temporaryButton.disabled=!hasPermission('attendance_manage') || !document.querySelectorAll('#attendance-table-body tr[data-id]').length;
             if(summary)summary.textContent=(document.getElementById('attendance-class')?.value||'Chọn lớp')+' · '+(document.getElementById('attendance-date')?.value||'Chọn ngày');
             const button=document.getElementById('attendance-dock-save');
             if(button)button.disabled=!hasPermission('attendance_manage') || document.querySelectorAll('#attendance-table-body tr[data-id]').length===0;
         }
         function uxAttendanceSaved(key) {
+            uxRemoveAttendanceTemporary(key);
             uxAttendanceDrafts.delete(key);
             uxAttendanceCloudError=false;
             uxUpdateAttendanceSaveUI();
@@ -16728,7 +16730,7 @@
             host.innerHTML='<div class="flex items-center justify-between gap-2 mb-3"><h3 class="text-base font-bold text-slate-900">Việc hôm nay</h3><span class="text-xs text-slate-500">'+now.toLocaleDateString('vi-VN')+'</span></div><div class="ux-today-layout"><div>'+classesHtml+'</div><div class="grid grid-cols-2 gap-2 content-start"><button type="button" onclick="uxOpenCurrentTuition()" class="ux-task-tile"><span class="text-2xl font-bold text-slate-900">'+unpaid+'</span><span class="text-xs text-slate-500">Chưa ghi nhận học phí tháng này</span></button><button type="button" onclick="switchTab(\'approvals\')" class="ux-task-tile"><span class="text-2xl font-bold text-slate-900">'+pendingRequests.length+'</span><span class="text-xs text-slate-500">Yêu cầu chờ duyệt</span></button></div></div>';
         }
         window.addEventListener('beforeunload',event=>{
-            if([...uxAttendanceDrafts.values()].some(d=>d.dirty)){event.preventDefault();event.returnValue='';}
+            if(uxAttendanceHasUnsavedChanges()){event.preventDefault();event.returnValue='';}
         });
 
         // Render the report from its data, never from a cropped/filtered screen capture.
@@ -16936,6 +16938,102 @@
             finally{button.disabled=false;}
         }
         document.addEventListener('keydown',event=>{if(event.key==='Escape' && !document.getElementById('session-image-modal')?.classList.contains('hidden'))closeSessionImageReport();});
+
+        // Temporary attendance is local to this account, club and browser; it is never a Cloud write.
+        let uxDraftStorageScope='';
+        let uxSavedAttendanceDrafts=new Map();
+        let uxPendingDraftSelection=null;
+        let uxDraftStoreError=false;
+        function uxAttendanceDraftStorageKey() {
+            return 'vovinam_attendance_drafts_v1:'+encodeURIComponent(JSON.stringify([currentAccountId,cloudConfig.url||'',cloudConfig.clubKey||'']));
+        }
+        function uxDraftFingerprint(draft) {
+            return JSON.stringify({rows:Object.entries(draft.rows||{}).sort(([a],[b])=>a.localeCompare(b)),guests:[...(draft.guests||[])].sort(),removed:[...(draft.removed||[])].sort()});
+        }
+        function uxDraftMatchesOfficial(key,draft) {
+            if(!Object.hasOwn(attendanceRecords,key))return false;
+            const rows=Object.fromEntries((attendanceRecords[key]||[]).filter(r=>r.studentUid).map(r=>[r.studentUid,{status:r.status,note:r.note||''}]));
+            return JSON.stringify(Object.entries(rows).sort(([a],[b])=>a.localeCompare(b)))===JSON.stringify(Object.entries(draft.rows||{}).sort(([a],[b])=>a.localeCompare(b)));
+        }
+        function uxEnsureAttendanceDraftStore() {
+            if(!safetyAuthenticated())return false;
+            const scope=uxAttendanceDraftStorageKey();
+            if(scope===uxDraftStorageScope)return !uxDraftStoreError;
+            uxDraftStorageScope=scope;uxDraftStoreError=false;uxSavedAttendanceDrafts=new Map();uxAttendanceDrafts.clear();uxPendingDraftSelection=null;
+            try {
+                const raw=localStorage.getItem(scope);if(!raw)return true;
+                const store=JSON.parse(raw);
+                if(store.version!==1 || !safetyPlain(store.drafts))throw new Error('Bản lưu tạm không đúng cấu trúc.');
+                for(const [key,value] of Object.entries(store.drafts)) {
+                    if(!safetyPlain(value) || !safetyPlain(value.rows) || !Array.isArray(value.guests) || !Array.isArray(value.removed))throw new Error('Bản lưu tạm bị lỗi.');
+                    const rows={};
+                    for(const [uid,row] of Object.entries(value.rows)) {
+                        if(['__proto__','constructor','prototype'].includes(uid) || !safetyPlain(row) || !['present','absent','excused'].includes(row.status) || typeof row.note!=='string')throw new Error('Dữ liệu điểm danh tạm không hợp lệ.');
+                        rows[uid]={status:row.status,note:row.note};
+                    }
+                    const draft={dirty:true,rows,guests:value.guests.filter(uid=>typeof uid==='string'),removed:value.removed.filter(uid=>typeof uid==='string'),savedAt:Number(value.savedAt)||0,baseFingerprint:typeof value.baseFingerprint==='string'?value.baseFingerprint:''};
+                    // If the matching draft has already been finalized, a stale cache cannot resurrect it.
+                    if(uxDraftMatchesOfficial(key,draft))continue;
+                    uxSavedAttendanceDrafts.set(key,draft);uxAttendanceDrafts.set(key,safetyClone(draft));
+                }
+                if(store.selection && typeof store.selection.date==='string' && /^\d{4}-\d{2}-\d{2}$/.test(store.selection.date) && typeof store.selection.className==='string' && uxSavedAttendanceDrafts.has(store.selection.date+'_'+store.selection.className))uxPendingDraftSelection=store.selection;
+                return true;
+            }catch(error){
+                uxDraftStoreError=true;uxSavedAttendanceDrafts.clear();uxAttendanceDrafts.clear();
+                console.warn('Không đọc được bản điểm danh tạm:',error);
+                return false;
+            }
+        }
+        function uxCaptureAttendanceDraft(key) {
+            return {dirty:true,rows:captureCurrentAttendanceDomMap(),guests:currentGuestList.map(s=>s._uid),removed:[...(removedSavedGuestIdsByKey[key]||[])],baseFingerprint:uxAttendanceDrafts.get(key)?.baseFingerprint??JSON.stringify(attendanceRecords[key]||[])};
+        }
+        function uxWriteAttendanceDraftStore(drafts,selection) {
+            const key=uxAttendanceDraftStorageKey();
+            if(!drafts.size){localStorage.removeItem(key);return;}
+            const json=JSON.stringify({version:1,updatedAt:Date.now(),selection,drafts:Object.fromEntries(drafts)});
+            localStorage.setItem(key,json);
+            if(localStorage.getItem(key)!==json)throw new Error('Trình duyệt chưa xác nhận ghi bản lưu tạm.');
+        }
+        function uxSaveAttendanceTemporary() {
+            if(!hasPermission('attendance_manage'))return showToast('Cần quyền điểm danh để lưu tạm.','error');
+            if(!uxEnsureAttendanceDraftStore())return showToast('Không đọc được kho lưu tạm. Bản cũ được giữ nguyên; hãy xuất JSON/ảnh để bảo vệ dữ liệu đang nhập.','error');
+            const date=document.getElementById('attendance-date').value,className=document.getElementById('attendance-class').value,key=getAttendanceKey();
+            if(!date || !className || key!==lastLoadedAttendanceKey || !document.querySelectorAll('#attendance-table-body tr[data-id]').length)return showToast('Hãy chọn đúng ngày, lớp và danh sách võ sinh trước khi lưu tạm.','info');
+            const draft={...uxCaptureAttendanceDraft(key),savedAt:Date.now()};
+            const next=new Map(uxSavedAttendanceDrafts);next.set(key,draft);
+            try {
+                uxWriteAttendanceDraftStore(next,{date,className});
+                uxSavedAttendanceDrafts=next;uxAttendanceDrafts.set(key,safetyClone(draft));uxPendingDraftSelection=null;
+                uxUpdateAttendanceSaveUI();
+                showToast('Đã lưu tạm trên thiết bị này. Bạn có thể thoát rồi mở lại tab Điểm danh để tiếp tục.','success');
+            }catch(error){
+                showToast('Chưa lưu tạm được: bộ nhớ đầy hoặc trình duyệt không cho phép ghi. Dữ liệu đang nhập vẫn được giữ trên màn hình.','error');
+            }
+        }
+        function uxResumeAttendanceTemporary() {
+            uxEnsureAttendanceDraftStore();
+            const selection=uxPendingDraftSelection;if(!selection)return;
+            uxPendingDraftSelection=null;
+            if(!classes.some(c=>c.name===selection.className))return;
+            document.getElementById('attendance-date').value=selection.date;
+            document.getElementById('attendance-class').value=selection.className;
+        }
+        function uxIsAttendanceTemporarilySaved(key,draft=uxAttendanceDrafts.get(key)) {
+            const saved=uxSavedAttendanceDrafts.get(key);
+            return Boolean(draft && saved && uxDraftFingerprint(draft)===uxDraftFingerprint(saved));
+        }
+        function uxRemoveAttendanceTemporary(key) {
+            if(!uxDraftStorageScope || uxDraftStoreError || !uxSavedAttendanceDrafts.has(key))return;
+            const next=new Map(uxSavedAttendanceDrafts);next.delete(key);
+            try {
+                const latest=[...next.entries()].sort((a,b)=>(b[1].savedAt||0)-(a[1].savedAt||0))[0];
+                const selection=latest?{date:latest[0].slice(0,10),className:latest[0].slice(11)}:null;
+                uxWriteAttendanceDraftStore(next,selection);uxSavedAttendanceDrafts=next;
+            }catch(error){console.warn('Điểm danh chính thức đã lưu, chưa dọn được bản tạm:',error);}
+        }
+        function uxAttendanceHasUnsavedChanges() {
+            return [...uxAttendanceDrafts.entries()].some(([key,draft])=>draft.dirty && !uxIsAttendanceTemporarilySaved(key,draft));
+        }
 
 </script>
 </body>
