@@ -2193,20 +2193,20 @@
                     <div class="sm:col-span-2 p-3.5 bg-emerald-50/90 border border-emerald-200 rounded-2xl text-xs text-emerald-900 flex items-start space-x-2.5">
                         <i class="fa-solid fa-satellite-dish text-emerald-600 text-base mt-0.5"></i>
                         <div class="space-y-1">
-                            <p class="font-black text-emerald-950">Đã kích hoạt Kênh Đồng Bộ Đám Mây Đa Máy Tự Động (Zero-Config Cloud Relay)!</p>
-                            <p class="text-[11px] text-emerald-800 leading-relaxed">Chỉ cần các máy tính và điện thoại nhập cùng một <strong>Mã Định Danh CLB / Phòng Dữ Liệu (Club ID)</strong> bên dưới (mặc định: <code>clb-vovinam-antruong</code>), hệ thống sẽ <strong>tự động đồng bộ trực tuyến thời gian thực (&lt;100ms)</strong> giữa tất cả các máy mà không bắt buộc phải tạo tài khoản Firebase!</p>
+                            <p class="font-black text-emerald-950">Kết nối đồng bộ cần được kiểm tra trên thiết bị</p>
+                            <p class="text-[11px] text-emerald-800 leading-relaxed">Các máy cần cùng <strong>Firebase URL, mã CLB và cấu hình xác thực/mã hóa</strong>. Trạng thái kết nối chỉ được xác nhận sau khi máy chủ phản hồi và dữ liệu được xử lý thành công. Relay cần khóa riêng tối thiểu 16 ký tự; không thay thế bản sao lưu trên máy chủ.</p>
                         </div>
                     </div>
 
                     <div>
                         <label for="cloud-club-key" class="block text-xs font-bold text-slate-700 mb-1">Mã Định Danh CLB / Phòng Dữ Liệu Chung (Club ID) <span class="text-red-500">*</span></label>
                         <input type="text" id="cloud-club-key" value="clb-vovinam-antruong" placeholder="VD: clb-vovinam-antruong" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-blue-300 bg-blue-50/30 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono font-bold text-vovinam-blue">
-                        <p class="text-[10px] text-slate-500 mt-1">Các máy có cùng Mã Phòng này sẽ tự động đồng bộ toàn bộ dữ liệu với nhau.</p>
+                        <p class="text-[10px] text-slate-500 mt-1">Dùng cùng mã CLB và cùng cấu hình máy chủ trên các thiết bị cần đồng bộ.</p>
                     </div>
 
                     <div>
                         <label for="cloud-secret-key" class="block text-xs font-bold text-slate-700 mb-1">Mã Bảo Mật / Database Secret (Tùy chọn)</label>
-                        <input type="password" id="cloud-secret-key" placeholder="Để trống nếu dùng Phòng Tự Động / Public Rules" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-700">
+                        <input type="password" id="cloud-secret-key" placeholder="Thông tin xác thực được cấp cho CLB; không mở Rules công khai" class="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-700">
                     </div>
 
                     <div class="sm:col-span-2">
@@ -2214,7 +2214,7 @@
                             Đường Dẫn Cloud Database Riêng (Tùy chọn — Firebase Realtime DB / REST Endpoint)
                         </label>
                         <input type="url" id="cloud-db-url" value="" placeholder="Để trống để dùng Cloud Tự Động, hoặc dán link https://...firebaseio.com" class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none font-mono text-slate-800">
-                        <p class="text-[11px] text-slate-400 mt-1">Có thể để trống (hệ thống tự dùng Cloud Relay tích hợp sẵn). Nếu muốn lưu trữ thêm trên Firebase riêng của CLB, hãy dán link Firebase Realtime Database vào đây.</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Nhập URL Firebase Realtime Database của CLB. Nếu để trống, Relay chỉ hoạt động khi có khóa riêng và có kết nối tới broker; không bảo đảm lưu bản sao trên máy chủ.</p>
                     </div>
 
                     <div class="sm:col-span-2">
@@ -13186,7 +13186,7 @@
             showToast(`Đã tăng tốc chu kỳ đồng bộ lên ${(ms / 1000).toFixed(1).replace('.0', '')} giây!`);
         }
 
-        function saveAndTestCloudConfig() {
+        async function saveAndTestCloudConfig() {
             if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được thay đổi cấu hình Cloud!', 'error');
@@ -13199,6 +13199,7 @@
             const autoEl = document.getElementById('cloud-auto-sync');
             const intervalEl = document.getElementById('cloud-sync-interval');
 
+            const oldScope=(cloudConfig.url||'')+'::'+cloudConfig.clubKey;
             const rawUrl = urlEl ? urlEl.value.trim() : '';
             const normalizedUrl = normalizeCloudUrl(rawUrl);
             if (urlEl && normalizedUrl !== rawUrl) {
@@ -13213,6 +13214,8 @@
             cloudConfig.syncIntervalMs = intervalEl ? (parseInt(intervalEl.value, 10) || 5000) : 5000;
 
             saveCloudConfigToStorage();
+            if(oldScope!==(cloudConfig.url||'')+'::'+cloudConfig.clubKey){safetySyncBase=null;hasCompletedInitialCloudPull=false;lastSyncedUpdatedAt='';await safetyLoadSyncBase();}
+            showCloudDiagnostic('info','Đang kiểm tra phản hồi từ máy chủ…');
             showToast(`Đang kết nối Phòng Đồng Bộ Đa Máy [${cloudConfig.clubKey}]...`, 'info');
 
             startCloudAutoPoll();
@@ -13859,7 +13862,7 @@
                     }finally{clearTimeout(timer);}
                 }
                 if(!sent)throw new Error('Có nhiều thiết bị đang ghi. Chưa ghi đè; hãy đồng bộ lại.');
-            }catch(e){durableScheduleCloudRetry();uxAttendanceCloudFailed();updateCloudStatusUI('error');if(manual || safetySyncConflicts.length)showToast(e.message,'error');console.warn('Cloud sync:',e.message);}
+            }catch(e){durableScheduleCloudRetry();uxAttendanceCloudFailed();updateCloudStatusUI('error');const detail=cloudFailureDetail(e,'sync');showCloudDiagnostic('error',detail);if(manual || safetySyncConflicts.length)showToast(detail,'error');console.warn('Cloud sync:',e.name||'Error');}
             finally{
                 isCloudPushing=false;isCloudSyncing=false;
                 if(hasPendingCloudPush){hasPendingCloudPush=false;setTimeout(()=>pushToCloud(false),500);}
@@ -13909,6 +13912,7 @@
 
             const abortCtrl = new AbortController();
             activePullAbortController = abortCtrl;
+            let syncPhase='network';
             const pullTimeout=setTimeout(()=>abortCtrl.abort(),15000);
 
             try {
@@ -13926,6 +13930,7 @@
                     throw statusError;
                 }
 
+                syncPhase='data';
                 let data = await res.json();
                 const elapsedMs = Math.max(1, Math.round(performance.now() - t0));
                 const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -13979,8 +13984,9 @@
                     return;
                 }
 
-                hasCompletedInitialCloudPull = true;
+                syncPhase='storage';
                 await applyFullDatabasePayload(data, 'smart_sync', silent);
+                hasCompletedInitialCloudPull=true;
                 if (data.updatedAt) {
                     lastSyncedUpdatedAt = data.updatedAt;
                     try { localStorage.setItem('vovinam_last_synced_iso', lastSyncedUpdatedAt); } catch (e) {}
@@ -13995,17 +14001,11 @@
                     showToast(`Đã tải dữ liệu mới nhất từ Cloud (${rbacStudents().length} võ sinh • ${elapsedMs}ms)!`);
                 }
             } catch (err) {
-                if (err && err.name === 'AbortError') return;
-                console.error('Lỗi tải Cloud:', err);
-                updateCloudStatusUI('error');
-                let errDetail = 'Không thể kết nối tới Cloud Database. Vui lòng kiểm tra lại đường dẫn URL hoặc kết nối mạng!';
-                if (err && (err.httpStatus === 401 || err.httpStatus === 403 || String(err.message).includes('401') || String(err.message).includes('403'))) {
-                    errDetail = 'Firebase từ chối quyền truy cập. Cần cấu hình xác thực/quyền riêng cho CLB; không mở đọc ghi công khai.';
-                }
-                showCloudDiagnostic('error', errDetail);
-                if (manual && !silent) {
-                    showToast(errDetail, 'error');
-                }
+                if(err?.name==='AbortError' && isCloudPushing)return;
+                const detail=cloudFailureDetail(err,syncPhase);
+                updateCloudStatusUI('error');showCloudDiagnostic('error',detail);
+                if(manual && !silent)showToast(detail,'error');
+                console.warn('Cloud pull:',err?.name||'Error',syncPhase);
             } finally {
                 clearTimeout(pullTimeout);
                 if (activePullAbortController === abortCtrl) {
@@ -17260,6 +17260,17 @@
         async function durableFetchWithTimeout(url,options={}) {
             const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
             try{return await fetch(url,{...options,signal:controller.signal});}finally{clearTimeout(timer);}
+        }
+
+        function cloudFailureDetail(error,phase='network') {
+            const code=Number(error?.httpStatus)||0;
+            if(code===401 || code===403 || /HTTP (401|403)/.test(error?.message||''))return 'Máy chủ từ chối quyền truy cập (HTTP 401/403). Kiểm tra xác thực Firebase và Rules cho CLB; không mở quyền công khai.';
+            if(error?.name==='AbortError')return 'Máy chủ chưa hoàn tất phản hồi trong 15 giây. Dữ liệu trên máy vẫn được giữ; hãy thử kết nối lại.';
+            if(code===404)return 'Không tìm thấy địa chỉ Cloud (HTTP 404). Kiểm tra URL Realtime Database và mã CLB.';
+            if(code)return 'Máy chủ trả về HTTP '+code+'. Dữ liệu trên máy vẫn được giữ.';
+            if(error instanceof TypeError || /failed to fetch|network|load failed|offline/i.test(error?.message||''))return 'Không nhận được phản hồi mạng. Kiểm tra Internet, DNS, CORS hoặc kết nối bị chặn; chưa xác nhận được đồng bộ.';
+            const reason=String(error?.message||'Lỗi chưa xác định').replace(/https?:\/\/[^\s]+/g,'[địa chỉ máy chủ]').replace(/(auth|token|secret|password|key)=[^&\s]+/gi,'$1=[đã ẩn]').slice(0,250);
+            return (phase==='storage'?'Đã nhận phản hồi Cloud nhưng chưa xử lý/lưu được dữ liệu: ':phase==='data'?'Đã kết nối Cloud nhưng dữ liệu phản hồi không hợp lệ: ':'Chưa hoàn tất đồng bộ: ')+reason;
         }
 </script>
 </body>
