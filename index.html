@@ -9317,8 +9317,10 @@
 
         // ================= TAB 1: DANH SÁCH VÕ SINH =================
         function renderStudents() {
+            // Chỉ đảm bảo UID; không sắp xếp/mutate mảng students gốc khi render.
+            // Thứ tự hiển thị được áp dụng trên bản sao `filtered` bên dưới,
+            // tránh việc mở cảnh báo/kiểm tra trùng tên làm xáo thứ tự dữ liệu gốc.
             ensureStudentUids();
-            sortStudentsInPlace();
 
             const dupAnalysis = analyzeStudentDuplicates();
             updateDuplicateWarningBanners(dupAnalysis);
