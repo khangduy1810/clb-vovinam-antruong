@@ -87,6 +87,68 @@
             }
             .no-print { display: none !important; }
         }
+        /* Comfortable touch targets and clear hierarchy for the daily club workflow. */
+        #tab-attendance button, #tab-students button { touch-action: manipulation; }
+        #tab-attendance .animate-pulse, #tab-attendance .animate-bounce,
+        #tab-students .animate-pulse, #tab-students .animate-bounce { animation: none; }
+        #tab-attendance .att-btn { min-height: 44px; min-width: 76px; padding: 10px 12px; }
+        #tab-attendance input[type="text"], #tab-attendance select, #tab-attendance input[type="date"] { min-height: 44px; }
+        #tab-attendance .attendance-save-dock { position: sticky; bottom: 12px; z-index: 35; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; background:rgba(255,255,255,.98); border:1px solid #cbd5e1; border-radius:16px; box-shadow:0 8px 32px #0f172a14; }
+        .attendance-save-dock button { min-height:48px; padding:12px 20px; border-radius:12px; background:#0056b3; color:white; font-weight:700; white-space:nowrap; }
+        .attendance-save-dock button:disabled { opacity:.45; cursor:not-allowed; }
+        .ux-today-layout { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:16px; }
+        .ux-today-class { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; width:100%; text-align:left; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:8px; background:white; }
+        .ux-today-class:hover,.ux-today-next { border-color:#93c5fd; background:#eff6ff; }
+        .ux-task-tile { display:flex; flex-direction:column; gap:6px; text-align:left; padding:14px; border-radius:12px; border:1px solid #e2e8f0; background:#f8fafc; min-height:100px; }
+        .ux-duplicate-details > summary { min-height:44px; }
+        @media (max-width:767px) {
+            .ux-today-layout { grid-template-columns:minmax(0,1fr); gap:8px; }
+            #tab-attendance { padding-bottom:120px; }
+            #tab-attendance .attendance-save-dock { position:fixed; bottom:0; left:0; right:0; border-radius:16px 16px 0 0; border-bottom:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); }
+            #attendance-save-summary { max-width:52vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+            #tab-attendance .attendance-table-scroll { overflow:visible; padding:12px; background:#f8fafc; }
+            #tab-attendance .attendance-main-table, #attendance-table-body { display:block; width:100%; }
+            #tab-attendance .attendance-main-table thead { display:none; }
+            #attendance-table-body { border:0; }
+            #attendance-table-body tr[data-id] { display:grid; grid-template-columns:28px minmax(0,1fr); grid-template-areas:"number identity" "belt belt" "category category" "status status" "note note"; gap:10px 8px; margin-bottom:12px; padding:14px; border:1px solid #e2e8f0; border-radius:16px; background:white; }
+            #attendance-table-body td { display:block; min-width:0; padding:0; border:0; }
+            #attendance-table-body td:nth-child(1) { grid-area:number; align-self:center; }
+            #attendance-table-body td:nth-child(2) { grid-area:identity; }
+            #attendance-table-body td:nth-child(3) { grid-area:belt; grid-column:1 / -1; width:max-content; max-width:100%; align-self:start; }
+            #attendance-table-body td:nth-child(4) { grid-area:category; padding-left:0; min-height:28px; }
+            #attendance-table-body td:nth-child(5) { grid-area:status; }
+            #attendance-table-body td:nth-child(6) { grid-area:note; }
+            #attendance-table-body td:nth-child(2) > div { align-items:center; gap:10px; }
+            #attendance-table-body td:nth-child(2) button { font-size:15px; line-height:1.4; overflow-wrap:anywhere; }
+            #attendance-table-body .attendance-status-options { display:flex; width:100%; gap:4px; }
+            #attendance-table-body .att-btn { flex:1; min-width:0; font-size:12px; padding:10px 4px; }
+            #attendance-table-body input[id^="note-"] { font-size:16px; width:100%; }
+            #tab-attendance .attendance-toolbar-actions { width:100%; }
+            #tab-attendance .attendance-toolbar-actions > .relative { flex:1 1 100%; }
+            #tab-attendance .attendance-toolbar-actions > button { min-height:44px; flex:1; justify-content:center; }
+            #student-table-wrapper { overflow:visible; padding:0 12px 12px; }
+            #student-table-wrapper table,#student-table-body { display:block; width:100%; }
+            #student-table-wrapper thead { display:none; }
+            #student-table-body > tr { display:grid; grid-template-columns:24px 24px minmax(0,1fr) 40px; grid-template-areas:"select number identity actions" ". . belt actions" ". . class actions"; column-gap:6px; row-gap:6px; padding:14px 0; }
+            #student-table-body > tr > td { display:block; padding:0; min-width:0; }
+            #student-table-body > tr > td:nth-child(1) { grid-area:select; padding-top:10px; }
+            #student-table-body > tr > td:nth-child(2) { grid-area:number; padding-top:10px; }
+            #student-table-body > tr > td:nth-child(3) { grid-area:identity; }
+            #student-table-body > tr > td:nth-child(4),#student-table-body > tr > td:nth-child(7),#student-table-body > tr > td:nth-child(8) { display:none; }
+            #student-table-body > tr > td:nth-child(5) { grid-area:belt; }
+            #student-table-body > tr > td:nth-child(6) { grid-area:class; }
+            #student-table-body > tr > td:nth-child(9) { grid-area:actions; }
+            #student-table-body > tr > td:nth-child(9) button:not([title="Xem hồ sơ"]) { display:none; }
+            #student-table-body > tr > td:nth-child(9) button { width:40px; min-height:44px; }
+            #student-table-body > tr > td:nth-child(3) > div { align-items:flex-start; gap:8px; }
+            #student-table-body > tr > td:nth-child(3) > div > div { min-width:0; }
+            #student-table-body > tr > td:nth-child(3) button { overflow-wrap:anywhere; font-size:14px; }
+            #student-table-body > tr > td:nth-child(3) button > i:last-child { display:none; }
+            #student-table-body > tr > td:nth-child(6) span { font-size:11px; padding:3px 7px; }
+            #student-table-body input[type="checkbox"] { width:20px; height:20px; }
+        }
+        @media print { .attendance-save-dock { display:none !important; } }
+        @media (prefers-reduced-motion:reduce) { .card-hover-lift,main > section:not(.hidden) { animation:none; transition:none; } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -489,6 +551,8 @@
             <!-- Khung Cảnh Báo Nhanh Khi Có Võ Sinh Trùng Tên / Trùng Mã Định Danh -->
             <div id="overview-duplicate-alert" class="hidden"></div>
 
+            <div id="overview-today-tasks" class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5"></div>
+
             <!-- 6 Khối Chỉ Số Nghiệp Vụ Hoạt Động (Click để chuyển nhanh tới Tab) -->
             <div>
                 <div class="flex items-center justify-between mb-3 px-1">
@@ -846,7 +910,8 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <h2 class="text-sm sm:text-base font-bold text-slate-800 flex items-center space-x-2">
                             <i class="fa-solid fa-list text-vovinam-blue"></i>
-                            <span>Danh Sách Võ Sinh (<span id="student-count">0</span>)</span>
+                            <span>Danh Sách Võ Sinh</span>
+                            <span class="text-xs font-normal text-slate-500" aria-live="polite">Đang hiển thị <strong id="student-count">0</strong> / <strong id="student-total-count">0</strong> võ sinh</span>
                         </h2>
                         <span id="student-sort-indicator-pill" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-vovinam-blue border border-blue-200 flex items-center space-x-1">
                             <i class="fa-solid fa-arrow-down-a-z"></i>
@@ -1041,7 +1106,7 @@
             <!-- Thanh Tìm Kiếm Theo Tên Để Bổ Sung Võ Sinh Học Bù Nhanh -->
             <div id="attendance-makeup-quick-panel" class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-purple-200/90 space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="attendance-toolbar-actions flex flex-wrap items-center gap-2">
                         <h3 class="text-xs sm:text-sm font-bold text-slate-800 flex items-center space-x-2">
                             <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-xs">
                                 <i class="fa-solid fa-magnifying-glass-plus"></i>
@@ -1052,7 +1117,7 @@
                             Đang học bù: 0 võ sinh
                         </span>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="attendance-toolbar-actions flex flex-wrap items-center gap-2">
                         <button type="button" id="btn-add-checked-inline-makeup" onclick="addCheckedInlineMakeupStudents()" class="hidden px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition items-center space-x-1.5 cursor-pointer">
                             <i class="fa-solid fa-user-check"></i>
                             <span id="btn-add-checked-inline-makeup-text">+ Bổ sung đã chọn (0)</span>
@@ -1139,7 +1204,7 @@
                         <i class="fa-solid fa-clipboard-user text-vovinam-blue"></i>
                         <span>Bảng Điểm Danh: <span id="current-class-display" class="text-vovinam-blue"></span></span>
                     </h3>
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="attendance-toolbar-actions flex flex-wrap items-center gap-2">
                         <div class="relative min-w-[200px] sm:min-w-[230px]">
                             <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                             <input type="text" id="attendance-table-search-input" oninput="filterCurrentAttendanceTable(this.value)" placeholder="Lọc nhanh tên trong bảng..." class="w-full pl-8 pr-7 py-1.5 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none bg-white">
@@ -1147,23 +1212,23 @@
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
-                        <button onclick="openSessionReportModal()" class="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
+                        <button onclick="openSessionReportModal()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
                             <i class="fa-solid fa-file-lines"></i>
                             <span>Xem Báo Cáo Buổi Học</span>
                         </button>
-                        <button onclick="exportCurrentSessionCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
+                        <button onclick="exportCurrentSessionCSV()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
                             <i class="fa-solid fa-file-excel"></i>
                             <span>Xuất Báo Cáo (CSV)</span>
                         </button>
-                        <button onclick="saveAttendance()" class="bg-vovinam-blue hover:bg-vovinam-darkblue text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
+                        <button onclick="saveAttendance(false)" class="bg-vovinam-blue hover:bg-vovinam-darkblue text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
                             <i class="fa-solid fa-floppy-disk"></i>
                             <span>Lưu Điểm Danh</span>
                         </button>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                <div class="overflow-x-auto attendance-table-scroll">
+                    <table class="attendance-main-table w-full text-left border-collapse text-xs sm:text-sm">
                         <thead>
                             <tr class="bg-slate-100/70 text-slate-600 font-bold border-b border-slate-200">
                                 <th class="py-3 px-4 w-12 text-center">STT</th>
@@ -1178,6 +1243,13 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <div class="attendance-save-dock no-print" aria-label="Lưu điểm danh">
+                <div class="min-w-0">
+                    <p id="attendance-save-status" class="text-xs font-semibold text-slate-600" role="status" aria-live="polite">Buổi học chưa được lưu</p>
+                    <p id="attendance-save-summary" class="text-[11px] text-slate-400 mt-1"></p>
+                </div>
+                <button type="button" id="attendance-dock-save" onclick="saveAttendance(false)"><i class="fa-solid fa-floppy-disk mr-1.5" aria-hidden="true"></i>Lưu điểm danh</button>
             </div>
         </section>
 
@@ -6018,6 +6090,7 @@
         
         // ================= BẢNG TỔNG QUAN CLB (OVERVIEW DASHBOARD) =================
         function renderOverviewDashboard() {
+            uxRenderTodayTasks();
             const titleEl = document.getElementById('overview-club-title');
             if (titleEl) titleEl.innerText = siteConfig.title || 'VOVINAM VIỆT VÕ ĐẠO';
 
@@ -9256,6 +9329,7 @@
 
             const dupAnalysis = analyzeStudentDuplicates();
             updateDuplicateWarningBanners(dupAnalysis);
+            uxCompactDuplicateAlerts(dupAnalysis);
 
             const searchEl = document.getElementById('search-student');
             const beltEl = document.getElementById('filter-belt');
@@ -9300,6 +9374,7 @@
             updateQuickWorkspaceKPIs();
 
             document.getElementById('student-count').innerText = filtered.length;
+            const totalEl=document.getElementById('student-total-count');if(totalEl)totalEl.textContent=students.length;
             const tbody = document.getElementById('student-table-body');
             const gridContainer = document.getElementById('student-grid-wrapper');
             const emptyMsg = document.getElementById('no-students-msg');
@@ -9332,7 +9407,7 @@
                     const isChecked = selectedStudentUids.has(s._uid);
 
                     return `
-                        <div class="${isUnconf ? 'bg-red-50/80 border-2 border-red-500 ring-2 ring-red-100' : 'bg-white border border-slate-200/90'} rounded-2xl p-4 shadow-xs card-hover-lift flex flex-col justify-between space-y-3">
+                        <div class="${isUnconf ? 'bg-amber-50/40 border border-amber-300' : 'bg-white border border-slate-200/90'} rounded-2xl p-4 shadow-xs card-hover-lift flex flex-col justify-between space-y-3">
                             <div class="flex items-start space-x-3">
                                 <input type="checkbox" data-uid="${safeUid}" ${isChecked ? 'checked' : ''} onchange="toggleSelectStudent('${safeJsRef}', this.checked)" class="student-select-checkbox mt-1 w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue cursor-pointer flex-shrink-0" title="Chọn học viên này để xoá hàng loạt">
                                 <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsRef}')" class="w-14 h-14 rounded-2xl object-cover border-2 ${isUnconf ? 'border-red-500 ring-2 ring-red-200' : 'border-vovinam-blue/20'} shadow-xs cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition flex-shrink-0">
@@ -9341,7 +9416,7 @@
                                         <span class="text-[11px] font-semibold text-slate-400 tabular-nums" data-student-number="${index + 1}">STT ${index + 1}</span>
                                         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isUnconf ? 'bg-red-600 text-white animate-pulse' : (isGuest ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-vovinam-blue')}">${isUnconf ? escapeHtml(dupInfo.shortReason) : (isGuest ? 'Học ghép/bù' : 'Chính thức')}</span>
                                     </div>
-                                    <button type="button" onclick="viewStudentDetail('${safeJsRef}')" class="font-black ${isUnconf ? 'text-red-600 hover:text-red-800' : 'text-slate-800 hover:text-vovinam-blue'} text-sm truncate block text-left w-full mt-0.5">
+                                    <button type="button" onclick="viewStudentDetail('${safeJsRef}')" class="font-black ${isUnconf ? 'text-slate-800 hover:text-vovinam-blue' : 'text-slate-800 hover:text-vovinam-blue'} text-sm truncate block text-left w-full mt-0.5">
                                         ${isUnconf ? '<i class="fa-solid fa-triangle-exclamation text-red-600 mr-1 animate-bounce"></i>' : ''}${safeName}
                                     </button>
                                     <div class="text-[10px] leading-tight font-mono break-all mt-0.5 ${dupInfo.isDupIdUnconfirmed ? 'text-red-600' : 'text-slate-400'}" data-student-identifier title="Mã định danh">${safeId}</div>
@@ -9349,7 +9424,8 @@
                                 </div>
                             </div>
                             ${isUnconf ? `
-                                <div class="p-2.5 rounded-xl bg-red-100/90 border border-red-300 text-[11px] text-red-800 space-y-1.5">
+                                <details class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 space-y-1.5">
+                                    <summary class="font-semibold cursor-pointer">Thông tin trùng · Xem chi tiết</summary>
                                     <p class="font-bold leading-snug"><i class="fa-solid fa-circle-exclamation text-red-600 mr-1"></i>${escapeHtml(dupInfo.detailReason)}</p>
                                     <div class="flex items-center gap-1.5">
                                         <button type="button" onclick="confirmStudentDuplicate('${safeJsRef}')" class="flex-1 py-1.5 px-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-xs shadow-xs transition flex items-center justify-center space-x-1 cursor-pointer">
@@ -9361,14 +9437,15 @@
                                             <span>Xoá</span>
                                         </button>
                                     </div>
-                                </div>
+                                </details>
                             ` : ''}
                             <div class="pt-2.5 border-t ${isUnconf ? 'border-red-200' : 'border-slate-100'} text-xs text-slate-600 space-y-1">
                                 <div class="flex items-center justify-between">
                                     <span class="text-slate-400"><i class="fa-solid fa-chalkboard-user mr-1 text-vovinam-blue"></i>Lớp:</span>
                                     <strong class="text-slate-700 truncate max-w-[170px]">${safeClass}</strong>
                                 </div>
-                                <div class="flex items-center justify-between">
+                                <details class="pt-1"><summary class="cursor-pointer text-[11px] text-slate-500">Ngày sinh &amp; liên hệ</summary>
+                                <div class="flex items-center justify-between mt-2">
                                     <span class="text-slate-400"><i class="fa-solid fa-cake-candles mr-1 text-amber-500"></i>Ngày sinh:</span>
                                     <span>${s.dob ? new Date(s.dob).toLocaleDateString('vi-VN') : 'N/A'} (${age} tuổi)</span>
                                 </div>
@@ -9376,6 +9453,7 @@
                                     <span class="text-slate-400"><i class="fa-solid fa-phone mr-1 text-emerald-600"></i>Liên hệ:</span>
                                     <a href="tel:${safeTelHref}" class="font-bold text-vovinam-blue hover:underline">${safePhone} (${safeParent})</a>
                                 </div>
+                                </details>
                             </div>
                             <div class="pt-2 border-t ${isUnconf ? 'border-red-200' : 'border-slate-100'} flex items-center justify-between">
                                 <button type="button" onclick="viewStudentDetail('${safeJsRef}')" class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-vovinam-blue text-xs font-bold transition flex items-center space-x-1">
@@ -9435,7 +9513,7 @@
                 }
 
                 return `
-                    <tr class="${isUnconf ? 'bg-red-50/90 hover:bg-red-100/80 border-l-4 border-l-red-600 border-b border-red-200' : 'hover:bg-blue-50/50 border-b border-slate-100'} transition">
+                    <tr class="${isUnconf ? 'bg-amber-50/40 hover:bg-amber-50 border-l-2 border-l-amber-400 border-b border-slate-100' : 'hover:bg-blue-50/50 border-b border-slate-100'} transition">
                         <td class="py-3 px-3 text-center">
                             <input type="checkbox" data-uid="${safeUid}" ${isChecked ? 'checked' : ''} onchange="toggleSelectStudent('${safeJsRef}', this.checked)" class="student-select-checkbox w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue cursor-pointer" title="Tích chọn để xoá hàng loạt">
                         </td>
@@ -9444,7 +9522,7 @@
                             <div class="flex items-center space-x-3">
                                 <img src="${avatarSrc}" alt="${safeName}" onclick="viewStudentDetail('${safeJsRef}')" class="w-10 h-10 rounded-xl object-cover border-2 ${isUnconf ? 'border-red-500 ring-2 ring-red-200' : 'border-slate-200'} shadow-sm flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-vovinam-blue transition">
                                 <div>
-                                    <button onclick="viewStudentDetail('${safeJsRef}')" class="text-left font-bold ${isUnconf ? 'text-red-600 font-black hover:text-red-800' : 'text-slate-800 hover:text-vovinam-blue'} transition group flex items-center space-x-1.5">
+                                    <button onclick="viewStudentDetail('${safeJsRef}')" class="text-left font-bold ${isUnconf ? 'text-slate-800 hover:text-vovinam-blue' : 'text-slate-800 hover:text-vovinam-blue'} transition group flex items-center space-x-1.5">
                                         ${isUnconf ? '<i class="fa-solid fa-triangle-exclamation text-red-600 animate-bounce"></i>' : ''}
                                         <span class="group-hover:underline">${safeName}</span>
                                         <i class="fa-solid fa-arrow-up-right-from-square text-[11px] ${isUnconf ? 'text-red-400 group-hover:text-red-700' : 'text-slate-400 group-hover:text-vovinam-blue'} transition"></i>
@@ -9455,7 +9533,7 @@
                                         ${dupInfo.isDupNameUnconfirmed ? `<span class="px-1.5 py-0.2 rounded bg-red-600 text-white font-black text-[10px]">⚠️ Trùng tên (${dupInfo.nameCount})</span>` : ''}
                                         ${dupInfo.isDupIdUnconfirmed ? `<span class="px-1.5 py-0.2 rounded bg-red-700 text-white font-black text-[10px]">⚠️ Trùng mã ĐD (${dupInfo.idCount})</span>` : ''}
                                     </div>
-                                    ${isUnconf ? `<div class="text-[10px] font-semibold text-red-600 mt-0.5">${escapeHtml(dupInfo.detailReason)}</div>` : ''}
+                                    ${isUnconf ? `<details class="text-[11px] text-amber-800 mt-1"><summary class="cursor-pointer">Kiểm tra thông tin trùng</summary><p class="mt-1 font-normal">${escapeHtml(dupInfo.detailReason)}</p></details>` : ''}
                                 </div>
                             </div>
                         </td>
@@ -10276,10 +10354,13 @@
         }
 
         function loadAttendanceSheet(preserveDomEdits=false) {
+            uxRememberAttendanceDraft();
             ensureStudentUids();
             const date=document.getElementById('attendance-date').value,className=document.getElementById('attendance-class').value,key=getAttendanceKey();
             if(key!==lastLoadedAttendanceKey){currentGuestList=[];inlineMakeupCheckedIds.clear();lastLoadedAttendanceKey=key;}
-            const dom=preserveDomEdits?captureCurrentAttendanceDomMap():{},saved=attendanceRecords[key]||[],removed=removedSavedGuestIdsByKey[key]||new Set();
+            const draft=uxAttendanceDrafts.get(key);
+            if(draft?.dirty)currentGuestList=draft.guests.map(uid=>students.find(s=>s._uid===uid)).filter(Boolean);
+            const dom=draft?.dirty?draft.rows:preserveDomEdits?captureCurrentAttendanceDomMap():{},saved=attendanceRecords[key]||[],removed=removedSavedGuestIdsByKey[key]||new Set();
             document.getElementById('current-class-display').innerText=`${className} - Ngày ${date?new Date(date).toLocaleDateString('vi-VN'):''}`;
             const official=sortStudentsArray(students.filter(s=>s.className===className)),included=new Set(),list=[];
             const add=(s,guest)=>{
@@ -10296,6 +10377,7 @@
             const ambiguous=saved.filter(r=>!r.studentUid && students.filter(s=>s.id===r.studentId).length>1);
             let warning=document.getElementById('safety-attendance-legacy');
             if(ambiguous.length){if(!warning){warning=document.createElement('p');warning.id='safety-attendance-legacy';warning.className='text-amber-700 text-sm p-3';document.getElementById('attendance-table-body').closest('table').before(warning);}warning.textContent=`Có ${ambiguous.length} mục điểm danh cũ trùng mã, chưa gán cho người nào. Khi lưu, hệ thống giữ riêng các mục này để đối chiếu.`;}else warning?.remove();
+            uxUpdateAttendanceSaveUI();
         }
 
         function renderAttendanceTable(list) {
@@ -10346,23 +10428,23 @@
                             ` : `<span class="px-2.5 py-0.5 text-xs bg-blue-50 text-vovinam-blue rounded-lg font-bold border border-blue-200">Lớp chính</span>`}
                         </td>
                         <td class="py-3 px-4 text-center">
-                            <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 space-x-1">
-                                <button onclick="changeStatus('${escapeJsAttr(s._uid)}', 'present')" id="btn-${escapeHtml(s._uid)}-present"
+                            <div class="attendance-status-options inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 space-x-1" role="group" aria-label="Điểm danh ${escapeHtml(s.name)}">
+                                <button type="button" onclick="changeStatus('${escapeJsAttr(s._uid)}', 'present')" id="btn-${escapeHtml(s._uid)}-present" aria-pressed="${item.status === 'present'}"
                                     class="att-btn px-2.5 py-1 rounded-lg text-xs font-bold transition ${item.status === 'present' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
                                     Có mặt
                                 </button>
-                                <button onclick="changeStatus('${escapeJsAttr(s._uid)}', 'absent')" id="btn-${escapeHtml(s._uid)}-absent"
+                                <button type="button" onclick="changeStatus('${escapeJsAttr(s._uid)}', 'absent')" id="btn-${escapeHtml(s._uid)}-absent" aria-pressed="${item.status === 'absent'}"
                                     class="att-btn px-2.5 py-1 rounded-lg text-xs font-bold transition ${item.status === 'absent' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
                                     Vắng KP
                                 </button>
-                                <button onclick="changeStatus('${escapeJsAttr(s._uid)}', 'excused')" id="btn-${escapeHtml(s._uid)}-excused"
+                                <button type="button" onclick="changeStatus('${escapeJsAttr(s._uid)}', 'excused')" id="btn-${escapeHtml(s._uid)}-excused" aria-pressed="${item.status === 'excused'}"
                                     class="att-btn px-2.5 py-1 rounded-lg text-xs font-bold transition ${item.status === 'excused' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
                                     Có phép / Trễ
                                 </button>
                             </div>
                         </td>
                         <td class="py-3 px-4">
-                            <input type="text" id="note-${escapeHtml(s._uid)}" value="${escapeHtml(item.note || '')}" placeholder="Ghi chú thêm..."
+                            <input type="text" id="note-${escapeHtml(s._uid)}" value="${escapeHtml(item.note || '')}" placeholder="Ghi chú buổi học..." aria-label="Ghi chú của ${escapeHtml(s.name)}" oninput="uxAttendanceEdited()"
                                 class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-vovinam-blue focus:outline-none">
                         </td>
                     </tr>
@@ -10371,6 +10453,7 @@
         }
 
         function changeStatus(studentId, newStatus) {
+            if(!hasPermission('attendance_manage'))return showToast('Cần quyền điểm danh để thay đổi trạng thái.','error');
             const btnPresent = document.getElementById(`btn-${studentId}-present`);
             const btnAbsent = document.getElementById(`btn-${studentId}-absent`);
             const btnExcused = document.getElementById(`btn-${studentId}-excused`);
@@ -10387,15 +10470,20 @@
                 btnExcused.className = 'att-btn px-2.5 py-1 rounded-lg text-xs font-bold transition bg-amber-500 text-white shadow-sm';
             }
 
-            recalculateLiveStats();
+            [btnPresent,btnAbsent,btnExcused].forEach((btn,i)=>{if(btn)btn.setAttribute('aria-pressed',String(['present','absent','excused'][i]===newStatus));});
+            if(!uxAttendanceBatch){recalculateLiveStats();uxAttendanceEdited();}
         }
 
         function markAllPresent() {
+            if(!hasPermission('attendance_manage'))return showToast('Cần quyền điểm danh.','error');
             const rows = document.querySelectorAll('#attendance-table-body tr[data-id]');
+            if(!rows.length)return showToast('Chưa có võ sinh trong buổi học.','info');
+            uxAttendanceBatch=true;
             rows.forEach(row => {
                 const id = row.getAttribute('data-id');
                 changeStatus(id, 'present');
             });
+            uxAttendanceBatch=false;recalculateLiveStats();uxAttendanceEdited();
             showToast('Đã đánh dấu có mặt cho tất cả!');
         }
 
@@ -10564,11 +10652,13 @@
             saveAttendanceToStorage();
             currentGuestList = [];
             if (removedSavedGuestIdsByKey[key]) delete removedSavedGuestIdsByKey[key];
-            showToast('Đã lưu điểm danh và tạo báo cáo buổi học!');
+            showToast('Đã lưu điểm danh trên máy.');
 
             if (openReport) {
                 openSessionReportModal();
             }
+            uxAttendanceSaved(key);
+            return true;
         
             });
         }
@@ -10877,6 +10967,7 @@
             inlineMakeupCheckedIds.clear();
             updateInlineMakeupCheckedBtn();
             loadAttendanceSheet(true);
+            uxAttendanceEdited();
             if (addedCount > 0) {
                 showToast(`Đã bổ sung ${addedCount} võ sinh học bù vào buổi học!`);
             }
@@ -11033,6 +11124,7 @@
             updateInlineMakeupCheckedBtn();
 
             loadAttendanceSheet(true);
+            uxAttendanceEdited();
             showToast(`Đã bổ sung võ sinh ${studentObj.name} (${studentObj.className}) học bù!`);
 
             if (keepModalOpen) {
@@ -11100,6 +11192,7 @@
             if (clearBtn) clearBtn.classList.add('hidden');
 
             loadAttendanceSheet(true);
+            uxAttendanceEdited();
             renderStudents();
             showToast(`Đã tạo & bổ sung võ sinh học bù "${cleanName}" (${newId}) vào buổi học!`);
         }
@@ -11114,6 +11207,7 @@
 
             const s = findStudentByRef(studentId);
             loadAttendanceSheet(true);
+            uxAttendanceEdited();
             showToast(`Đã gỡ võ sinh ${s ? s.name : studentId} khỏi danh sách học bù buổi này!`, 'info');
         }
 
@@ -11322,6 +11416,7 @@
                 guestModalCheckedIds.clear();
                 closeGuestModal();
                 loadAttendanceSheet(true);
+            uxAttendanceEdited();
                 if (addedCount > 0) {
                     showToast(`Đã bổ sung ${addedCount} võ sinh học bù vào buổi học!`);
                 } else {
@@ -11345,6 +11440,7 @@
             }
             closeGuestModal();
             loadAttendanceSheet(true);
+            uxAttendanceEdited();
         }
 
         // ================= TAB 3: QUẢN LÝ HỌC PHÍ =================
@@ -13869,13 +13965,14 @@
                         const next=safetyMergePayload(snapshot,current,outgoing);
                         safetyPersist(next);safetyAssign(next);safetySetSyncBase(outgoing);
                         lastSyncedUpdatedAt=outgoing.updatedAt;localStorage.setItem('vovinam_last_synced_iso',lastSyncedUpdatedAt);
+                        uxAttendanceCloudConfirmed(outgoing);
                         refreshAllUiViewsSafely(true);updateCloudStatusUI('connected');sent=true;
                         if(manual)showToast('Cloud đã xác nhận lưu phiên bản mới.','success');
                         break;
                     }finally{clearTimeout(timer);}
                 }
                 if(!sent)throw new Error('Có nhiều thiết bị đang ghi. Chưa ghi đè; hãy đồng bộ lại.');
-            }catch(e){updateCloudStatusUI('error');if(manual || safetySyncConflicts.length)showToast(e.message,'error');console.warn('Cloud sync:',e.message);}
+            }catch(e){uxAttendanceCloudFailed();updateCloudStatusUI('error');if(manual || safetySyncConflicts.length)showToast(e.message,'error');console.warn('Cloud sync:',e.message);}
             finally{
                 isCloudPushing=false;isCloudSyncing=false;
                 if(hasPendingCloudPush){hasPendingCloudPush=false;setTimeout(()=>pushToCloud(false),500);}
@@ -14001,6 +14098,7 @@
                 }
 
                 applyFullDatabasePayload(data, 'smart_sync', silent);
+                uxAttendanceCloudConfirmed(data);
                 cloudConfig.lastSync = timeNow;
                 saveCloudConfigToStorage();
                 updateCloudStatusUI('connected', `• ${timeNow} (${elapsedMs}ms)`);
@@ -16525,6 +16623,81 @@
                 };row.appendChild(select);row.appendChild(btn);host.appendChild(row);
             }
         }
+
+        // Daily workflow: keep edits visible and distinguish local saves from confirmed Cloud writes.
+        const uxAttendanceDrafts=new Map();
+        let uxAttendanceBatch=false;
+        const uxSyncedAttendance=new Map();
+        let uxAttendanceCloudError=false;
+        let uxDuplicateDetailsOpen=false;
+        function uxRememberAttendanceDraft() {
+            const key=lastLoadedAttendanceKey;
+            if(!key || !uxAttendanceDrafts.get(key)?.dirty)return;
+            uxAttendanceDrafts.set(key,{dirty:true,rows:captureCurrentAttendanceDomMap(),guests:currentGuestList.map(s=>s._uid)});
+        }
+        function uxAttendanceEdited() {
+            const key=lastLoadedAttendanceKey || getAttendanceKey();
+            if(!key || !document.getElementById('attendance-date')?.value || !document.getElementById('attendance-class')?.value || !document.querySelectorAll('#attendance-table-body tr[data-id]').length)return;
+            uxAttendanceDrafts.set(key,{dirty:true,rows:captureCurrentAttendanceDomMap(),guests:currentGuestList.map(s=>s._uid)});
+            uxUpdateAttendanceSaveUI();
+        }
+        function uxUpdateAttendanceSaveUI() {
+            const key=lastLoadedAttendanceKey || getAttendanceKey();
+            const dirty=Boolean(uxAttendanceDrafts.get(key)?.dirty);
+            const saved=Object.hasOwn(attendanceRecords,key);
+            const synced=saved && uxSyncedAttendance.get(key)===JSON.stringify(attendanceRecords[key]);
+            const label=dirty?'Có thay đổi chưa lưu':synced?'Đã đồng bộ Cloud':saved?(uxAttendanceCloudError?'Đã lưu trên máy · Cloud chưa đồng bộ':'Đã lưu trên máy'):'Buổi học chưa được lưu';
+            const status=document.getElementById('attendance-save-status');
+            if(status){status.textContent=label;status.className='text-xs font-semibold '+(dirty?'text-amber-800':synced?'text-emerald-700':'text-slate-600');}
+            const summary=document.getElementById('attendance-save-summary');
+            if(summary)summary.textContent=(document.getElementById('attendance-class')?.value||'Chọn lớp')+' · '+(document.getElementById('attendance-date')?.value||'Chọn ngày');
+            const button=document.getElementById('attendance-dock-save');
+            if(button)button.disabled=!hasPermission('attendance_manage') || document.querySelectorAll('#attendance-table-body tr[data-id]').length===0;
+        }
+        function uxAttendanceSaved(key) {
+            uxAttendanceDrafts.delete(key);
+            uxAttendanceCloudError=false;
+            uxUpdateAttendanceSaveUI();
+        }
+        function uxAttendanceCloudConfirmed(payload) {
+            for(const [key,rows] of Object.entries(payload.attendanceRecords||{}))uxSyncedAttendance.set(key,JSON.stringify(rows));
+            uxAttendanceCloudError=false;uxUpdateAttendanceSaveUI();
+        }
+        function uxAttendanceCloudFailed() {uxAttendanceCloudError=true;uxUpdateAttendanceSaveUI();}
+        function uxCompactDuplicateAlerts(analysis) {
+            const banner=document.getElementById('student-duplicate-banner');
+            if(!banner || banner.classList.contains('hidden') || !analysis.unconfirmedStudentCount)return;
+            const original=banner.innerHTML;
+            banner.innerHTML='<details class="ux-duplicate-details rounded-xl border border-amber-200 bg-amber-50"'+(uxDuplicateDetailsOpen?' open':'')+'><summary class="px-4 py-3 text-sm font-semibold text-amber-900 cursor-pointer">'+analysis.unconfirmedStudentCount+' hồ sơ cần kiểm tra thông tin trùng · Xem chi tiết</summary><div class="px-3 pb-3">'+original+'</div></details>';
+            const details=banner.querySelector('details');
+            if(details)details.addEventListener('toggle',()=>{uxDuplicateDetailsOpen=details.open;});
+        }
+        function uxTodayDate() {
+            const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        }
+        function uxOpenTodayClass(classId) {
+            const cls=classes.find(c=>c.id===classId);if(!cls)return;
+            document.getElementById('attendance-date').value=uxTodayDate();
+            document.getElementById('attendance-class').value=cls.name;
+            switchTab('attendance');
+        }
+        function uxOpenCurrentTuition() {document.getElementById('tuition-month').value=uxTodayDate().slice(0,7);switchTab('tuition');}
+        function uxRenderTodayTasks() {
+            const host=document.getElementById('overview-today-tasks');if(!host)return;
+            const now=new Date(),day=['CN','T2','T3','T4','T5','T6','T7'][now.getDay()],time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+            const today=classes.filter(c=>c.status!=='paused' && (Array.isArray(c.daysArr)?c.daysArr.includes(day):String(c.days||'').includes(day==='CN'?'Chủ Nhật':'Thứ '+day.slice(1))));
+            today.sort((a,b)=>String(a.startTime||'').localeCompare(String(b.startTime||'')));
+            const month=uxTodayDate().slice(0,7),unpaid=students.filter(s=>{const r=safetyTuitionRecord(month,s);return !r || r.status==='unpaid';}).length;
+            const next=today.find(c=>!c.endTime || c.endTime>=time);
+            const classesHtml=today.length?today.map(c=>{
+                const finished=Boolean(c.endTime && c.endTime<time),active=c.startTime && c.endTime && c.startTime<=time && c.endTime>=time;
+                return '<button type="button" onclick="uxOpenTodayClass(\''+escapeJsAttr(c.id)+'\')" class="ux-today-class'+(next?.id===c.id?' ux-today-next':'')+'"><span class="min-w-0"><strong class="block break-words">'+escapeHtml(c.name)+'</strong><span class="text-xs text-slate-500">'+escapeHtml(c.time||'Chưa có giờ tập')+' · '+students.filter(s=>s.className===c.name).length+' võ sinh</span></span><span class="text-xs whitespace-nowrap '+(active?'text-emerald-700':'text-slate-500')+'">'+(finished?'Đã kết thúc':active?'Đang tập':'Điểm danh →')+'</span></button>';
+            }).join(''):'<p class="text-sm text-slate-500 py-2">Hôm nay chưa có lớp theo lịch đã tạo.</p>';
+            host.innerHTML='<div class="flex items-center justify-between gap-2 mb-3"><h3 class="text-base font-bold text-slate-900">Việc hôm nay</h3><span class="text-xs text-slate-500">'+now.toLocaleDateString('vi-VN')+'</span></div><div class="ux-today-layout"><div>'+classesHtml+'</div><div class="grid grid-cols-2 gap-2 content-start"><button type="button" onclick="uxOpenCurrentTuition()" class="ux-task-tile"><span class="text-2xl font-bold text-slate-900">'+unpaid+'</span><span class="text-xs text-slate-500">Chưa ghi nhận học phí tháng này</span></button><button type="button" onclick="switchTab(\'approvals\')" class="ux-task-tile"><span class="text-2xl font-bold text-slate-900">'+pendingRequests.length+'</span><span class="text-xs text-slate-500">Yêu cầu chờ duyệt</span></button></div></div>';
+        }
+        window.addEventListener('beforeunload',event=>{
+            if([...uxAttendanceDrafts.values()].some(d=>d.dirty)){event.preventDefault();event.returnValue='';}
+        });
 
 </script>
 </body>
