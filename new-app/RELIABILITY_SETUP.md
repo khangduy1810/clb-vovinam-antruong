@@ -31,3 +31,11 @@ Kiểm thử khôi phục end-to-end dùng `npm run test:recovery:build` rồi c
 ## Tự khóa sau 10 phút
 
 Khóa màn hình sau 10 phút không tương tác. Kiểm tra lại thời gian khi chuyển về tab, mở lại trang hoặc từ ứng dụng khác trở về; thao tác đầu tiên sau khi hết hạn không mở khóa. Mở lại bằng mật khẩu tài khoản qua Firebase reauthentication. Khóa áp dụng theo tài khoản trên trình duyệt hiện tại, các tab cùng trình duyệt dùng chung mốc hoạt động; máy khác theo dõi riêng. Khóa không thay đổi quyền tài khoản và không đăng xuất các thiết bị khác. Khi khóa, giao diện dữ liệu được tháo khỏi màn hình; bản điểm danh đang sửa giữ trong bộ nhớ trình duyệt như trước. Mật khẩu mở khóa không lưu vào trình duyệt hay Firestore. Không cần sửa Rules riêng cho chức năng khóa.
+
+## Khóa tài khoản và thùng rác
+
+Chủ CLB có nút Khóa/Mở khóa ở mỗi hồ sơ tài khoản. Khóa cập nhật membership về inactive, chặn quyền dữ liệu ở các máy. Không xóa người dùng Firebase Authentication hay mật khẩu. Chủ CLB được bảo vệ ở cả giao diện và Rules.
+
+Chủ CLB có thể Chuyển vào thùng rác từ hồ sơ chi tiết (võ sinh, lớp, học phí, đơn hàng, thi đấu, phê duyệt) hoặc thẻ tài khoản. Thùng rác giữ nguyên tài liệu bằng cờ deleted, kèm người/thời điểm xóa và lịch sử; không tự xóa vĩnh viễn. Lớp còn võ sinh phải chuyển học viên trước. Khôi phục võ sinh cần khôi phục lớp trước. Khôi phục tài khoản giữ trạng thái khóa; chủ CLB kiểm tra quyền và mở khóa riêng. Mã võ sinh đã xóa vẫn được giữ để tránh cấp trùng. Đây là thùng rác hồ sơ trên trang, không quản lý tệp đã tải xuống điện thoại.
+
+Publish Rules mới một lần, sau đó tải lại trang để dùng tính năng này. Không có dữ liệu thực tế nào được xóa hoặc khóa trong lúc phát triển/kiểm thử.

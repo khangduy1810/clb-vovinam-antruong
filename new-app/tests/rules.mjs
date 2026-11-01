@@ -72,5 +72,7 @@ try{
  await assertFails(getDocs(collection(staff,root+'/snapshots')));await assertSucceeds(setDoc(doc(owner,root+'/snapshots/test'),{at:serverTimestamp(),data:'{}'}));
  await assertSucceeds(setDoc(doc(owner,root+'/members/staff@example.test'),{...staffProfile,status:'inactive'}));await assertFails(getDoc(doc(client2,root+'/records/student--S1')));
  console.log('PASS: drafts resume on another client, realtime listener receives change, backups protected and revoked membership blocked');
+ await assertFails(save(staff,'student','S1',{id:'VS1',name:'Try trash',classId:'C1',deleted:true},3));
+ await assertFails(setDoc(doc(owner,root+'/members/owner@example.test'),{...ownerProfile,isSuperAdmin:false,status:'inactive'}));
  console.log('ALL FIRESTORE SECURITY/CONCURRENCY CHECKS PASSED');
 }finally{await test.cleanup()}

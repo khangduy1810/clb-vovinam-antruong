@@ -36,6 +36,7 @@ service cloud.firestore {
   }
   function reserved(r) { return r.kind != 'student' || getAfter(/databases/$(database)/documents/clubs/antruong-v2/studentCodes/$('code-' + r.data.id.lower())).data.studentUid == r.id; }
   function restoring() { return owner() && maintenance(); }
+  function trashAllowed(r) { return owner() || (r.data.get('deleted',false) == false && (resource == null || resource.data.data.get('deleted',false) == false)); }
   function valid(r) {
    return r.keys().hasOnly(['kind','id','data','version','updatedAt','auditId','imported']) &&
     r.kind in ['student','class','attendance','tuition','gear','tournament','approval','config','account'] &&
@@ -54,7 +55,7 @@ service cloud.firestore {
   match /clubs/antruong-v2/members/{email} {
    allow get: if signed() && (email == request.auth.token.email.lower() || owner());
    allow list: if owner();
-   allow create, update: if owner() && request.resource.data.keys().hasOnly(['id','name','email','status','isSuperAdmin','allClasses','classIds','permissions','roleTitle','requireEmailVerification']) &&
+   allow create, update: if owner() && (!exists(/databases/$(database)/documents/clubs/antruong-v2/members/$(email)) || resource.data.isSuperAdmin != true) && request.resource.data.keys().hasOnly(['id','name','email','status','isSuperAdmin','allClasses','classIds','permissions','roleTitle','requireEmailVerification']) &&
      request.resource.data.email == email && request.resource.data.status in ['active','inactive'] &&
      request.resource.data.isSuperAdmin == false && request.resource.data.allClasses is bool &&
      request.resource.data.classIds is list && request.resource.data.permissions is map;
@@ -63,8 +64,8 @@ service cloud.firestore {
   match /clubs/antruong-v2/records/{key} {
    allow get: if active() && (!exists(/databases/$(database)/documents/clubs/antruong-v2/records/$(key)) || readRecord(resource.data));
    allow list: if owner() || readRecord(resource.data);
-   allow create: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(request.resource.data) && (reserved(request.resource.data) || (owner() && request.resource.data.get('imported',false) == true && !exists(/databases/$(database)/documents/clubs/antruong-v2/meta/studentCodes))) && request.resource.data.version == 1 && ((owner() && request.resource.data.get('imported',false) == true) || hasAudit(request.resource.data));
-   allow update: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(resource.data) && writeRecord(request.resource.data) && reserved(request.resource.data) && request.resource.data.id == resource.data.id && request.resource.data.kind == resource.data.kind && request.resource.data.version == resource.data.version + 1 && hasAudit(request.resource.data);
+   allow create: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(request.resource.data) && trashAllowed(request.resource.data) && (reserved(request.resource.data) || (owner() && request.resource.data.get('imported',false) == true && !exists(/databases/$(database)/documents/clubs/antruong-v2/meta/studentCodes))) && request.resource.data.version == 1 && ((owner() && request.resource.data.get('imported',false) == true) || hasAudit(request.resource.data));
+   allow update: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(resource.data) && writeRecord(request.resource.data) && trashAllowed(request.resource.data) && !(resource.data.kind == 'account' && resource.data.data.get('isSuperAdmin',false) == true) && reserved(request.resource.data) && request.resource.data.id == resource.data.id && request.resource.data.kind == resource.data.kind && request.resource.data.version == resource.data.version + 1 && hasAudit(request.resource.data);
    allow create,update: if restoring() && valid(request.resource.data) && key == request.resource.data.kind + '--' + request.resource.data.id;
    allow delete: if restoring();
   }
