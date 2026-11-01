@@ -1,0 +1,1 @@
+{"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"},"hosting":{"public":"dist","ignore":["firebase.json","**/.*","**/node_modules/**"],"rewrites":[{"source":"**","destination":"/index.html"}]},"emulators":{"firestore":{"port":8088},"auth":{"port":9098},"ui":{"enabled":false},"singleProjectMode":true}}

@@ -1,0 +1,77 @@
+# Vovinam An Trường v2 — GitHub + Firebase
+
+Giữ giao diện bản mới đã duyệt. React/Vite chạy trên GitHub Pages; Firebase Authentication đăng nhập email/mật khẩu, Firestore giữ dữ liệu tập trung và kiểm tra quyền theo lớp. Không phụ thuộc đăng nhập ChatGPT hoặc Sites.
+
+Mã nguồn ở `new-app/`; bản chạy tĩnh ở `v2/`. Thư mục gốc của trang cũ không bị thay thế. Dữ liệu học sinh, JSON sao lưu, mật khẩu/hash và khóa quản trị không nằm trong GitHub. Cấu hình Firebase web là định danh công khai, không cấp quyền đọc dữ liệu.
+
+## Kích hoạt một lần (bắt buộc)
+
+Hiện mã đã sẵn sàng nhưng chưa tự cấu hình được dự án Firebase của chủ CLB. GitHub Pages không tự tạo tài khoản, database hoặc triển khai Firestore Rules.
+
+1. Trong Firebase project **clb-vovinam-antruong**, chọn **Build → Firestore Database → Create database → Standard edition → Production mode**, database `(default)`. Chọn vị trí phù hợp trước khi tạo. Không thay đổi Realtime Database của trang cũ.
+2. Trong **Authentication → Sign-in method**, bật **Email/Password**. Ở **Users → Add user**, tạo email/mật khẩu cho chủ CLB. Chủ CLB tự đặt mật khẩu; không đưa vào GitHub hoặc gửi trong chat.
+3. Triển khai `firestore.rules` và `firestore.indexes.json` ở thư mục này. Có thể dùng Cloud Shell sau khi đăng nhập Firebase CLI:
+
+   ```bash
+   git clone --branch v2-firebase-login https://github.com/khangduy1810/clb-vovinam-antruong.git
+   cd clb-vovinam-antruong/new-app
+   npx firebase-tools login --no-localhost
+   npx firebase-tools deploy --project clb-vovinam-antruong --only firestore:rules,firestore:indexes
+   ```
+
+   Chỉ deploy Firestore. Không deploy file Rules của Realtime Database cũ. Nếu deploy indexes chưa hoàn tất, chờ chúng chuyển sang Enabled.
+
+4. Tạo quyền chủ CLB bằng **một** trong hai cách:
+
+   - Trong Google Cloud Shell đang đăng nhập tài khoản chủ dự án, chạy `node scripts/bootstrap-owner.mjs EMAIL_CHU_CLB`. Script xác nhận email đã có trong Firebase Auth, không hỏi mật khẩu, và không thay thế hồ sơ quyền đã tồn tại.
+   - Hoặc tạo document Firestore tại `clubs/antruong-v2/members/EMAIL_CHU_CLB` (email viết thường), với các trường:
+
+   | Trường | Kiểu | Giá trị |
+   | --- | --- | --- |
+   | id | string | ACC-ADMIN |
+   | name | string | Tên người quản trị |
+   | email | string | Email đăng nhập, viết thường |
+   | status | string | active |
+   | isSuperAdmin | boolean | true |
+   | allClasses | boolean | true |
+   | classIds | array | rỗng |
+   | permissions | map | rỗng |
+   | roleTitle | string | Chủ CLB |
+
+5. Mở trang `/clb-vovinam-antruong/v2/`, đăng nhập chủ CLB, chọn file **Vovinam_FullBackup_2026-10-29.json** trong mục nhập dữ liệu. Giữ tab mở đến khi báo hoàn tất. Nếu gián đoạn, chọn lại đúng file để tiếp tục; dấu SHA-256 ngăn nhập nhầm file khác. Thành viên không đọc được dữ liệu khi chưa hoàn tất nhập. Kiểm tra **110 võ sinh / 4 lớp / 5 hồ sơ**. Mỗi người được giữ riêng, không gộp theo họ tên.
+6. Trong tab **Tài khoản**, gắn email, chọn lớp, tab làm việc và trạng thái hoạt động cho HLV. Trong Firebase **Authentication → Users**, tạo tài khoản email/mật khẩu trùng email vừa gắn. Gửi link v2 cho HLV; mỗi người dùng email/mật khẩu riêng. Không cần mã phòng, ghép nối máy, Push hoặc Pull.
+
+Có thể thêm `khangduy1810.github.io` vào **Authentication → Settings → Authorized domains** nếu Firebase yêu cầu cho tính năng email/link. Không cần dùng GitHub OAuth.
+
+## Kiểm tra bằng hai máy trước khi dùng thật
+
+- Chủ CLB đăng nhập máy A, HLV đăng nhập máy B bằng hai email khác nhau.
+- HLV chỉ thấy các lớp và tab đã cấp; mở trực tiếp API cũng không vượt được Rules.
+- HLV lưu tạm điểm danh; đăng nhập cùng HLV trên máy C, mở đúng lớp/ngày để tiếp tục.
+- Cập nhật học phí hoặc hồ sơ ở A, kiểm tra B nhận qua listener nếu B có quyền tương ứng.
+- Hai máy sửa cùng một hồ sơ cũ: lần lưu sau báo tải phiên bản mới, không ghi đè âm thầm.
+- Tắt quyền/khóa hồ sơ HLV; truy cập dữ liệu từ máy B phải bị Rules từ chối.
+
+## Sao lưu và giới hạn
+
+Xuất JSON riêng cho chủ CLB. Tạo snapshot trước lần sửa đầu tiên của chủ mỗi ngày, giữ 30 bản; thay đổi của HLV không kích hoạt snapshot toàn CLB. Chưa cấu hình lịch sao lưu khi không ai mở trang. Chưa có giao diện phục hồi dữ liệu đang hoạt động bằng cách ghi đè toàn bộ; import chỉ dành cho vùng trống hoặc tiếp tục đúng lần nhập bị gián đoạn. Tải JSON độc lập định kỳ.
+
+Firestore transactions cần mạng. Điểm danh chưa gửi có bản nháp riêng trên thiết bị; chỉ nút Lưu tạm có xác nhận máy chủ mới tiếp tục được ở máy khác. Không hứa độ trễ cố định. Mật khẩu cũ không chuyển sang Firebase Authentication.
+
+## Phát triển và cập nhật bản chạy
+
+```bash
+cd new-app
+npm ci
+npm run build
+```
+
+Sau build, chạy `node scripts/update-pages.mjs` rồi commit cả `new-app/` và `v2/`. Đường dẫn assets tương đối nên hỗ trợ GitHub Pages trong thư mục con. Firebase Hosting là lựa chọn khác (`firebase deploy --only hosting`); không cần chuyển để chạy GitHub Pages.
+
+Kiểm tra cục bộ: `firebase emulators:exec --project demo-antruong-v2 --only firestore,auth 'node tests/rules.mjs && node tests/auth.mjs'`. Java/Firebase CLI cần tương thích nhau. Kiểm tra bản sao lưu thật có thể truyền `IMPORT_BACKUP_PATH` chỉ trên máy cục bộ, không commit file đó.
+
+## Quyền tại máy chủ
+
+Rules kiểm tra email trong ID token, hồ sơ hoạt động, quyền theo tab, phạm vi lớp, phiên bản tăng đúng 1, cấu trúc cơ bản và nhật ký đi kèm lần ghi. Thành viên không tự sửa hồ sơ quyền, không đọc bản sao toàn CLB, không ghi sang lớp khác. Quy tắc đầy đủ danh sách điểm danh và liên kết từng dòng được kiểm tra tại ứng dụng; không coi đó là thay thế cho kiểm tra nghiệp vụ server riêng nếu sau này bổ sung backend.
+
+Tài liệu chính thức: [Firebase Auth email/password](https://firebase.google.com/docs/auth/web/password-auth), [Rules theo người dùng](https://firebase.google.com/docs/firestore/security/rules-conditions), [Firestore transactions](https://firebase.google.com/docs/firestore/manage-data/transactions).
