@@ -81,3 +81,13 @@ Tài liệu chính thức: [Firebase Auth email/password](https://firebase.googl
 Nếu báo `Unsupported field value: undefined (found in field actor ...)`, hồ sơ membership của tài khoản đăng nhập thiếu `name` hoặc không phải string. Trong Firestore Console, mở `clubs/antruong-v2/members/<email đăng nhập>`, thêm/sửa `name` kiểu string thành tên người dùng. Bản mới kiểm tra trường này trước khi ghi và hiển thị email thay vì để trống lời chào. Không dùng tên dự phòng để vượt kiểm tra nhật ký tại Rules.
 
 Tải lại trang v2, chọn lại **đúng file JSON trước đó** để tiếp tục. Các hồ sơ đã ghi được bỏ qua; thao tác cuối chỉ chuyển trạng thái nhập sang ready kèm nhật ký sau khi hồ sơ tên đã hợp lệ. Không xóa collection và không đổi hash/trạng thái nhập thủ công.
+
+## Hồ sơ cá nhân: ảnh và mật khẩu
+
+Mọi tài khoản hoạt động có mục **Hồ sơ cá nhân**; cũng có thể bấm ảnh/chữ cái ở góc trên hoặc cuối menu. Đổi mật khẩu bằng mật khẩu hiện tại, mật khẩu mới và xác nhận. Firebase Authentication xác thực lại trước khi cập nhật; mật khẩu không được ghi vào Firestore, JSON sao lưu hoặc localStorage. Mật khẩu mới tối thiểu 8 ký tự, backend Firebase vẫn áp dụng chính sách dự án.
+
+Ảnh được xử lý trên trình duyệt thành JPEG vuông 256×256, sau đó lưu ở `clubs/antruong-v2/profiles/<Firebase UID>`. JPEG/PNG/WebP được hỗ trợ; HEIC/HEIF phụ thuộc khả năng giải mã của trình duyệt, nếu không đọc được cần xuất JPG. Tối đa ảnh gốc 8 MB và dữ liệu sau xử lý 180.000 ký tự. Rules chỉ cho tài khoản hoạt động đọc/ghi ảnh chính UID đó; không cho thay đổi quyền, email hay lớp từ document ảnh. Ảnh hiện trên thiết bị khác khi người đó đăng nhập cùng tài khoản. Ảnh riêng này chưa nằm trong JSON sao lưu hồ sơ nghiệp vụ.
+
+**Chủ dự án cần Publish lại `new-app/firestore.rules` sau cập nhật này.** Nếu chưa áp dụng, màn hình báo rõ ảnh chưa lưu được; chức năng đổi mật khẩu và các chức năng cũ vẫn hoạt động. Không bật quyền đọc/ghi công khai, không sửa Rules Realtime Database và không cần cấu hình Firebase Storage.
+
+Kiểm tra bổ sung: emulator Auth xác thực mật khẩu hiện tại và đăng nhập bằng mật khẩu mới trên client khác; emulator Firestore kiểm tra ảnh chính chủ, từ chối sửa/đọc ảnh người khác, quyền chưa cấp, dữ liệu quá lớn hoặc chèn thêm trường phân quyền. Kiểm tra bố cục bằng component thử nghiệm không có phiên đăng nhập thật.

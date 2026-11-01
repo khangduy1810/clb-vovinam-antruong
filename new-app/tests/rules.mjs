@@ -41,6 +41,17 @@ try{
  await assertSucceeds(save(staff,'attendance','2026-11-01_C1',{date:'2026-11-01',classId:'C1',status:'draft',rows:[{studentUid:'S1',status:'unmarked'}]},0));
  const client2=actor('staff','staff@example.test');assert.equal((await getDoc(doc(client2,root+'/records/attendance--2026-11-01_C1'))).data().data.status,'draft');
  const live=new Promise((resolve,reject)=>{const stop=onSnapshot(doc(client2,root+'/records/student--S1'),snap=>{if(snap.data()?.version===3){stop();resolve(true)}},reject);setTimeout(()=>{stop();reject(new Error('Live update timed out'))},8000).unref()});await save(staff,'student','S1',{id:'VS1',name:'Live update',classId:'C1'},2);await live;
+ const photo={photoURL:'data:image/jpeg;base64,/9j/AA==',updatedAt:serverTimestamp()};
+ await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),photo));
+ assert.equal((await getDoc(doc(client2,root+'/profiles/staff'))).data().photoURL,photo.photoURL);
+ await assertFails(getDoc(doc(owner,root+'/profiles/staff')));
+ await assertFails(setDoc(doc(staff,root+'/profiles/owner'),photo));
+ await assertFails(setDoc(doc(stranger,root+'/profiles/stranger'),photo));
+ await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...photo,permissions:{settings_manage:true}}));
+ await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{photoURL:'javascript:alert(1)',updatedAt:serverTimestamp()}));
+ await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{photoURL:'data:image/jpeg;base64,'+'A'.repeat(180000),updatedAt:serverTimestamp()}));
+ await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),{photoURL:'',updatedAt:serverTimestamp()}));
+ console.log('PASS: own-photo writes/read across clients, other-user isolation, active membership, schema/size validation and permission injection rejection');
  await assertFails(getDocs(collection(staff,root+'/snapshots')));await assertSucceeds(setDoc(doc(owner,root+'/snapshots/test'),{at:serverTimestamp(),data:'{}'}));
  await assertSucceeds(setDoc(doc(owner,root+'/members/staff@example.test'),{...staffProfile,status:'inactive'}));await assertFails(getDoc(doc(client2,root+'/records/student--S1')));
  console.log('PASS: drafts resume on another client, realtime listener receives change, backups protected and revoked membership blocked');
