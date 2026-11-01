@@ -91,3 +91,7 @@ Mọi tài khoản hoạt động có mục **Hồ sơ cá nhân**; cũng có th
 **Chủ dự án cần Publish lại `new-app/firestore.rules` sau cập nhật này.** Nếu chưa áp dụng, màn hình báo rõ ảnh chưa lưu được; chức năng đổi mật khẩu và các chức năng cũ vẫn hoạt động. Không bật quyền đọc/ghi công khai, không sửa Rules Realtime Database và không cần cấu hình Firebase Storage.
 
 Kiểm tra bổ sung: emulator Auth xác thực mật khẩu hiện tại và đăng nhập bằng mật khẩu mới trên client khác; emulator Firestore kiểm tra ảnh chính chủ, từ chối sửa/đọc ảnh người khác, quyền chưa cấp, dữ liệu quá lớn hoặc chèn thêm trường phân quyền. Kiểm tra bố cục bằng component thử nghiệm không có phiên đăng nhập thật.
+
+## Lịch sao lưu tuần giữ 4 tháng
+
+Xem [WEEKLY_BACKUP_SETUP.md](WEEKLY_BACKUP_SETUP.md). Website đã có danh sách/trạng thái và nút tải JSON; backend trong `functions/` chạy Chủ nhật 02:00 và dọn bản quá 4 tháng mỗi ngày. **Chủ dự án cần bật Blaze và chạy script triển khai trước; lịch chưa được tự kích hoạt bởi GitHub Pages.** File nằm trong Cloud Storage riêng tư, không phải GitHub công khai hay tự tải/xóa trong ứng dụng Tệp của iPhone.

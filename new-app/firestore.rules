@@ -68,6 +68,7 @@ service cloud.firestore {
    allow create: if active() && request.resource.data.keys().hasOnly(['actor','actorUid','action','kind','record_id','at']) && request.resource.data.actorUid == request.auth.uid && request.resource.data.actor == me().name && request.resource.data.at == request.time;
    allow update,delete: if false;
   }
+  match /clubs/antruong-v2/weeklyBackups/{id} { allow read: if owner(); allow write: if false; }
   match /clubs/antruong-v2/profiles/{uid} {
    allow get: if active() && request.auth.uid == uid;
    allow list,delete: if false;

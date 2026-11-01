@@ -41,6 +41,11 @@ try{
  await assertSucceeds(save(staff,'attendance','2026-11-01_C1',{date:'2026-11-01',classId:'C1',status:'draft',rows:[{studentUid:'S1',status:'unmarked'}]},0));
  const client2=actor('staff','staff@example.test');assert.equal((await getDoc(doc(client2,root+'/records/attendance--2026-11-01_C1'))).data().data.status,'draft');
  const live=new Promise((resolve,reject)=>{const stop=onSnapshot(doc(client2,root+'/records/student--S1'),snap=>{if(snap.data()?.version===3){stop();resolve(true)}},reject);setTimeout(()=>{stop();reject(new Error('Live update timed out'))},8000).unref()});await save(staff,'student','S1',{id:'VS1',name:'Live update',classId:'C1'},2);await live;
+ await test.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),root+'/weeklyBackups/2026-11-01'),{id:'2026-11-01',bytes:1234}));
+ await assertSucceeds(getDocs(collection(owner,root+'/weeklyBackups')));
+ await assertFails(getDocs(collection(staff,root+'/weeklyBackups')));
+ await assertFails(setDoc(doc(owner,root+'/weeklyBackups/2026-11-08'),{id:'2026-11-08'}));
+ console.log('PASS: weekly backup index is owner-readable and server-write-only');
  const photo={photoURL:'data:image/jpeg;base64,/9j/AA==',updatedAt:serverTimestamp()};
  await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),photo));
  assert.equal((await getDoc(doc(client2,root+'/profiles/staff'))).data().photoURL,photo.photoURL);
