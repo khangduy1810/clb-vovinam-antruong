@@ -21,6 +21,16 @@ try{
  await assertFails(getDocs(query(collection(staff,root+'/records'),where('kind','==','student'))));await assertFails(getDoc(doc(staff,root+'/records/student--S2')));
  await assertSucceeds(getDoc(doc(staff,root+'/records/student--S1')));await assertFails(getDocs(collection(staff,root+'/members')));await assertFails(setDoc(doc(staff,root+'/members/staff@example.test'),{...staffProfile,isSuperAdmin:true}));
  console.log('PASS: class-filtered queries allowed; other classes, account enumeration and privilege escalation denied');
+ const beforeResume=(await getDocs(collection(owner,root+'/records'))).docs.map(d=>[d.id,d.data().version]).sort();
+ await test.withSecurityRulesDisabled(async c=>{const p={...ownerProfile};delete p.name;await setDoc(doc(c.firestore(),root+'/members/owner@example.test'),p)});
+ await setDoc(doc(owner,root+'/meta/import'),{status:'in_progress'});
+ function finishImport(){const b=writeBatch(owner);b.set(doc(owner,root+'/meta/import'),{status:'ready'});b.set(doc(collection(owner,root+'/audit')),{actor:'Admin',actorUid:'owner',action:'import',kind:'backup',record_id:'initial',at:serverTimestamp()});return b.commit()}
+ await assertFails(finishImport());assert.equal((await getDoc(doc(owner,root+'/meta/import'))).data().status,'in_progress');
+ await test.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),root+'/members/owner@example.test'),ownerProfile));
+ await assertSucceeds(finishImport());assert.equal((await getDoc(doc(owner,root+'/meta/import'))).data().status,'ready');
+ assert.deepEqual((await getDocs(collection(owner,root+'/records'))).docs.map(d=>[d.id,d.data().version]).sort(),beforeResume);
+ console.log('PASS: repairing the canonical profile name finalizes an interrupted import without duplicating records or changing their versions');
+
  async function save(db,kind,id,data,version){return runTransaction(db,async tx=>{const ref=doc(db,root+'/records/'+kind+'--'+id),current=await tx.get(ref);if((current.data()?.version||0)!==version)throw new Error('stale');const event=doc(collection(db,root+'/audit'));tx.set(ref,{kind,id,data,version:version+1,updatedAt:serverTimestamp(),auditId:event.id});tx.set(event,{actor:db===owner?'Admin':'HLV',actorUid:db===owner?'owner':'staff',action:'update',kind,record_id:id,at:serverTimestamp()})})}
  await assertSucceeds(save(staff,'student','S1',{id:'VS1',name:'Updated',classId:'C1'},1));await assert.rejects(()=>save(staff,'student','S1',{id:'VS1',name:'Stale',classId:'C1'},1));
  await assertFails(setDoc(doc(staff,root+'/records/student--S1'),{kind:'student',id:'S1',version:3,data:{id:'VS1',name:'No audit',classId:'C1'},updatedAt:serverTimestamp()}));

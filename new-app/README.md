@@ -75,3 +75,9 @@ Kiểm tra cục bộ: `firebase emulators:exec --project demo-antruong-v2 --onl
 Rules kiểm tra email trong ID token, hồ sơ hoạt động, quyền theo tab, phạm vi lớp, phiên bản tăng đúng 1, cấu trúc cơ bản và nhật ký đi kèm lần ghi. Thành viên không tự sửa hồ sơ quyền, không đọc bản sao toàn CLB, không ghi sang lớp khác. Quy tắc đầy đủ danh sách điểm danh và liên kết từng dòng được kiểm tra tại ứng dụng; không coi đó là thay thế cho kiểm tra nghiệp vụ server riêng nếu sau này bổ sung backend.
 
 Tài liệu chính thức: [Firebase Auth email/password](https://firebase.google.com/docs/auth/web/password-auth), [Rules theo người dùng](https://firebase.google.com/docs/firestore/security/rules-conditions), [Firestore transactions](https://firebase.google.com/docs/firestore/manage-data/transactions).
+
+## Khắc phục hồ sơ thiếu tên khi nhập dữ liệu
+
+Nếu báo `Unsupported field value: undefined (found in field actor ...)`, hồ sơ membership của tài khoản đăng nhập thiếu `name` hoặc không phải string. Trong Firestore Console, mở `clubs/antruong-v2/members/<email đăng nhập>`, thêm/sửa `name` kiểu string thành tên người dùng. Bản mới kiểm tra trường này trước khi ghi và hiển thị email thay vì để trống lời chào. Không dùng tên dự phòng để vượt kiểm tra nhật ký tại Rules.
+
+Tải lại trang v2, chọn lại **đúng file JSON trước đó** để tiếp tục. Các hồ sơ đã ghi được bỏ qua; thao tác cuối chỉ chuyển trạng thái nhập sang ready kèm nhật ký sau khi hồ sơ tên đã hợp lệ. Không xóa collection và không đổi hash/trạng thái nhập thủ công.
