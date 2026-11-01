@@ -13833,22 +13833,22 @@
                     try {
                         // Compare-and-swap prevents two writers overwriting the same Firebase revision.
                         const read=await fetch(endpoint,{headers:{'X-Firebase-ETag':'true'},cache:'no-store',signal:controller.signal});
-                        if(!read.ok)throw new Error('Không đọc được phiên bản Cloud: HTTP '+read.status);
+                        if(!read.ok)throw await cloudHttpError(read,'đọc');
                         const etag=read.headers.get('ETag');
                         if(!etag)throw new Error('Máy chủ không cung cấp ETag; đã chặn ghi để tránh đè dữ liệu.');
-                        let remote=await read.json();
+                        let remote=cloudUnpackFirebase(await read.json());
                         if(remote?._encrypted)remote=JSON.parse(await decryptPayloadAES(remote.cipherData,(cloudConfig.encryptionKey||'').trim()));
                         const snapshot=safetyMigrateLinks(safetyClone(buildFullDatabasePayload()));
                         let outgoing=snapshot;
                         if(remote){remote=safetyValidate(remote);safetyMigrateLinks(remote);outgoing=safetyMergePayload(safetySyncBase,snapshot,remote);}
                         if(safetySyncConflicts.length){safetyShowConflicts();throw new Error('Phát hiện xung đột; chưa ghi lên Cloud.');}
                         outgoing.updatedAt=new Date().toISOString();outgoing.version='4.0';
-                        let body=outgoing;
+                        let body=/firebaseio\.com|firebasedatabase\.app/i.test(cloudConfig.url||'')?cloudPackFirebase(outgoing):outgoing;
                         const key=(cloudConfig.encryptionKey||'').trim();
                         if(key){if(key.length<16)throw new Error('Khóa mã hóa phải có ít nhất 16 ký tự.');body={_encrypted:true,cipherData:await encryptPayloadAES(JSON.stringify(outgoing),key),updatedAt:outgoing.updatedAt,updatedBy:outgoing.updatedBy};}
                         const res=await fetch(endpoint,{method:'PUT',headers:{'Content-Type':'application/json','if-match':etag},body:JSON.stringify(body),signal:controller.signal});
                         if(res.status===412)continue;
-                        if(!res.ok)throw new Error('Máy chủ chưa xác nhận ghi: HTTP '+res.status);
+                        if(!res.ok)throw await cloudHttpError(res,'ghi');
                         // Preserve edits made while network requests were in flight.
                         const current=safetyClone(buildFullDatabasePayload());
                         const next=safetyMergePayload(snapshot,current,outgoing);
@@ -13925,13 +13925,11 @@
                     signal: abortCtrl.signal
                 });
                 if (!res.ok) {
-                    const statusError = new Error('HTTP ' + res.status);
-                    statusError.httpStatus = res.status;
-                    throw statusError;
+                    throw await cloudHttpError(res,'đọc');
                 }
 
                 syncPhase='data';
-                let data = await res.json();
+                let data = cloudUnpackFirebase(await res.json());
                 const elapsedMs = Math.max(1, Math.round(performance.now() - t0));
                 const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -14064,7 +14062,7 @@
                     if (Date.now() - lastLocalMutationTimeMs < 1500) return;
                     try {
                         const parsed = JSON.parse(evt.data);
-                        const remotePayload = (parsed && parsed.path === '/' && parsed.data) ? parsed.data : null;
+                        const remotePayload = (parsed && parsed.path === '/' && parsed.data) ? cloudUnpackFirebase(parsed.data) : null;
                         if (remotePayload && remotePayload.updatedAt && isIncomingTimestampNewer(remotePayload.updatedAt, lastSyncedUpdatedAt)) {
                             if (!remotePayload._encrypted && (remotePayload.students || remotePayload.classes)) {
                                 const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -16128,6 +16126,7 @@
         const safetyPlain = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 
         function safetyValidate(raw, mode = 'merge') {
+            raw=cloudUnpackFirebase(raw);
             if (!safetyPlain(raw)) throw new Error('Gói dữ liệu phải là một đối tượng JSON.');
             if (![...DATA_COLLECTIONS,...DATA_OBJECTS].some(k => Object.hasOwn(raw,k))) throw new Error('Không tìm thấy dữ liệu Vovinam.');
             const p = safetyClone(raw);
@@ -17266,11 +17265,46 @@
             const code=Number(error?.httpStatus)||0;
             if(code===401 || code===403 || /HTTP (401|403)/.test(error?.message||''))return 'Máy chủ từ chối quyền truy cập (HTTP 401/403). Kiểm tra xác thực Firebase và Rules cho CLB; không mở quyền công khai.';
             if(error?.name==='AbortError')return 'Máy chủ chưa hoàn tất phản hồi trong 15 giây. Dữ liệu trên máy vẫn được giữ; hãy thử kết nối lại.';
+            if(code===400)return 'Firebase từ chối yêu cầu (HTTP 400). '+cloudSafeReason(error?.serverReason || 'Dữ liệu hoặc tham số gửi lên chưa được chấp nhận.');
             if(code===404)return 'Không tìm thấy địa chỉ Cloud (HTTP 404). Kiểm tra URL Realtime Database và mã CLB.';
             if(code)return 'Máy chủ trả về HTTP '+code+'. Dữ liệu trên máy vẫn được giữ.';
             if(error instanceof TypeError || /failed to fetch|network|load failed|offline/i.test(error?.message||''))return 'Không nhận được phản hồi mạng. Kiểm tra Internet, DNS, CORS hoặc kết nối bị chặn; chưa xác nhận được đồng bộ.';
-            const reason=String(error?.message||'Lỗi chưa xác định').replace(/https?:\/\/[^\s]+/g,'[địa chỉ máy chủ]').replace(/(auth|token|secret|password|key)=[^&\s]+/gi,'$1=[đã ẩn]').slice(0,250);
+            const reason=cloudSafeReason(error?.message||'Lỗi chưa xác định');
             return (phase==='storage'?'Đã nhận phản hồi Cloud nhưng chưa xử lý/lưu được dữ liệu: ':phase==='data'?'Đã kết nối Cloud nhưng dữ liệu phản hồi không hợp lệ: ':'Chưa hoàn tất đồng bộ: ')+reason;
+        }
+
+        // Firebase treats object keys as database paths. Session/class names, legacy IDs and
+        // duplicate indexes may contain '.', '#', '$', '[', ']' or '/'. Store the complete
+        // JSON in bounded string chunks so names, empty collections and identity keys round-trip.
+        function cloudPackFirebase(payload) {
+            const json=JSON.stringify(payload),payloadChunks=[];
+            for(let start=0;start<json.length;){
+                let end=Math.min(start+240000,json.length);
+                if(end<json.length && /[\uD800-\uDBFF]/.test(json[end-1]))end--;
+                payloadChunks.push(json.slice(start,end));start=end;
+            }
+            const packed={_vovinamTransport:'json-chunks-v1',chunkCount:payloadChunks.length,payloadChunks,updatedAt:payload.updatedAt||'',updatedBy:payload.updatedBy||''};
+            if(new Blob([JSON.stringify(packed)]).size>30*1024*1024)throw new Error('Gói đồng bộ vượt 30 MB. Hãy xuất JSON độc lập và giảm ảnh/tệp trước khi gửi.');
+            return packed;
+        }
+        function cloudUnpackFirebase(raw) {
+            if(!raw || !Object.hasOwn(raw,'_vovinamTransport'))return raw;
+            if(raw._vovinamTransport!=='json-chunks-v1')throw new Error('Định dạng đồng bộ mới chưa được hỗ trợ. Hãy tải lại trang trên tất cả thiết bị.');
+            if(!Array.isArray(raw.payloadChunks) || !Number.isInteger(raw.chunkCount) || raw.chunkCount<1 || raw.chunkCount>150 || raw.payloadChunks.length!==raw.chunkCount || raw.payloadChunks.some(x=>typeof x!=='string' || !x.length || x.length>240000))throw new Error('Bản Cloud thiếu hoặc sai các phần dữ liệu; chưa áp dụng thay đổi.');
+            const json=raw.payloadChunks.join('');
+            if(new Blob([json]).size>30*1024*1024)throw new Error('Bản Cloud vượt giới hạn đồng bộ 30 MB; chưa áp dụng thay đổi.');
+            const payload=JSON.parse(json);
+            if(!payload || typeof payload!=='object' || Array.isArray(payload) || payload._vovinamTransport || payload.updatedAt!==raw.updatedAt)throw new Error('Nội dung bản Cloud không khớp thông tin phiên bản.');
+            return payload;
+        }
+        function cloudSafeReason(reason) {
+            return String(reason||'').replace(/https?:\/\/[^\s]+/g,'[địa chỉ máy chủ]').replace(/(auth|token|secret|password|key)=[^&\s]+/gi,'$1=[đã ẩn]').slice(0,300);
+        }
+        async function cloudHttpError(response,operation) {
+            let reason='';
+            try{const body=await response.text();try{const parsed=JSON.parse(body);reason=typeof parsed.error==='string'?parsed.error:'';}catch{if(!/<[a-z!]/i.test(body))reason=body;}}catch{}
+            const error=new Error('Máy chủ từ chối '+operation+': HTTP '+response.status);
+            error.httpStatus=response.status;error.serverReason=cloudSafeReason(reason);return error;
         }
 </script>
 </body>
