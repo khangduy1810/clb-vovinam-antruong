@@ -39,3 +39,7 @@ Chủ CLB có nút Khóa/Mở khóa ở mỗi hồ sơ tài khoản. Khóa cập
 Chủ CLB có thể Chuyển vào thùng rác từ hồ sơ chi tiết (võ sinh, lớp, học phí, đơn hàng, thi đấu, phê duyệt) hoặc thẻ tài khoản. Thùng rác giữ nguyên tài liệu bằng cờ deleted, kèm người/thời điểm xóa và lịch sử; không tự xóa vĩnh viễn. Lớp còn võ sinh phải chuyển học viên trước. Khôi phục võ sinh cần khôi phục lớp trước. Khôi phục tài khoản giữ trạng thái khóa; chủ CLB kiểm tra quyền và mở khóa riêng. Mã võ sinh đã xóa vẫn được giữ để tránh cấp trùng. Đây là thùng rác hồ sơ trên trang, không quản lý tệp đã tải xuống điện thoại.
 
 Publish Rules mới một lần, sau đó tải lại trang để dùng tính năng này. Không có dữ liệu thực tế nào được xóa hoặc khóa trong lúc phát triển/kiểm thử.
+
+### Điểm danh trong thùng rác
+
+Chọn buổi ở Báo cáo rồi bấm Chuyển buổi điểm danh vào thùng rác. Trong Thùng rác có thể lọc loại dữ liệu và tìm tên/mã/ngày. Khôi phục buổi tập giữ nguyên các dòng, dấu điểm danh, ghi chú và trạng thái lịch sử; không áp lại sĩ số lớp hiện tại lên buổi đã chốt. Hồ sơ điểm danh đang trong thùng rác không được ghi đè bằng một buổi mới cùng ngày/lớp; cần khôi phục trước. Phần mở rộng giao diện này dùng Rules thùng rác đã phát hành trước đó.

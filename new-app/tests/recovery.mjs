@@ -6,7 +6,7 @@ import {doc,setDoc,getDoc,getDocs,collection,connectFirestoreEmulator,serverTime
 import {connectAuthEmulator,createUserWithEmailAndPassword,sendEmailVerification,applyActionCode,reload} from 'firebase/auth';
 import {auth,db,app} from '../src/firebase.ts';
 import {prepareRecovery,restoreApp,readRecovery,recoveryPlanForUndo,captureApp} from '../src/recovery.ts';
-import {mutate} from '../src/gateway.ts';
+import {mutate,readState} from '../src/gateway.ts';
 import {ensureStudentCodes} from '../src/student-codes.ts';
 connectFirestoreEmulator(db,'127.0.0.1',8088);connectAuthEmulator(auth,'http://127.0.0.1:9098',{disableWarnings:true});
 const projectId='clb-vovinam-antruong',root='clubs/antruong-v2';
@@ -31,6 +31,13 @@ try{
  await mutate({kind:'account',id:'TRASH-TEST',data:{...account,deleted:true,deletedAt:new Date().toISOString(),deletedBy:'Admin'},version:2});assert.equal((await getDoc(doc(db,root+'/members/'+account.email))).data().status,'inactive');assert.equal((await getDoc(doc(db,root+'/records/account--TRASH-TEST'))).data().data.deleted,true);
  await mutate({kind:'account',id:'TRASH-TEST',data:{...account,deleted:false,status:'inactive'},version:3});assert.equal((await getDoc(doc(db,root+'/members/'+account.email))).data().status,'inactive');
  await assert.rejects(()=>mutate({kind:'account',id:'ADMIN',data:{...owner,status:'inactive'},version:1}),/bảo vệ|chủ CLB/);
+ await readState();const attendance={date:'2026-11-01',classId:'C2',status:'final',rows:[{studentUid:'S2',status:'present',note:'preserve',makeup:false}]};
+ await mutate({kind:'attendance',id:'2026-11-01_C2',data:attendance,version:0});
+ await mutate({kind:'student',id:'S3',data:{name:'Added later',id:'LATER-3',classId:'C2'},version:0});await readState();
+ await mutate({kind:'attendance',id:'2026-11-01_C2',data:{...attendance,deleted:true},version:1});assert.equal((await getDoc(doc(db,root+'/records/attendance--2026-11-01_C2'))).data().data.deleted,true);
+ await mutate({kind:'attendance',id:'2026-11-01_C2',data:{...attendance,deleted:false},version:2});assert.deepEqual((await getDoc(doc(db,root+'/records/attendance--2026-11-01_C2'))).data().data.rows,attendance.rows);
+ await assert.rejects(()=>mutate({kind:'attendance',id:'2026-11-01_C2',data:{...attendance,deleted:false,rows:[{studentUid:'S2',status:'unmarked'}]},version:3}));
+ console.log('PASS: completed attendance can be trashed/restored unchanged even after the class roster grows');
  console.log('PASS: production account lock/trash revoke membership; restoring keeps account locked; owner cannot be locked or trashed');
  console.log('PASS: real recovery module captures undo before writes, replaces records and memberships, preserves owner, resumes interruption, blocks staff during restore and restores undo with rebuilt unique codes');
 }finally{await test.cleanup();await deleteApp(app)}
