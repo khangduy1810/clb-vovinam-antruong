@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {selectReport} from '../src/report-export.ts';
+import {profileForAccount,safePhoto} from '../src/account-profiles.ts';
+import {recoveryPlan} from '../src/recovery-plan.ts';
+const draft={id:'draft',data:{date:'2026-11-01',status:'draft'}},old={id:'old',data:{date:'2026-10-31',status:'final'}};
+assert.equal(selectReport([draft],''),draft);assert.equal(selectReport([draft,old],''),old);assert.equal(selectReport([draft,old],'draft'),draft);assert.equal(selectReport([draft],'deleted-id'),draft);assert.equal(selectReport([],''),undefined);
+const account={id:'STAFF',data:{email:'Staff@Example.test'}},photo={email:'staff@example.test',accountId:'STAFF',photoURL:'data:image/jpeg;base64,/9j/AA=='};
+assert.equal(profileForAccount(account,[photo]),photo);assert.equal(profileForAccount(account,[{...photo,accountId:'OTHER'}]),null);assert.equal(profileForAccount({...account,data:{email:'other@example.test'}},[photo]),null);assert.equal(safePhoto('javascript:alert(1)'),'');assert.equal(safePhoto(photo.photoURL),photo.photoURL);
+const backup={format:'antruong-v2',records:[],profiles:[{id:'uid',data:photo}]};assert.equal(recoveryPlan(backup).profiles[0].data.accountId,'STAFF');assert.throws(()=>recoveryPlan({...backup,profiles:[{id:'uid',data:{photoURL:'',email:'staff@example.test'}}]}),/Liên kết/);
+console.log('PASS: draft-only reporting, explicit draft selection, removed report fallback; photos require matching account ID and email; restored photo links validated.');

@@ -9,22 +9,24 @@
     "test": "node tests/rules.mjs",
     "test:flows": "esbuild tests/flows.mjs --bundle --format=esm --platform=node --packages=external --outfile=tests/.flows-built.mjs && node tests/.flows-built.mjs",
     "test:recovery:build": "esbuild tests/recovery.mjs --bundle --format=esm --platform=node --packages=external --outfile=tests/.recovery-built.mjs",
-    "test:idle": "node tests/idle.mjs"
+    "test:idle": "node tests/idle.mjs",
+    "test:reports": "esbuild tests/reports.mjs --bundle --format=esm --platform=node --packages=external --outfile=tests/.reports-built.mjs && node tests/.reports-built.mjs"
   },
   "dependencies": {
     "firebase": "^12.0.0",
     "lucide-react": "^1.31.0",
+    "pdf-lib": "^1.17.1",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.0",
+    "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "vite": "^7.0.0",
-    "typescript": "^5.9.0",
     "tailwindcss": "^4.0.0",
-    "@tailwindcss/vite": "^4.0.0"
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0"
   }
 }

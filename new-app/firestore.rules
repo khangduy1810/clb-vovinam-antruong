@@ -91,7 +91,8 @@ service cloud.firestore {
    allow delete: if restoring();
    allow create,update: if (restoring() || (active() && request.auth.uid == uid)) &&
     request.resource.data.keys().hasAll(['photoURL','updatedAt']) &&
-    request.resource.data.keys().hasOnly(['photoURL','updatedAt']) &&
+    request.resource.data.keys().hasOnly(['photoURL','updatedAt','email','accountId']) &&
+    (restoring() || !request.resource.data.keys().hasAny(['email','accountId']) || (request.resource.data.email == request.auth.token.email.lower() && request.resource.data.accountId == me().id)) &&
     request.resource.data.photoURL is string && request.resource.data.photoURL.size() <= 180000 &&
     (request.resource.data.photoURL == '' || request.resource.data.photoURL.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+')) &&
     request.resource.data.updatedAt == request.time;

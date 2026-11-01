@@ -50,6 +50,13 @@ try{
  await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),photo));
  assert.equal((await getDoc(doc(client2,root+'/profiles/staff'))).data().photoURL,photo.photoURL);
  await assertSucceeds(getDoc(doc(owner,root+'/profiles/staff')));
+ await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),{...photo,email:'staff@example.test',accountId:'STAFF'}));
+ await assertSucceeds(getDocs(collection(owner,root+'/profiles')));
+ await assertFails(getDocs(collection(staff,root+'/profiles')));
+ await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...photo,email:'owner@example.test',accountId:'ADMIN'}));
+ await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...photo,email:'staff@example.test',accountId:'ADMIN'}));
+ await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...photo,email:'staff@example.test'}));
+ console.log('PASS: verified account-photo binding, owner-only photo listing, forged email/account bindings denied');
  await assertFails(setDoc(doc(staff,root+'/profiles/owner'),photo));
  await assertFails(setDoc(doc(stranger,root+'/profiles/stranger'),photo));
  await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...photo,permissions:{settings_manage:true}}));
