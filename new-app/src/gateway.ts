@@ -43,7 +43,7 @@ export async function mutate(input:any){
   if(kind==='account'&&data.email){newMember=await tx.get(profileRef(data.email));if(newMember.exists()&&newMember.data().id!==id)throw new Error('Email đã gắn với hồ sơ khác.');}
   if(kind==='account'&&oldEmail&&oldEmail!==data.email){oldMember=await tx.get(profileRef(oldEmail));if(oldMember.exists()&&oldMember.data().isSuperAdmin)throw new Error('Tài khoản chủ CLB được bảo vệ.');}
   const next={kind,id,data,version:version+1,updatedAt:serverTimestamp(),auditId:auditRef.id};tx.set(ref,next);tx.set(auditRef,{actor:auditName,actorUid:a.identityId,action:existing?'update':'create',kind,record_id:id,at:serverTimestamp()});
-  if(kind==='account'){if(oldMember?.exists())tx.delete(profileRef(oldEmail));if(data.email)tx.set(profileRef(data.email),{id,name:data.name,email:data.email,status:data.status,isSuperAdmin:false,allClasses:!!data.allClasses,classIds:data.classIds||[],permissions:data.permissions||{},roleTitle:data.roleTitle||'Thành viên'});}
+  if(kind==='account'){if(oldMember?.exists())tx.delete(profileRef(oldEmail));if(data.email)tx.set(profileRef(data.email),{id,name:data.name,email:data.email,status:data.status,isSuperAdmin:false,allClasses:!!data.allClasses,classIds:data.classIds||[],permissions:data.permissions||{},roleTitle:data.roleTitle||'Thành viên',requireEmailVerification:true});}
   return {...next,updatedAt:new Date().toISOString()};
  });return {ok:true,record:result};
 }

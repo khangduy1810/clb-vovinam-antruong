@@ -3,9 +3,10 @@ service cloud.firestore {
  match /databases/{database}/documents {
   function signed() { return request.auth != null && request.auth.token.email is string; }
   function me() { return get(/databases/$(database)/documents/clubs/antruong-v2/members/$(request.auth.token.email.lower())).data; }
-  function live(a) { return signed() && a.status == 'active' && (a.isSuperAdmin == true || get(/databases/$(database)/documents/clubs/antruong-v2/meta/import).data.status == 'ready'); }
+  function verified(a) { return a.get('requireEmailVerification',false) != true || request.auth.token.email_verified == true; }
+  function live(a) { return signed() && verified(a) && a.status == 'active' && (a.isSuperAdmin == true || get(/databases/$(database)/documents/clubs/antruong-v2/meta/import).data.status == 'ready'); }
   function active() { let a = me(); return live(a); }
-  function owner() { let a = me(); return signed() && a.status == 'active' && a.isSuperAdmin == true; }
+  function owner() { let a = me(); return signed() && verified(a) && a.status == 'active' && a.isSuperAdmin == true; }
   function has(a,p) { return a.isSuperAdmin == true || a.permissions.get(p,false) == true; }
   function inClass(a,cid) { return a.isSuperAdmin == true || a.allClasses == true || cid in a.classIds; }
   function readRecord(r) {
@@ -50,7 +51,7 @@ service cloud.firestore {
   match /clubs/antruong-v2/members/{email} {
    allow get: if signed() && (email == request.auth.token.email.lower() || owner());
    allow list: if owner();
-   allow create, update: if owner() && request.resource.data.keys().hasOnly(['id','name','email','status','isSuperAdmin','allClasses','classIds','permissions','roleTitle']) &&
+   allow create, update: if owner() && request.resource.data.keys().hasOnly(['id','name','email','status','isSuperAdmin','allClasses','classIds','permissions','roleTitle','requireEmailVerification']) &&
      request.resource.data.email == email && request.resource.data.status in ['active','inactive'] &&
      request.resource.data.isSuperAdmin == false && request.resource.data.allClasses is bool &&
      request.resource.data.classIds is list && request.resource.data.permissions is map;

@@ -57,6 +57,18 @@ try{
  await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{photoURL:'data:image/jpeg;base64,'+'A'.repeat(180000),updatedAt:serverTimestamp()}));
  await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),{photoURL:'',updatedAt:serverTimestamp()}));
  console.log('PASS: own-photo writes/read across clients, other-user isolation, active membership, schema/size validation and permission injection rejection');
+ await test.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),root+'/members/staff@example.test'),{...staffProfile,requireEmailVerification:true}));
+ const unverified=test.authenticatedContext('staff',{email:'staff@example.test',email_verified:false}).firestore();
+ const verified=test.authenticatedContext('staff',{email:'staff@example.test',email_verified:true}).firestore();
+ await assertSucceeds(getDoc(doc(unverified,root+'/members/staff@example.test')));
+ await assertFails(getDoc(doc(unverified,root+'/records/student--S1')));
+ await assertFails(setDoc(doc(unverified,root+'/profiles/staff'),photo));
+ await assertSucceeds(getDoc(doc(verified,root+'/records/student--S1')));
+ await assertFails(getDoc(doc(verified,root+'/records/student--S2')));
+ await assertFails(setDoc(doc(unverified,root+'/members/staff@example.test'),{...staffProfile,requireEmailVerification:false}));
+ await test.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),root+'/members/staff@example.test'),staffProfile));
+ console.log('PASS: invited users require verified token for records/photos; verification grants only assigned scope; self bypass denied; existing memberships preserved');
+
  await assertFails(getDocs(collection(staff,root+'/snapshots')));await assertSucceeds(setDoc(doc(owner,root+'/snapshots/test'),{at:serverTimestamp(),data:'{}'}));
  await assertSucceeds(setDoc(doc(owner,root+'/members/staff@example.test'),{...staffProfile,status:'inactive'}));await assertFails(getDoc(doc(client2,root+'/records/student--S1')));
  console.log('PASS: drafts resume on another client, realtime listener receives change, backups protected and revoked membership blocked');
