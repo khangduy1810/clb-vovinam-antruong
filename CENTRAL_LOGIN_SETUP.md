@@ -13,6 +13,14 @@ Mã trang đã tích hợp Firebase Authentication và dữ liệu theo lớp/t�
 
 Trong lúc mở quy trình thiết lập, đồng bộ kiểu cũ được tạm dừng trên máy đó. Tải lại trang để hủy nếu chưa kích hoạt hệ thống mới.
 
+## Link đăng nhập dành cho các máy khác
+
+Gửi link `https://khangduy1810.github.io/clb-vovinam-antruong/dang-nhap.html`. Trang này kiểm tra hệ thống trung tâm đã kích hoạt, Rules đã bảo vệ dữ liệu, rồi xác thực Firebase và hồ sơ quyền của người dùng trước khi mở trang làm việc. Không quay về tài khoản mẫu hoặc dữ liệu tài khoản cũ của trình duyệt.
+
+Nếu trang báo chưa kích hoạt, quản trị viên dùng nút **Mở trang thiết lập trên máy chính** (đường dẫn `index.html?setup=central-v2`) và hoàn tất quy trình ở trên. Đổi link không tự chuyển các tài khoản cũ sang Firebase.
+
+Nếu báo chưa được cấp hồ sơ quyền, tài khoản có thể đã có trong Firebase Authentication nhưng chưa được quản trị viên liên kết ở trang. Cấp tài khoản từ Tài khoản / Phân quyền như phần dưới. Giao người dùng cùng link, tên đăng nhập và mật khẩu; họ không nhập cấu hình Cloud hay tự chọn quyền.
+
 ## Cấp tài khoản cho HLV, thủ quỹ
 
 Trong **Tài khoản / Phân quyền**, mở từng tài khoản cũ chưa liên kết, đặt mật khẩu khởi tạo mới ít nhất 8 ký tự, kiểm tra lớp và quyền rồi lưu. Hoặc tạo tài khoản mới tại đây. Mật khẩu cũ dạng hash không được tự nhập sang Firebase Authentication.
@@ -45,6 +53,7 @@ Chạy từ thư mục gốc của repo:
 
 ```sh
 node tests/central.cjs
+node tests/login-entry.cjs
 npx firebase-tools emulators:exec --only database,auth --project demo-vovinam --config tests/firebase.json 'node tests/central-emulator.cjs'
 ```
 

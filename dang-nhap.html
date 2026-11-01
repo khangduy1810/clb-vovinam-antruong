@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="vi">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#102c55"><meta name="robots" content="noindex">
+ <title>Đăng nhập · Vovinam An Trường</title>
+ <style>
+ *{box-sizing:border-box}body{margin:0;color:#18304c;background:#eef3f9;font:16px/1.5 system-ui,-apple-system,sans-serif}main{min-height:100svh;display:grid;place-items:center;padding:24px 16px}.card{width:100%;max-width:460px;background:white;border:1px solid #dde5f0;border-radius:24px;overflow:hidden;box-shadow:0 16px 50px #17335d14}header{padding:28px 28px 24px;background:#102c55;color:white}header p{margin:0 0 8px;color:#f3c968;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}h1{font-size:28px;line-height:1.2;margin:0 0 10px}header span{font-size:14px;color:#d5e1f1}.content{padding:24px 28px}label{display:block;font-size:14px;font-weight:650;margin-bottom:6px}.field{margin-bottom:18px}input{font:inherit;width:100%;padding:12px;border:1px solid #cbd6e5;border-radius:11px;min-height:48px;color:#18304c;background:#fff}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #a6c9ff;outline-offset:3px}.password{position:relative}.password input{padding-right:65px}.password button{position:absolute;right:5px;top:5px;bottom:5px;border:0;background:transparent;color:#315b89;font-weight:650;padding:0 10px}.submit{border:0;border-radius:12px;background:#075cb8;color:#fff;font:inherit;font-weight:750;width:100%;padding:13px;min-height:49px;cursor:pointer}.submit:disabled{opacity:.55;cursor:wait}.hint{font-size:13px;color:#64748b;margin:8px 0 0}.status{font-size:14px;padding:12px;border-radius:12px;background:#f0f5fc;border:1px solid #d9e5f5;margin:0 0 20px}.status[data-state="error"]{color:#9f1d26;background:#fff2f2;border-color:#f4cbd0}.status[data-state="pending"]{color:#77500b;background:#fff9e9;border-color:#f4e2b5}.status[data-state="ready"]{color:#166344;background:#effaf4;border-color:#c9e9d7}.support{border-top:1px solid #e5ebf3;margin-top:24px;padding-top:18px;font-size:13px;color:#64748b}.support a{color:#075cb8;font-weight:650}.retry{border:0;background:transparent;padding:7px 0;color:#075cb8;font:inherit;font-weight:650;font-size:13px;cursor:pointer}.support p{margin:8px 0}details{margin-top:14px}summary{cursor:pointer;font-weight:650;color:#31506f}details ol{padding-left:20px}.foot{text-align:center;color:#7b899c;font-size:12px;margin-top:20px}button{touch-action:manipulation}@media(max-width:360px){.content,header{padding-left:20px;padding-right:20px}h1{font-size:25px}}
+ </style>
+</head>
+<body>
+<main><div><section class="card" aria-labelledby="login-title">
+ <header><p>Câu lạc bộ Vovinam An Trường</p><h1 id="login-title">Đăng nhập</h1><span>Dùng tài khoản được cấp trên mọi điện thoại và máy tính.</span></header>
+ <div class="content">
+  <p id="signin-status" class="status" role="status" aria-live="polite">Đang kiểm tra máy chủ đăng nhập…</p>
+  <form id="signin-form">
+   <div class="field"><label for="signin-user">Tài khoản hoặc email</label><input id="signin-user" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ví dụ: hlv_tri hoặc email quản trị viên" required></div>
+   <div class="field"><label for="signin-password">Mật khẩu</label><div class="password"><input id="signin-password" name="password" type="password" autocomplete="current-password" required><button id="signin-show-password" type="button" aria-label="Hiện mật khẩu" aria-pressed="false">Hiện</button></div></div>
+   <button id="signin-submit" class="submit" type="submit" disabled>Đăng nhập</button>
+   <p class="hint">Đăng nhập xong, trang tự tải lớp và các chức năng được cấp cho bạn.</p>
+  </form>
+  <button id="signin-retry" class="retry" type="button">Kiểm tra kết nối lại</button>
+  <div class="support">
+   <p>Chưa có tài khoản hoặc không thấy lớp? Liên hệ quản trị viên để được cấp tài khoản và quyền trên hệ thống trung tâm.</p>
+   <details><summary>Dành cho quản trị viên</summary><ol><li>Kích hoạt đăng nhập trung tâm một lần trên máy có dữ liệu đầy đủ.</li><li>Trong Tài khoản / Phân quyền, liên kết tài khoản cũ hoặc tạo tài khoản mới, chọn lớp và quyền rồi lưu.</li><li>Gửi link trang này cùng tên đăng nhập và mật khẩu cho người dùng.</li></ol><a id="signin-setup-link" href="index.html?setup=central-v2">Mở trang thiết lập trên máy chính</a><p>Tài khoản chỉ tồn tại trong bản lưu cũ hoặc chỉ được tạo ở Firebase Authentication chưa tự có quyền trên trang.</p></details>
+  </div>
+ </div>
+</section><p class="foot">Mỗi người dùng tài khoản riêng · Không cần ghép máy</p></div></main>
+<script src="firebase-config.js?v=20261101-2"></script>
+<script src="login-entry.js?v=20261101-2"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 /* Central sign-in and class-scoped storage. No credential/password database is sent between browsers. */
 (function(root){
 'use strict';
-const config=Object.freeze({apiKey:'AIzaSyBVLei7bl_BQGQYSfNvqkhHnTfgYcckLj4',authDomain:'clb-vovinam-antruong.firebaseapp.com',databaseURL:'https://clb-vovinam-antruong-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'clb-vovinam-antruong',appId:'1:333636723863:web:3b82f17394d0bec89475d2'});
+const config=root.VOVINAM_FIREBASE_CONFIG||Object.freeze({apiKey:'AIzaSyBVLei7bl_BQGQYSfNvqkhHnTfgYcckLj4',authDomain:'clb-vovinam-antruong.firebaseapp.com',databaseURL:'https://clb-vovinam-antruong-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'clb-vovinam-antruong',appId:'1:333636723863:web:3b82f17394d0bec89475d2'});
 const PREFIX='central_v2',AUTH_KEY='vovinam_central_auth_v1',FIELDS=['classes','students','attendanceRecords','tuitionRecords','gearOrders','tournamentEntries','pendingRequests','confirmedDuplicates'];
 let active=false,verified=false,session=null,profile=null,meta=null,base={},profiles=[],legacyProfiles=[],directory={},streams=[],poll=null,sendTimer=null,refreshTimer=null,refreshPromise=null,syncTask=null,rerun=false,generation=0,setupSession=null,pullTimer=null,accountEdit=null,setupRunning=false;
 const clone=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
@@ -232,7 +232,7 @@ function updateLoginUI(){
  const modal=$('login-modal');if(modal)modal.classList.toggle('hidden',authenticated());
  const note=$('central-login-note');if(note)note.textContent='Tài khoản và quyền được tải từ máy chủ. Không cần ghép máy.';
 }
-const loginEmail=username=>String(username||'').trim().includes('@')?String(username).trim().toLowerCase():sanitizeUsername(username)+'@accounts.clb-vovinam-antruong.invalid';
+const loginEmail=username=>{const text=String(username||'').trim().replace(/^@+/,'');return text.includes('@')?text.toLowerCase():sanitizeUsername(text)+'@accounts.clb-vovinam-antruong.invalid';};
 async function login(username,password){
  try{
   if(!verified)throw new Error('Máy chủ đăng nhập trung tâm chưa được xác nhận an toàn hoặc đang bảo trì. Vui lòng liên hệ quản trị viên.');
@@ -298,8 +298,8 @@ async function prepare(){
  installSetupUI();
  let found;
  try{found=await read('meta',false);}catch(error){if(localStorage.getItem('vovinam_central_enabled')==='1' || (await idbGetItem(AUTH_KEY))?.uid){active=true;durableBase=null;durableRevision=0;wipeUI();showToast('Chưa kiểm tra được máy chủ đăng nhập trung tâm. Vui lòng thử lại khi có mạng.','error');}return;}
- if(!found?.enabled){if(localStorage.getItem('vovinam_central_enabled')==='1'){active=true;durableBase=null;durableRevision=0;wipeUI();showToast('Máy chủ đăng nhập trung tâm đang bảo trì. Vui lòng liên hệ quản trị viên.','error');}return;}
- let protectedCheck;try{protectedCheck=await request(config.databaseURL+'/'+PREFIX+'/data.json');}catch(error){active=true;durableBase=null;durableRevision=0;wipeUI();showToast('Chưa kiểm tra được Rules máy chủ. Thử tải lại trang khi có mạng.','error');return;}
+ if(!found?.enabled){if(localStorage.getItem('vovinam_central_enabled')==='1' || new URLSearchParams(location.search).get('entry')==='central-v2'){active=true;durableBase=null;durableRevision=0;wipeUI();showToast('Máy chủ đăng nhập trung tâm đang bảo trì. Vui lòng liên hệ quản trị viên.','error');}return;}
+ let protectedCheck;try{protectedCheck=await request(config.databaseURL+'/'+PREFIX+'/data.json?shallow=true');}catch(error){active=true;durableBase=null;durableRevision=0;wipeUI();showToast('Chưa kiểm tra được Rules máy chủ. Thử tải lại trang khi có mạng.','error');return;}
  if(![401,403].includes(protectedCheck.status)){active=true;durableBase=null;durableRevision=0;wipeUI();showToast('Chưa xác nhận được Rules bảo vệ dữ liệu trung tâm. Liên hệ quản trị viên để kiểm tra trước khi đăng nhập.','error');return;}
  meta=found;verified=true;active=true;localStorage.setItem('vovinam_central_enabled','1');stopCloudRealtimeSync();durableBase=null;durableRevision=0;
  session=await idbGetItem(AUTH_KEY);
@@ -309,6 +309,10 @@ async function prepare(){
 }
 function installSetupUI(){
  if($('central-setup-card'))return;const host=$('tab-settings');if(!host)return;
+ const shared=document.createElement('div');shared.id='central-login-link-card';shared.className='bg-white p-5 rounded-2xl border border-blue-200 space-y-3';
+ shared.innerHTML='<h2 class="font-bold text-slate-800">Link đăng nhập chung cho mọi thiết bị</h2><a id="central-login-link" class="block text-sm text-blue-700 break-all font-semibold"></a><p class="text-sm text-slate-600">Gửi link cùng tài khoản được cấp. Người dùng đăng nhập để nhận đúng lớp và quyền; không phải ghép máy.</p><button type="button" id="central-copy-login-link" class="px-4 py-2 rounded-xl bg-blue-700 text-white font-bold">Sao chép link đăng nhập</button>';
+ host.prepend(shared);const link=$('central-login-link');link.href=new URL('dang-nhap.html',location.href).href;link.textContent=link.href;
+ $('central-copy-login-link').onclick=async()=>{try{await navigator.clipboard.writeText(link.href);showToast('Đã sao chép link đăng nhập chung.','success');}catch{showToast('Nhấn giữ link đăng nhập để sao chép.','info');}};
  const card=document.createElement('div');card.id='central-setup-card';card.className='bg-white p-5 rounded-2xl border border-blue-200 space-y-3';
  card.innerHTML='<h2 class="font-bold text-slate-800">Chuyển sang đăng nhập tập trung</h2><p class="text-sm text-slate-600">Thực hiện một lần trên máy có dữ liệu đầy đủ. Sau khi chuyển, các máy dùng cùng link và tài khoản được cấp.</p><button type="button" id="central-setup-open" class="px-4 py-2 rounded-xl bg-blue-700 text-white font-bold">Thiết lập quản trị viên Firebase</button><div id="central-setup-form" class="hidden space-y-3"><label class="block text-sm">Email quản trị viên<input id="central-setup-email" type="email" autocomplete="username" class="block w-full border rounded-lg p-2"></label><label class="block text-sm">Mật khẩu Firebase<input id="central-setup-password" type="password" autocomplete="new-password" class="block w-full border rounded-lg p-2"></label><label class="flex gap-2 text-sm"><input id="central-setup-existing" type="checkbox">Email này đã có trong Firebase Authentication</label><button type="button" id="central-setup-auth" class="px-4 py-2 bg-blue-700 text-white rounded-lg">Đăng ký / xác nhận tài khoản Firebase</button><p id="central-setup-status" role="status" class="text-sm break-words"></p><div id="central-setup-next" class="hidden space-y-3"><button type="button" id="central-setup-rules" class="border rounded-lg p-2">Tải Rules dành cho quản trị viên này</button><p class="text-sm">Tải bản JSON đầy đủ trước. Trong Firebase Console → Realtime Database → Rules, dán toàn bộ nội dung tệp Rules rồi Publish. Quy tắc mới khóa truy cập công khai và cho tài khoản quản trị vừa xác nhận quyền chuyển dữ liệu.</p><button type="button" id="central-setup-backup" class="border rounded-lg p-2">Tải JSON dữ liệu máy này</button><p id="central-setup-counts" class="text-sm font-semibold"></p><label class="flex gap-2 text-sm"><input id="central-setup-confirm" type="checkbox">Tôi đã kiểm tra đây là dữ liệu đầy đủ cần dùng chung và đã tải bản JSON độc lập.</label><button type="button" id="central-setup-import" class="px-4 py-2 bg-emerald-700 text-white rounded-lg">Kiểm tra Rules và chuyển dữ liệu</button></div></div>';
  host.prepend(card);
@@ -333,7 +337,7 @@ async function setupImport(){
   const old=clone(buildFullDatabasePayload());safetyAssertCompleteMedia(old);safetyValidate(old,'replace');
   if(durableEnabled){await durableMutationQueue.catch(()=>{});await durableSerial;}
   // Anonymous access must already be denied. Never upload private data into public Rules.
-  const anonymous=await request(config.databaseURL+'/'+PREFIX+'/data.json');if(anonymous.ok)throw new Error('Rules vẫn cho đọc công khai. Dán Rules đã tải và Publish trước khi tiếp tục.');
+  const anonymous=await request(config.databaseURL+'/'+PREFIX+'/data.json?shallow=true');if(anonymous.ok)throw new Error('Rules vẫn cho đọc công khai. Dán Rules đã tải và Publish trước khi tiếp tục.');
   if(![401,403].includes(anonymous.status))throw new Error('Chưa xác nhận được Rules bảo mật.');
   session=setupSession;
   const probe=await db('',{headers:{'X-Firebase-ETag':'true'}}),existing=await probe.json(),etag=probe.headers.get('ETag');
@@ -350,5 +354,9 @@ async function setupImport(){
   await idbSetItem(AUTH_KEY,session);status.textContent='Chuyển dữ liệu thành công. Đang mở lại trang với tài khoản trung tâm…';location.reload();
  }catch(error){status.textContent=errorText(error);session=null;profile=null;}
 }
-root.VovinamCentral={config,captureAccount,accountsSnapshot:()=>entriesPayload({}).accounts,get setupRunning(){return setupRunning;},get active(){return active;},get uid(){return session?.uid||'';},authenticated,prepare,login,logout,unlock,changePassword,resetPassword,saveAccountForm,setAccount,saveAvatar,schedule,push,pull,start,stop,cacheEntry,updateLoginUI,classKey,pack,unpack,layout,entriesPayload,mergeEntry};
+function openSetupIfRequested(){
+ if(new URLSearchParams(location.search).get('setup')!=='central-v2' || active || !rbacGlobalAdmin() || !safetyAuthenticated())return;
+ switchTab('settings');$('central-setup-open')?.click();
+}
+root.VovinamCentral={config,openSetupIfRequested,captureAccount,accountsSnapshot:()=>entriesPayload({}).accounts,get setupRunning(){return setupRunning;},get active(){return active;},get uid(){return session?.uid||'';},authenticated,prepare,login,logout,unlock,changePassword,resetPassword,saveAccountForm,setAccount,saveAvatar,schedule,push,pull,start,stop,cacheEntry,updateLoginUI,classKey,pack,unpack,layout,entriesPayload,mergeEntry};
 })(window);

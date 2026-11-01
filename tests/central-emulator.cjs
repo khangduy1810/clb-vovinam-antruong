@@ -56,6 +56,18 @@ await test('Application adapter writes a payment through actual permission Rules
 await test('Another account on a clean application session receives the saved payment',async()=>{
  const {api,appContext,ownerEmail}=globalThis.centralSmoke;await api.logout();assert.equal(appContext.run('students.length'),0);await api.login(ownerEmail,'CorrectPass123');assert.equal(api.authenticated(),true);assert.equal(appContext.run('students.length'),2);assert.equal(appContext.run('tuitionRecords["2026-11"].a.amount'),420000);
 });
+
+await test('New login URL verifies rights and hands the Firebase session to the application',async()=>{
+ const vm=require('vm'),fs=require('fs');const {api,appContext,ctx,staffEmail}=globalThis.centralSmoke;
+ const elements=new Map();const node=id=>{if(!elements.has(id))elements.set(id,{value:'',textContent:'',dataset:{},disabled:false,type:'password',addEventListener(){},setAttribute(){}});return elements.get(id);};
+ let destination='';const entry={console,URLSearchParams,AbortController,setTimeout,clearTimeout,document:{getElementById:node},localStorage:{setItem:(k,v)=>ctx.localStorage.setItem(k,v),removeItem:k=>ctx.localStorage.removeItem(k)},location:{replace:url=>{destination=url;}},fetch:ctx.fetch,indexedDB:{open(){const open={};setImmediate(()=>{open.result={objectStoreNames:{contains:()=>true},close(){},transaction(){const tx={};tx.objectStore=()=>({put(row){setImmediate(()=>{ctx.centralPrivateStorage.set(row.key,row.value);tx.oncomplete?.();});}});return tx;}};open.onsuccess?.();});return open;}}};entry.window=entry;
+ vm.createContext(entry);vm.runInContext(fs.readFileSync('firebase-config.js','utf8'),entry);vm.runInContext(fs.readFileSync('login-entry.js','utf8'),entry);
+ for(let i=0;i<80&&!entry.VovinamLoginEntry.ready;i++)await new Promise(r=>setTimeout(r,25));
+ assert.equal(entry.VovinamLoginEntry.ready,true);node('signin-user').value=staffEmail;node('signin-password').value='CorrectPass123';await entry.VovinamLoginEntry.submit({preventDefault(){}});
+ assert.equal(destination,'index.html?entry=central-v2');assert.equal(ctx.centralPrivateStorage.get('vovinam_central_auth_v1').uid,staff.uid);
+ await api.prepare();assert.equal(api.authenticated(),true);assert.equal(appContext.run('currentAccountId'),'cashA');assert.equal(appContext.run('students.length'),1);assert.equal(appContext.run('tuitionRecords["2026-11"].a.amount'),420000);
+});
 console.log('TOTAL',passed,'actual Firebase emulator checks passed');
+
 
 })().catch(e=>{console.error('FAIL',e.stack);process.exitCode=1;});

@@ -6289,6 +6289,7 @@
                     pullFromCloud(false, true);
                 }
             }
+            window.VovinamCentral?.openSetupIfRequested();
         };
 
         // Lưu trữ và lấy dữ liệu LocalStorage (bọc trong try/catch an toàn)
@@ -15169,6 +15170,7 @@
             showToast(`Đăng nhập thành công! Xin chào ${escapeHtml(acc.name)} (${escapeHtml(acc.roleTitle)}).`);
         
             refreshAllUiViewsSafely(false);
+            window.VovinamCentral?.openSetupIfRequested();
         }
 
         function handleFailedLogin(errorBox, errorMsg, defaultMessage, attempts) {
@@ -17406,7 +17408,8 @@
             error.httpStatus=response.status;error.serverReason=cloudSafeReason(reason);return error;
         }
 </script>
+<script src="firebase-config.js?v=20261101-2"></script>
 <script src="central-rules.js?v=20261101-1"></script>
-<script src="central.js?v=20261101-1"></script>
+<script src="central.js?v=20261101-2"></script>
 </body>
 </html>
