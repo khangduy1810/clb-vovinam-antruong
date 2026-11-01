@@ -5341,6 +5341,7 @@
         }
 
         function handleSessionUnlock(e) {
+            if(window.VovinamCentral?.active){e.preventDefault();return VovinamCentral.unlock(document.getElementById('lock-screen-password').value);}
             e.preventDefault();
             const remainingLockout = getLockoutRemainingSeconds();
             const errBox = document.getElementById('lock-screen-error');
@@ -6234,8 +6235,9 @@
             if(durableEnabled && durableBase){hasLocalUserEdits=Boolean(durableBase.hasUserEdits)||durablePendingCloud;}
             ensureStudentUids();
             safetyMigrateLinks(buildFullDatabasePayload());
+            if(window.VovinamCentral)await VovinamCentral.prepare();
             loadCloudConfig();
-            checkAutoPairingFromUrl();
+            if(!window.VovinamCentral?.active)checkAutoPairingFromUrl();
             // Kiểm tra trạng thái xác thực phiên làm việc sau khi đã tải danh sách tài khoản & cấu hình
             initAuthSession();
             applySiteConfig();
@@ -6544,6 +6546,7 @@
 
         // ================= VAI TRÒ, TÀI KHOẢN & PHÂN QUYỀN CHI TIẾT (RBAC) =================
         function saveAccountsToStorage(skipCloud = false) {
+            if(window.VovinamCentral?.active){accounts=VovinamCentral.accountsSnapshot();return;}
             safeSetStorageItem('vovinam_accounts', accounts);
             try {
                 localStorage.setItem('vovinam_current_account_id', currentAccountId);
@@ -6818,6 +6821,7 @@
         }
 
         function toggleAccountPermission(accId,permKey,isChecked) {
+            if(window.VovinamCentral?.active)return VovinamCentral.setAccount(accId,p=>{p.permissions={...p.permissions,[permKey]:Boolean(isChecked)};return p;});
             if(durableEnabled && !durableMutationActive){return safetyRunMutation(()=>toggleAccountPermission(accId,permKey,isChecked));}
 
             const target=accounts.find(a=>a.id===accId);if(!target || !Object.hasOwn(RBAC_PERMISSIONS,permKey))return;
@@ -6827,6 +6831,7 @@
         }
 
         function openAccountModal(isEdit = false, accId = null) {
+            if(window.VovinamCentral?.active)VovinamCentral.captureAccount(isEdit?accId:null);
             if (!hasPermission('accounts_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được thêm/sửa tài khoản!', 'error');
                 return;
@@ -6901,6 +6906,7 @@
         }
 
         function saveAccount(e) {
+            if(window.VovinamCentral?.active){e.preventDefault();return VovinamCentral.saveAccountForm();}
             e.preventDefault();
             return safetyRunMutation(()=>{
 
@@ -7011,6 +7017,7 @@
         }
 
         function deleteAccount(accId) {
+            if(window.VovinamCentral?.active){showConfirm('Xóa quyền truy cập','Tài khoản sẽ mất quyền sử dụng hệ thống. Tiếp tục?',async()=>{await VovinamCentral.setAccount(accId,()=>null);});return;}
             if(!(rbacCanManageAccount(accounts.find(a=>a.id===accId)) || rbacDeny()))return;
             if (!hasPermission('accounts_manage')) {
                 showToast('Tài khoản của bạn không có quyền xóa tài khoản!', 'error');
@@ -12972,6 +12979,7 @@
 
         // ================= ĐỒNG BỘ DỮ LIỆU ĐÁM MÂY (CLOUD SYNC) & SAO LƯU (.JSON) =================
         function loadCloudConfig() {
+            if(window.VovinamCentral?.active){cloudConfig={...DEFAULT_CLOUD_CONFIG,url:VovinamCentral.config.databaseURL,autoSync:true};updateCloudStatusUI(VovinamCentral.authenticated()?'connected':'ready');return;}
             try {
                 const raw = localStorage.getItem('vovinam_cloud_config');
                 if (raw) {
@@ -13171,6 +13179,7 @@
 
         function applyFullDatabasePayload(rawPayload,mode='smart_sync',silent=false,durableQueued=false) {
             if(durableEnabled && !durableQueued){const task=durableMutationQueue.catch(()=>{}).then(()=>applyFullDatabasePayload(rawPayload,mode,silent,true));durableMutationQueue=task;return task;}
+            if(window.VovinamCentral?.active){rawPayload=safetyClone(rawPayload);rawPayload.accounts=safetyClone(accounts);if(rawPayload.deletedRegistry){rawPayload.deletedRegistry.accounts={};if(rawPayload.deletedRegistry.restored)rawPayload.deletedRegistry.restored.accounts={};}}
             const incoming=safetyValidate(rawPayload,mode);
             const old=safetyClone(buildFullDatabasePayload());
             const prepare=p=>{
@@ -13226,6 +13235,7 @@
         }
 
         async function saveAndTestCloudConfig() {
+            if(window.VovinamCentral?.active)return showToast('Kết nối máy chủ được tích hợp sẵn theo tài khoản; không cần cấu hình riêng từng máy.','info');
             if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được thay đổi cấu hình Cloud!', 'error');
@@ -13280,6 +13290,7 @@
         }
 
         function disconnectCloudConfig() {
+            if(window.VovinamCentral?.active)return showToast('Dùng Đăng xuất để ngắt tài khoản trên máy này.','info');
             if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if (!hasPermission('settings_manage')) {
                 showToast('Chỉ Quản Trị Viên có quyền Hệ thống mới được ngắt kết nối Cloud!', 'error');
@@ -13479,6 +13490,7 @@
         }
 
         function startMqttRealtimeRelay() {
+            if(window.VovinamCentral?.active)return;
             if(!safetyAuthenticated())return;
             if(cloudConfig.url)return;
             try { getMqttEffectivePassphrase(); } catch { updateCloudStatusUI('local'); return; }
@@ -13567,6 +13579,7 @@
         }
 
         async function publishStateToMqttRelay(manual = false) {
+            if(window.VovinamCentral?.active)return;
             if(durableEnabled){await durableMutationQueue.catch(()=>{});await durableSerial;}
             if(cloudConfig.url || !safetyAuthenticated() || safetySyncConflicts.length)return false;
             if (!mqttRelayWs || mqttRelayWs.readyState !== WebSocket.OPEN || !mqttRelayConnected) {
@@ -13859,6 +13872,8 @@
         }
 
         async function pushToCloud(manual=true) {
+            if(window.VovinamCentral?.setupRunning)return;
+            if(window.VovinamCentral?.active)return VovinamCentral.push(manual).catch(()=>{});
             if(safetyRestoreInProgress || safetySyncConflicts.length){if(manual)showToast('Cần hoàn tất khôi phục hoặc xử lý xung đột trước khi gửi.','info');return;}
             if(!safetyAuthenticated())return;
             const endpoint=getCloudEndpointUrl();
@@ -13911,6 +13926,8 @@
         }
 
         async function pullFromCloud(manual = true, silent = false, initIfEmpty = false) {
+            if(window.VovinamCentral?.setupRunning)return;
+            if(window.VovinamCentral?.active)return VovinamCentral.pull(manual).catch(()=>{});
             if(!safetyAuthenticated() || safetyRestoreInProgress || safetySyncConflicts.length)return;
             // Nếu chưa cấu hình Firebase URL riêng -> Đồng bộ qua Kênh Đám Mây Tự Động (MQTT WebSocket Relay)
             const endpoint = getCloudEndpointUrl();
@@ -14055,6 +14072,8 @@
         }
 
         function triggerAutoCloudSync() {
+            if(window.VovinamCentral?.setupRunning)return;
+            if(window.VovinamCentral?.active){if(!durableMutationActive)VovinamCentral.schedule();else durableSyncRequested=true;return;}
             if(durableEnabled && (durableBootstrapping || durableMutationActive)){durableSyncRequested=true;return;}
             hasLocalUserEdits = true;
             const logicalNow = getMonotonicLogicalNowMs();
@@ -14086,6 +14105,7 @@
         }
 
         function startCloudRealtimeStream() {
+            if(window.VovinamCentral?.active)return;
             if(!safetyAuthenticated())return;
             if(cloudEventSource){try{cloudEventSource.close();}catch{}cloudEventSource=null;}
             cloudStreamHealthy=false;
@@ -14145,6 +14165,8 @@
         }
 
         function startCloudAutoPoll() {
+            if(window.VovinamCentral?.setupRunning)return;
+            if(window.VovinamCentral?.active)return VovinamCentral.start();
             if(!safetyAuthenticated())return;
             if(!cloudConfig.url){try{getMqttEffectivePassphrase();}catch{updateCloudStatusUI('local');return;}}
             stopCloudRealtimeSync();
@@ -14251,6 +14273,8 @@
         }
 
         function triggerInstantForegroundSync() {
+            if(window.VovinamCentral?.setupRunning)return;
+            if(window.VovinamCentral?.active){VovinamCentral.pull(false).catch(()=>{});return;}
             if(durableEnabled){durableReloadPrimary().catch(console.warn);durableRefreshStorage();durableCreateBackup(false,false);}
             if (cloudConfig.url && cloudConfig.autoSync && !isCloudPushing && !isCloudSyncing) {
                 durablePendingCloud?pushToCloud(false):pullFromCloud(false, true, false);
@@ -14875,6 +14899,7 @@
 
         // ================= CƠ CHẾ XÁC THỰC, ĐĂNG NHẬP & BẢO MẬT MẬT KHẨU (ĐÃ NÂNG CẤP BẢO MẬT) =================
         function initAuthSession() {
+            if(window.VovinamCentral?.active){VovinamCentral.updateLoginUI();return;}
             let session = null;
             try {
                 const s = localStorage.getItem('vovinam_auth_session');
@@ -14980,6 +15005,7 @@
 
         // Render danh sách tài khoản mẫu kèm mật khẩu mặc định rõ ràng
         function renderQuickLoginList() {
+            if(window.VovinamCentral?.active){const host=document.getElementById('quick-login-list');if(host)host.replaceChildren();return;}
             const container = document.getElementById('quick-login-list');
             const countBadge = document.getElementById('quick-login-count-badge');
             if (countBadge) countBadge.innerText = `${accounts.length} tài khoản`;
@@ -15060,6 +15086,7 @@
         }
 
         function performLogin(username, password) {
+            if(window.VovinamCentral?.active)return VovinamCentral.login(username,password);
             const errorBox = document.getElementById('login-error-box');
             const errorMsg = document.getElementById('login-error-msg');
 
@@ -15157,6 +15184,7 @@
         }
 
         function handleLogout() {
+            if(window.VovinamCentral?.active)return VovinamCentral.logout();
             showConfirm('Xác Nhận Đăng Xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi phiên làm việc an toàn hiện tại?', () => {
                 try {
                     localStorage.removeItem('vovinam_auth_session');
@@ -15262,6 +15290,7 @@
         }
 
         function handleChangePassword(e) {
+            if(window.VovinamCentral?.active){e.preventDefault();return VovinamCentral.changePassword();}
             e.preventDefault();
             return safetyRunMutation(()=>{
 
@@ -15366,6 +15395,7 @@
         }
 
         function handleSwitchAccount(e) {
+            if(window.VovinamCentral?.active){e.preventDefault();const target=accounts.find(a=>a.id===document.getElementById('switch-target-account').value);if(target)return VovinamCentral.login(target.authEmail||target.username,document.getElementById('switch-password').value);return;}
             e.preventDefault();
             const select = document.getElementById('switch-target-account');
             const targetId = select.value;
@@ -15448,6 +15478,7 @@
         }
 
         function handleAdminResetPassword(e) {
+            if(window.VovinamCentral?.active){e.preventDefault();return VovinamCentral.resetPassword(document.getElementById('admin-reset-acc-id').value);}
             if(!(rbacCanManageAccount(accounts.find(a=>a.id===document.getElementById('admin-reset-acc-id').value)) || rbacDeny()))return;
             return safetyRunMutation(()=>{
 
@@ -15482,6 +15513,7 @@
         }
 
         function toggleAccountLock(accId) {
+            if(window.VovinamCentral?.active)return VovinamCentral.setAccount(accId,p=>{if(p.isSuperAdmin)throw new Error('Không thể khóa quản trị viên gốc.');p.status=p.status==='locked'?'active':'locked';return p;});
             if(!(rbacCanManageAccount(accounts.find(a=>a.id===accId)) || rbacDeny()))return;
             if (!hasPermission('accounts_manage')) {
                 showToast('Không có quyền quản trị để khóa/mở khóa tài khoản!', 'error');
@@ -15775,6 +15807,7 @@
         }
 
         function savePersonalAvatar(e) {
+            if(window.VovinamCentral?.active){e.preventDefault();return VovinamCentral.saveAvatar();}
             if(durableEnabled && !durableMutationActive){e.preventDefault();return safetyRunMutation(()=>savePersonalAvatar(e));}
 
             if(!((document.getElementById('personal-avatar-acc-id').value===currentAccountId || rbacCanManageAccount(accounts.find(a=>a.id===document.getElementById('personal-avatar-acc-id').value))) || rbacDeny()))return;
@@ -15877,6 +15910,7 @@
         }
 
         async function notifyBackendServerLogin(username,password,acc) {
+            if(window.VovinamCentral?.active)return;
             if(backendServerState.mode!=='http')return;
             const res=await callBackendApi('POST','/api/auth/login',{username,password});
             backendServerState.jwtToken=res.status===200 && res.data?.token ? res.data.token : '';
@@ -15908,6 +15942,7 @@
         }
 
         async function initBackendServerBridge() {
+            if(window.VovinamCentral?.active)return;
             try {
                 const savedUrl = localStorage.getItem('vovinam_backend_server_url') || '';
                 backendServerState.baseUrl = savedUrl;
@@ -16136,7 +16171,7 @@
         async function safetyDownloadWeeklyBackup() {
             if(!(rbacGlobalAdmin() && safetyAuthenticated() || rbacDeny('Thao tác toàn bộ hệ thống chỉ dành cho Super Admin hoặc tài khoản được cấp toàn quyền.')))return;
             if(!hasPermission('settings_manage'))return showToast('Cần quyền quản trị hệ thống.','error');
-            const index=durableEnabled?await idbGetItem(DURABLE_BACKUP_INDEX):null;
+            const index=durableEnabled?await idbGetItem(durableBackupIndexKey()):null;
             const backup=await idbGetItem(index?.[0]?.key||'vovinam_weekly_backup');
             if(!backup?.payload)return showToast('Chưa có bản dự phòng định kỳ.','info');
             downloadFile(JSON.stringify(backup.payload,null,2),'Vovinam_DuPhong_'+new Date(backup.at).toISOString().slice(0,10)+'.json','application/json');
@@ -16231,7 +16266,7 @@
             };textCheck(p);
             if (p.accounts) {
                 const usernames=p.accounts.map(a=>sanitizeUsername(a.username).toLowerCase());
-                if (new Set(usernames).size!==usernames.length || !p.accounts.some(a=>a.isSuperAdmin && a.status!=='locked')) throw new Error('Phải có ít nhất một quản trị viên đang hoạt động, tên đăng nhập không trùng.');
+                if (new Set(usernames).size!==usernames.length || (!window.VovinamCentral?.active && !p.accounts.some(a=>a.isSuperAdmin && a.status!=='locked'))) throw new Error('Phải có ít nhất một quản trị viên đang hoạt động, tên đăng nhập không trùng.');
             }
             if (mode === 'replace') {
                 if (!Array.isArray(p.students) || !Array.isArray(p.classes)) throw new Error('Ghi đè cần có cả students và classes. Gói từng phần chỉ được dùng chế độ gộp.');
@@ -16459,6 +16494,7 @@
             }
         }
         function safetyAuthenticated() {
+            if(window.VovinamCentral?.active)return VovinamCentral.authenticated();
             const acc=getCurrentAccount();if(!acc || acc.status==='locked')return false;
             try{const s=JSON.parse(localStorage.getItem('vovinam_auth_session')||'null');return Boolean(s && s.accountId===acc.id && s.expiresAt>Date.now() && s.integrityToken && timingSafeEqual(s.integrityToken,computeSessionIntegrityToken(acc,s.expiresAt)) && localStorage.getItem('vovinam_session_locked')!=='1');}catch{return false;}
         }
@@ -16469,6 +16505,7 @@
             safetySyncBase=nextBase;return task;
         }
         async function safetyLoadSyncBase() {
+            if(window.VovinamCentral?.active){safetySyncBase=null;return;}
             const saved=await idbGetItem('vovinam_sync_base');
             if(saved?.scope===(cloudConfig.url||'')+'::'+cloudConfig.clubKey)safetySyncBase=saved.payload;
             const conflicts=await idbGetItem('vovinam_sync_conflicts');
@@ -17098,6 +17135,8 @@
         let durableCommitHooks=[],durableSyncRequested=false,durableMaintenanceTimer=null,durableRetryTimer=null,durableRetryAttempt=0;
         let durableLastBackupAt=0,durableBackupBusy=false,durableBackupError='';
         let durableReadyResolve;const durableReady=new Promise(resolve=>{durableReadyResolve=resolve;});
+        function durablePrimaryKey(){return window.VovinamCentral?.active?'vovinam_primary_central_'+(VovinamCentral.uid||'guest'):DURABLE_PRIMARY_KEY;}
+        function durableBackupIndexKey(){return window.VovinamCentral?.active?DURABLE_BACKUP_INDEX+':'+(VovinamCentral.uid||'guest'):DURABLE_BACKUP_INDEX;}
         function durableReadStorage(key) {return durableEnabled && durableCache.has(key)?durableCache.get(key):localStorage.getItem(key);}
         function durableCapture(payload) {
             durableBase=safetyClone(payload);
@@ -17105,7 +17144,7 @@
         }
         function durablePrimaryRead(db) {
             return new Promise((resolve,reject)=>{
-                const tx=db.transaction([IDB_STORE_KV],'readonly'),req=tx.objectStore(IDB_STORE_KV).get(DURABLE_PRIMARY_KEY);let value=null;
+                const tx=db.transaction([IDB_STORE_KV],'readonly'),req=tx.objectStore(IDB_STORE_KV).get(durablePrimaryKey());let value=null;
                 req.onsuccess=()=>{value=req.result?.value||null;};
                 tx.oncomplete=()=>resolve(value);tx.onerror=()=>reject(new Error('Không đọc được cơ sở dữ liệu IndexedDB.'));tx.onabort=tx.onerror;
             });
@@ -17130,7 +17169,7 @@
             const db=await openVovinamIndexedDB();if(!db)throw new Error('IndexedDB không sẵn sàng; chưa xác nhận lưu.');
             const base=options.base===undefined?safetyClone(durableBase):options.base,revision=options.revision??durableRevision;
             return new Promise((resolve,reject)=>{
-                const tx=db.transaction([IDB_STORE_KV],'readwrite'),store=tx.objectStore(IDB_STORE_KV),read=store.get(DURABLE_PRIMARY_KEY);
+                const tx=db.transaction([IDB_STORE_KV],'readwrite'),store=tx.objectStore(IDB_STORE_KV),read=store.get(durablePrimaryKey());
                 let result=null,error=null;
                 read.onsuccess=()=>{
                     try{
@@ -17143,7 +17182,8 @@
                         }
                         safetyValidate(next,'replace');safetyAssertCompleteMedia(next);
                         result={version:1,revision:(root?.revision||0)+1,at:Date.now(),writer:clientDeviceId,pendingCloud:options.source==='cloud'?Boolean(root?.pendingCloud)||!durableDataEqual(next,payload):options.source==='bootstrap'?durablePendingCloud:true,payload:next};
-                        store.put({key:DURABLE_PRIMARY_KEY,value:result,updatedAt:result.at});
+                        store.put({key:durablePrimaryKey(),value:result,updatedAt:result.at});
+                        const privateCache=window.VovinamCentral?.cacheEntry(next);if(privateCache)store.put({...privateCache,updatedAt:result.at});
                         // A complete primary snapshot replaces redundant legacy copies, never the media vault.
                         for(const key of Object.values(STORAGE_FIELDS))store.delete(key);
                         store.delete('vovinam_safety_committed');
@@ -17227,10 +17267,10 @@
             if(!durableEnabled){durablePendingCloud=false;try{localStorage.removeItem('vovinam_cloud_pending');}catch{}return;}
             const db=await openVovinamIndexedDB();
             await new Promise((resolve,reject)=>{
-                const tx=db.transaction([IDB_STORE_KV],'readwrite'),store=tx.objectStore(IDB_STORE_KV),req=store.get(DURABLE_PRIMARY_KEY);
+                const tx=db.transaction([IDB_STORE_KV],'readwrite'),store=tx.objectStore(IDB_STORE_KV),req=store.get(durablePrimaryKey());
                 req.onsuccess=()=>{const root=req.result?.value;if(!root)return;
                     const pending=!durableDataEqual(root.payload,payload);root.pendingCloud=pending;root.lastCloudAckAt=Date.now();durablePendingCloud=pending;
-                    store.put({key:DURABLE_PRIMARY_KEY,value:root,updatedAt:Date.now()});
+                    store.put({key:durablePrimaryKey(),value:root,updatedAt:Date.now()});
                 };
                 tx.oncomplete=resolve;tx.onerror=()=>reject(new Error('Chưa lưu được xác nhận đồng bộ.'));tx.onabort=tx.onerror;
             });
@@ -17257,7 +17297,7 @@
             const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
             set('durable-storage-health',quota?`Đã dùng ${formatBytesDisplay(usage)} · còn ${formatBytesDisplay(free)} / ${formatBytesDisplay(quota)}`:'Trình duyệt chưa cung cấp thông tin dung lượng.');
             set('durable-storage-mode',durableEnabled?'Dữ liệu chính: IndexedDB · không bị giới hạn bởi LocalStorage':'Dữ liệu dự phòng: LocalStorage · dung lượng hạn chế');
-            set('durable-sync-health',!cloudConfig.url?'Chưa cấu hình Firebase: hiện chỉ lưu trên thiết bị.':navigator.onLine===false?'Đang mất mạng · thay đổi sẽ gửi lại khi có mạng':safetySyncConflicts.length?'Có xung đột cần xử lý trước khi gửi':durablePendingCloud?'Có thay đổi đang chờ gửi lên Cloud':'Không có thay đổi đang chờ gửi');
+            set('durable-sync-health',window.VovinamCentral?.active?(durablePendingCloud?'Đăng nhập tập trung · có thay đổi đang chờ máy chủ xác nhận':'Đăng nhập tập trung · không có thay đổi đang chờ gửi'):!cloudConfig.url?'Chưa cấu hình Firebase: hiện chỉ lưu trên thiết bị.':navigator.onLine===false?'Đang mất mạng · thay đổi sẽ gửi lại khi có mạng':safetySyncConflicts.length?'Có xung đột cần xử lý trước khi gửi':durablePendingCloud?'Có thay đổi đang chờ gửi lên Cloud':'Không có thay đổi đang chờ gửi');
             set('durable-backup-health',durableBackupError || (!isWeeklyAutoBackupEnabled()?'Đã tắt sao lưu định kỳ':durableLastBackupAt?'Bản dự phòng gần nhất: '+new Date(durableLastBackupAt).toLocaleString('vi-VN'):'Chưa có bản dự phòng định kỳ'));
             set('overview-storage-text',quota?formatBytesDisplay(free)+' còn trống':'Chưa rõ dung lượng');
             set('storage-used-text',formatBytesDisplay(usage));set('storage-quota-text',quota?formatBytesDisplay(quota):'Chưa xác định');set('storage-card-quota',quota?formatBytesDisplay(quota):'Theo trình duyệt');
@@ -17276,19 +17316,19 @@
             try{
                 await durableSerial.catch(()=>{});
                 const db=await openVovinamIndexedDB(),root=await durablePrimaryRead(db);if(!root)return false;
-                const index=await idbGetItem(DURABLE_BACKUP_INDEX)||[];durableLastBackupAt=index[0]?.at||0;
+                const index=await idbGetItem(durableBackupIndexKey())||[];durableLastBackupAt=index[0]?.at||0;
                 if(!force && durableLastBackupAt && Date.now()-durableLastBackupAt<WEEKLY_BACKUP_INTERVAL_MS){durableUpdateHealthUI();return false;}
                 const payload=safetyClone(root.payload);safetyAssertCompleteMedia(payload);
                 const at=Date.now(),key='vovinam_backup_v1:'+at+'_'+clientDeviceId+'_'+Math.random().toString(36).slice(2),bytes=new Blob([JSON.stringify(payload)]).size,estimate=await durableRefreshStorage();
                 const free=(estimate.quota||0)-(estimate.usage||0),keep=estimate.quota && free<bytes*3?1:3;
                 const entry={key,at,revision:root.revision,bytes};let created=false;
                 await new Promise((resolve,reject)=>{
-                    const tx=db.transaction([IDB_STORE_KV],'readwrite'),store=tx.objectStore(IDB_STORE_KV),read=store.get(DURABLE_BACKUP_INDEX);
+                    const tx=db.transaction([IDB_STORE_KV],'readwrite'),store=tx.objectStore(IDB_STORE_KV),read=store.get(durableBackupIndexKey());
                     read.onsuccess=()=>{
                         const latest=read.result?.value||[];
                         if(!force && latest[0]?.at && at-latest[0].at<WEEKLY_BACKUP_INTERVAL_MS){durableLastBackupAt=latest[0].at;return;}
                         const next=[entry,...latest].slice(0,keep);created=true;
-                        store.put({key,value:{at,revision:root.revision,payload},updatedAt:at});store.put({key:DURABLE_BACKUP_INDEX,value:next,updatedAt:at});
+                        store.put({key,value:{at,revision:root.revision,payload},updatedAt:at});store.put({key:durableBackupIndexKey(),value:next,updatedAt:at});
                         for(const old of latest)if(!next.some(item=>item.key===old.key))store.delete(old.key);
                     };
                     tx.oncomplete=resolve;tx.onerror=()=>reject(new Error('Không tạo được bản dự phòng; các bản cũ được giữ nguyên.'));tx.onabort=tx.onerror;
@@ -17366,5 +17406,7 @@
             error.httpStatus=response.status;error.serverReason=cloudSafeReason(reason);return error;
         }
 </script>
+<script src="central-rules.js?v=20261101-1"></script>
+<script src="central.js?v=20261101-1"></script>
 </body>
 </html>
