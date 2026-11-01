@@ -1288,6 +1288,20 @@
                 </div>
             </div>
 
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-2">
+                <label for="tuition-search" class="block text-xs font-bold text-slate-700">Tìm võ sinh để cập nhật học phí</label>
+                <div class="flex gap-2">
+                    <div class="relative flex-1 min-w-0">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400" aria-hidden="true"></i>
+                        <input type="search" id="tuition-search" placeholder="Nhập họ tên hoặc mã định danh võ sinh…" oninput="renderTuitionTable()" autocomplete="off" enterkeyhint="search" aria-controls="tuition-table-body" aria-describedby="tuition-search-hint tuition-search-count" class="w-full pl-9 pr-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-vovinam-blue focus:outline-none">
+                    </div>
+                    <button type="button" onclick="clearTuitionSearch()" class="px-3 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl" aria-label="Xóa tìm kiếm học phí">Xóa</button>
+                </div>
+                <p id="tuition-search-hint" class="text-xs text-slate-500">Tìm được cả tên không dấu. Chọn Cập nhật ở đúng võ sinh để ghi nhận đóng tiền.</p>
+                <p id="tuition-search-count" role="status" aria-live="polite" class="text-xs font-semibold text-vovinam-blue"></p>
+                <p class="text-[11px] text-slate-400">Các số liệu tổng hợp phía trên tính cho toàn bộ danh sách của tháng đang chọn.</p>
+            </div>
+
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs sm:text-sm">
@@ -3225,9 +3239,11 @@
             </div>
             <form onsubmit="saveTuitionRecord(event)" class="p-6 space-y-4">
                 <input type="hidden" id="tuition-student-id">
+                <input type="hidden" id="tuition-record-month">
                 <div>
                     <p class="text-xs text-slate-500">Võ sinh:</p>
                     <p id="tuition-student-name" class="text-base font-black text-slate-800"></p>
+                    <p id="tuition-student-context" class="text-xs text-slate-500 mt-1"></p>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Trạng Thái Đóng Phí</label>
@@ -11291,17 +11307,38 @@
         }
 
         // ================= TAB 3: QUẢN LÝ HỌC PHÍ =================
+        function tuitionBirthDate(student) {
+            const date=String(student.dob||'');
+            return /^\d{4}-\d{2}-\d{2}$/.test(date)?date.split('-').reverse().join('/'):date||'Chưa cập nhật';
+        }
+        function matchesTuitionSearch(student,query) {
+            const tokens=normalizeVietnameseSearch(query).split(' ').filter(Boolean);
+            const name=normalizeVietnameseSearch(student.name),id=normalizeVietnameseSearch(student.id);
+            return tokens.every(token=>name.includes(token) || id.includes(token));
+        }
+        function clearTuitionSearch() {
+            const input=document.getElementById('tuition-search');if(input)input.value='';
+            renderTuitionTable();input?.focus();
+        }
         function renderTuitionTable() {
             if(!rbacCanTab('tuition')){document.getElementById('tuition-table-body').innerHTML='';return;}
             const month = document.getElementById('tuition-month').value;
-            const monthData = rbacTuitionRecords()[month] || {};
             const tbody = document.getElementById('tuition-table-body');
 
             let paidCount = 0;
             let unpaidCount = 0;
             let totalAmount = 0;
 
-            const sortedTuitionStudents = sortStudentsArray(rbacStudents());
+            const allTuitionStudents=sortStudentsArray(rbacStudents());
+            const query=document.getElementById('tuition-search')?.value||'';
+            const sortedTuitionStudents=allTuitionStudents.filter(student=>matchesTuitionSearch(student,query));
+            // Searching narrows rows only; monthly totals continue to cover the assigned roster.
+            for(const student of allTuitionStudents){
+                const rec=safetyTuitionRecord(month,student);
+                if(rec?.status==='paid'){paidCount++;totalAmount+=Number(rec.amount||0);}else unpaidCount++;
+            }
+            const count=document.getElementById('tuition-search-count');
+            if(count)count.textContent=`Hiển thị ${sortedTuitionStudents.length} / ${allTuitionStudents.length} võ sinh · Tháng ${month||'chưa chọn'}`;
             const dupAnalysis = analyzeStudentDuplicates();
             tbody.innerHTML = sortedTuitionStudents.map((s, idx) => {
                 const rec = safetyTuitionRecord(month, s) || { status: 'unpaid', amount: 350000, receipt: '' };
@@ -11309,12 +11346,6 @@
                 const isUnconf = dupInfo.isUnconfirmed;
                 const safeRef = escapeJsAttr(s._uid || s.id);
 
-                if (rec.status === 'paid') {
-                    paidCount++;
-                    totalAmount += Number(rec.amount || 0);
-                } else {
-                    unpaidCount++;
-                }
 
                 let badge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600">Chưa đóng</span>';
                 if (rec.status === 'paid') {
@@ -11332,6 +11363,7 @@
                                 <span>${escapeHtml(s.name)}</span>
                             </button>
                             <div class="text-[11px] ${dupInfo.isDupIdUnconfirmed ? 'text-red-600 font-bold' : 'text-slate-400'} font-mono">${escapeHtml(s.id)} ${isUnconf ? `<span class="ml-1 px-1.5 py-0.2 bg-red-600 text-white rounded text-[9px] font-sans font-bold">${escapeHtml(dupInfo.shortReason)}</span>` : ''}</div>
+                            <div class="text-[11px] text-slate-400">Ngày sinh: ${escapeHtml(tuitionBirthDate(s))}</div>
                         </td>
                         <td class="py-3 px-4 text-xs font-medium text-slate-600">${escapeHtml(s.className)}</td>
                         <td class="py-3 px-4 text-center">${badge}</td>
@@ -11346,7 +11378,7 @@
                         </td>
                     </tr>
                 `;
-            }).join('');
+            }).join('') || `<tr><td colspan="7" class="py-10 px-4 text-center text-sm text-slate-500">${allTuitionStudents.length?'Không tìm thấy võ sinh. Thử họ tên hoặc mã định danh khác.':'Chưa có võ sinh trong danh sách được quản lý.'}</td></tr>`;
 
             document.getElementById('tuition-stat-paid').innerText = paidCount;
             document.getElementById('tuition-stat-unpaid').innerText = unpaidCount;
@@ -11370,9 +11402,11 @@
             const rec = safetyTuitionRecord(month, s) || { status: 'unpaid', amount: 350000, receipt: '' };
 
             document.getElementById('tuition-student-id').value = s._uid;
+            document.getElementById('tuition-record-month').value=month;
             document.getElementById('tuition-student-name').innerText = `${s.name} (${s.id}) - Tháng ${month}`;
+            document.getElementById('tuition-student-context').textContent=`Lớp: ${s.className||'Chưa cập nhật'} · Ngày sinh: ${tuitionBirthDate(s)}`;
             document.getElementById('tuition-status').value = rec.status;
-            document.getElementById('tuition-amount').value = rec.amount || 350000;
+            document.getElementById('tuition-amount').value = rec.amount ?? 350000;
             document.getElementById('tuition-receipt').value = rec.receipt || '';
 
             document.getElementById('tuition-modal').classList.remove('hidden');
@@ -11383,13 +11417,14 @@
         }
 
         function saveTuitionRecord(e) {
+            e.preventDefault();
             if(!(rbacRequireStudent(document.getElementById('tuition-student-id').value,'tuition_manage')))return;
             return safetyRunMutation(()=>{
 
             e.preventDefault();if(!hasPermission('tuition_manage'))return showToast('Cần quyền quản lý học phí.','error');
-            const month=document.getElementById('tuition-month').value,s=findStudentByRef(document.getElementById('tuition-student-id').value);
+            const month=document.getElementById('tuition-record-month')?.value || document.getElementById('tuition-month').value,s=findStudentByRef(document.getElementById('tuition-student-id').value);
             const amount=Number(document.getElementById('tuition-amount').value),status=document.getElementById('tuition-status').value;
-            if(!s || !month || !Number.isFinite(amount) || amount<0)return showToast('Thông tin học phí không hợp lệ.','error');
+            if(!s || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || !['paid','unpaid','discount'].includes(status) || !Number.isFinite(amount) || amount<0)return showToast('Thông tin học phí không hợp lệ.','error');
             if(!tuitionRecords[month])tuitionRecords[month]={};
             tuitionRecords[month][s._uid]={studentUid:s._uid,studentId:s.id,status,amount,receipt:document.getElementById('tuition-receipt').value.trim(),updatedAt:new Date().toLocaleDateString('vi-VN'),_updatedAt:Date.now()};
             saveTuitionToStorage();closeTuitionModal();renderTuitionTable();showToast('Đã lưu học phí.');
