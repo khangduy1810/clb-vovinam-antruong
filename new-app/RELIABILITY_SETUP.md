@@ -27,3 +27,7 @@ Danh sách buổi chưa chốt nhận thêm võ sinh mới, bỏ người đã c
 `npm run build`, `npm run test:flows`, `node tests/profile.mjs`, và bộ Auth/Firestore emulator trong `tests/rules.mjs`, `tests/auth.mjs`.
 
 Kiểm thử khôi phục end-to-end dùng `npm run test:recovery:build` rồi chạy `node tests/.recovery-built.mjs` bên trong `firebase emulators:exec --only firestore,auth --project clb-vovinam-antruong`. Tất cả kết nối trong bài này được trỏ rõ tới localhost, không ghi dự án thực tế.
+
+## Tự khóa sau 10 phút
+
+Khóa màn hình sau 10 phút không tương tác. Kiểm tra lại thời gian khi chuyển về tab, mở lại trang hoặc từ ứng dụng khác trở về; thao tác đầu tiên sau khi hết hạn không mở khóa. Mở lại bằng mật khẩu tài khoản qua Firebase reauthentication. Khóa áp dụng theo tài khoản trên trình duyệt hiện tại, các tab cùng trình duyệt dùng chung mốc hoạt động; máy khác theo dõi riêng. Khóa không thay đổi quyền tài khoản và không đăng xuất các thiết bị khác. Khi khóa, giao diện dữ liệu được tháo khỏi màn hình; bản điểm danh đang sửa giữ trong bộ nhớ trình duyệt như trước. Mật khẩu mở khóa không lưu vào trình duyệt hay Firestore. Không cần sửa Rules riêng cho chức năng khóa.
