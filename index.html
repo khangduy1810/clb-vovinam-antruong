@@ -2234,14 +2234,16 @@
                                 <input type="checkbox" id="cloud-auto-sync" onchange="onCloudAutoSyncToggle()" checked class="w-4 h-4 rounded text-vovinam-blue focus:ring-vovinam-blue">
                                 <span>Đồng bộ Thời Gian Thực Siêu Tốc (Real-time SSE + Turbo Polling)</span>
                             </label>
-                            <p class="text-[11px] text-slate-500 pl-6">Tự động đẩy tức thì (<code class="text-vovinam-blue font-bold">&lt;100ms</code>) ngay khi thao tác và nhận thay đổi từ thiết bị khác theo thời gian thực.</p>
+                            <p class="text-[11px] text-slate-500 pl-6">Gửi sau khi lưu trên máy và chờ gộp 200 ms; nhận qua kênh trực tiếp khi máy chủ gửi. Nếu kênh trực tiếp gián đoạn, dùng chu kỳ kiểm tra dự phòng bên dưới. Độ trễ còn phụ thuộc mạng và dung lượng dữ liệu.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             <div class="flex items-center space-x-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-blue-200">
                                 <i class="fa-solid fa-gauge-high text-vovinam-blue text-xs"></i>
-                                <label for="cloud-sync-interval" class="text-[11px] font-bold text-slate-600">Tốc độ:</label>
+                                <label for="cloud-sync-interval" class="text-[11px] font-bold text-slate-600">Kiểm tra dự phòng:</label>
                                 <select id="cloud-sync-interval" onchange="changeCloudSyncInterval(this.value)" class="text-xs font-bold text-vovinam-blue bg-transparent focus:outline-none cursor-pointer">
-                                    <option value="5000" selected>5 giây (Khuyến nghị)</option>
+                                    <option value="1000" selected>1 giây (Nhanh)</option>
+                                    <option value="2000">2 giây</option>
+                                    <option value="5000">5 giây</option>
                                     <option value="10000">10 giây (Cân bằng)</option>
                                     <option value="15000">15 giây (Tiết kiệm)</option>
                                 </select>
@@ -5903,12 +5905,13 @@
             secret: '',
             encryptionKey: '',
             autoSync: true,
-            syncIntervalMs: 5000,
+            syncIntervalMs: 1000,
             lastSync: ''
         };
         let cloudConfig = { ...DEFAULT_CLOUD_CONFIG };
         let cloudPollTimer = null;
         let cloudEventSource = null;
+        let cloudStreamHealthy=false,cloudLastFallbackAt=0,cloudRealtimeRefreshPending=false,cloudRealtimeDrainTimer=null;
         let isCloudSyncing = false;
         let isCloudPushing = false;
         let hasPendingCloudPush = false;
@@ -12939,6 +12942,7 @@
                 if (raw) {
                     cloudConfig = { ...DEFAULT_CLOUD_CONFIG, ...JSON.parse(raw) };
                     let changed = false;
+                    if(!cloudConfig.realtimeTuningVersion){if(!cloudConfig.syncIntervalMs || cloudConfig.syncIntervalMs===5000)cloudConfig.syncIntervalMs=1000;cloudConfig.realtimeTuningVersion=1;changed=true;}
                     if (!cloudConfig.clubKey || cloudConfig.clubKey === 'vovinam' + '_main_club') {
                         cloudConfig.clubKey = 'clb-vovinam-antruong';
                         changed = true;
@@ -12975,7 +12979,7 @@
             if (secEl) secEl.value = cloudConfig.secret || '';
             if (encEl) encEl.value = cloudConfig.encryptionKey || '';
             if (autoEl) autoEl.checked = cloudConfig.autoSync !== false;
-            if (intervalEl) intervalEl.value = String(cloudConfig.syncIntervalMs || 5000);
+            if (intervalEl) intervalEl.value = String(cloudConfig.syncIntervalMs || 1000);
         }
 
         function openCloudSyncSettingsSection() {
@@ -13177,13 +13181,13 @@
 
         function changeCloudSyncInterval(val) {
             if(!rbacGlobalAdmin() || !safetyAuthenticated())return rbacDeny('Cần quyền toàn hệ thống.');
-            const ms = Math.max(800, parseInt(val, 10) || 1500);
+            const ms = Math.max(1000, parseInt(val, 10) || 1000);
             cloudConfig.syncIntervalMs = ms;
             saveCloudConfigToStorage();
             if (cloudConfig.autoSync) {
                 startCloudAutoPoll();
             }
-            showToast(`Đã tăng tốc chu kỳ đồng bộ lên ${(ms / 1000).toFixed(1).replace('.0', '')} giây!`);
+            showToast(`Đã đặt kiểm tra dự phòng ${(ms / 1000).toFixed(1).replace('.0', '')} giây; kênh trực tiếp nhận thay đổi ngay khi máy chủ gửi.`);
         }
 
         async function saveAndTestCloudConfig() {
@@ -13211,7 +13215,7 @@
             cloudConfig.secret = secEl ? secEl.value.trim() : '';
             cloudConfig.encryptionKey = encEl ? encEl.value.trim() : '';
             cloudConfig.autoSync = autoEl ? autoEl.checked : true;
-            cloudConfig.syncIntervalMs = intervalEl ? (parseInt(intervalEl.value, 10) || 5000) : 5000;
+            cloudConfig.syncIntervalMs = intervalEl ? (parseInt(intervalEl.value, 10) || 1000) : 1000;
 
             saveCloudConfigToStorage();
             if(oldScope!==(cloudConfig.url||'')+'::'+cloudConfig.clubKey){safetySyncBase=null;hasCompletedInitialCloudPull=false;lastSyncedUpdatedAt='';await safetyLoadSyncBase();}
@@ -13235,6 +13239,8 @@
                 try { cloudEventSource.close(); } catch (e) {}
                 cloudEventSource = null;
             }
+            cloudStreamHealthy=false;cloudRealtimeRefreshPending=false;
+            if(cloudRealtimeDrainTimer)clearTimeout(cloudRealtimeDrainTimer);cloudRealtimeDrainTimer=null;
             stopMqttRealtimeRelay();
         }
 
@@ -13680,7 +13686,7 @@
                 k: clubKey,
                 s: (secEl && secEl.value.trim()) ? secEl.value.trim() : (cloudConfig.secret || ''),
                 e: (encEl && encEl.value.trim()) ? encEl.value.trim() : (cloudConfig.encryptionKey || ''),
-                i: cloudConfig.syncIntervalMs || 5000
+                i: cloudConfig.syncIntervalMs || 1000
             };
             const jsonStr = JSON.stringify(cfgObj);
             return 'VVN-SYNC-' + btoa(encodeURIComponent(jsonStr));
@@ -13768,7 +13774,7 @@
                 cloudConfig.secret = cfgObj.s || '';
                 cloudConfig.encryptionKey = cfgObj.e || '';
                 cloudConfig.autoSync = true;
-                cloudConfig.syncIntervalMs = cfgObj.i || 5000;
+                cloudConfig.syncIntervalMs = Math.max(1000,Number(cfgObj.i)||1000);
 
                 saveCloudConfigToStorage();
                 loadCloudConfigForm();
@@ -13865,7 +13871,7 @@
             }catch(e){durableScheduleCloudRetry();uxAttendanceCloudFailed();updateCloudStatusUI('error');const detail=cloudFailureDetail(e,'sync');showCloudDiagnostic('error',detail);if(manual || safetySyncConflicts.length)showToast(detail,'error');console.warn('Cloud sync:',e.name||'Error');}
             finally{
                 isCloudPushing=false;isCloudSyncing=false;
-                if(hasPendingCloudPush){hasPendingCloudPush=false;setTimeout(()=>pushToCloud(false),500);}
+                if(hasPendingCloudPush){hasPendingCloudPush=false;setTimeout(()=>pushToCloud(false),100);}else cloudDrainRealtimeRefresh();
             }
         }
 
@@ -13947,9 +13953,9 @@
                     return;
                 }
 
-                // Nếu trong lúc đang tải về mà người dùng vừa thao tác lưu cục bộ (trong vòng 2 giây vừa qua) thì không ghi đè dữ liệu cũ lên
-                if (isCloudPushing || hasPendingCloudPush || (!manual && silent && (Date.now() - lastLocalMutationTimeMs < 2000))) {
-                    return;
+                // A running push owns the Cloud exchange; queue a fresh read after it completes.
+                if (isCloudPushing || hasPendingCloudPush) {
+                    cloudRealtimeRefreshPending=true;return;
                 }
 
                 if (data && data._encrypted && data.cipherData) {
@@ -14009,7 +14015,7 @@
                 if (activePullAbortController === abortCtrl) {
                     activePullAbortController = null;
                 }
-                isCloudSyncing = false;
+                isCloudSyncing = false;cloudDrainRealtimeRefresh();
             }
         }
 
@@ -14040,51 +14046,67 @@
                     autoCloudSyncTimer = null;
                     publishStateToMqttRelay(false);
                     if (cloudConfig.url) pushToCloud(false);
-                }, 650);
+                }, 200);
             }
         }
 
         function startCloudRealtimeStream() {
             if(!safetyAuthenticated())return;
-            if (cloudEventSource) {
-                try { cloudEventSource.close(); } catch (e) {}
-                cloudEventSource = null;
-            }
-            const endpoint = getCloudEndpointUrl();
-            if (!endpoint || !cloudConfig.autoSync || typeof window.EventSource === 'undefined') return;
-
-            try {
-                const es = new EventSource(endpoint);
-                cloudEventSource = es;
-
-                const handleRealtimeEvent = async (evt) => {
-                    if (!evt || !evt.data || isCloudPushing || hasPendingCloudPush) return;
-                    if (Date.now() - lastLocalMutationTimeMs < 1500) return;
-                    try {
-                        const parsed = JSON.parse(evt.data);
-                        const remotePayload = (parsed && parsed.path === '/' && parsed.data) ? cloudUnpackFirebase(parsed.data) : null;
-                        if (remotePayload && remotePayload.updatedAt && isIncomingTimestampNewer(remotePayload.updatedAt, lastSyncedUpdatedAt)) {
-                            if (!remotePayload._encrypted && (remotePayload.students || remotePayload.classes)) {
-                                const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                                await applyFullDatabasePayload(remotePayload, 'smart_sync', true);
-                                lastSyncedUpdatedAt = remotePayload.updatedAt;
-                                cloudConfig.lastSync = timeNow;
-                                saveCloudConfigToStorage();
-                                updateCloudStatusUI('connected', `• Real-time ${timeNow}`);
-                            } else {
-                                durablePendingCloud?pushToCloud(false):pullFromCloud(false, true, false);
-                            }
-                        } else if (parsed && parsed.path && parsed.path !== '/') {
-                            durablePendingCloud?pushToCloud(false):pullFromCloud(false, true, false);
+            if(cloudEventSource){try{cloudEventSource.close();}catch{}cloudEventSource=null;}
+            cloudStreamHealthy=false;
+            const endpoint=getCloudEndpointUrl();
+            if(!endpoint || !cloudConfig.autoSync || typeof window.EventSource==='undefined')return;
+            try{
+                const es=new EventSource(endpoint);cloudEventSource=es;let eventQueue=Promise.resolve(),firstRootEvent=true;const streamStartVersion=lastSyncedUpdatedAt;
+                es.onopen=()=>{if(cloudEventSource===es){cloudStreamHealthy=true;cloudLastFallbackAt=Date.now();}};
+                es.onerror=()=>{if(cloudEventSource===es){cloudStreamHealthy=false;cloudRealtimeRefreshPending=true;cloudDrainRealtimeRefresh();}};
+                const receive=async evt=>{
+                    if(cloudEventSource!==es || !evt?.data)return;
+                    if(isCloudPushing || isCloudSyncing || hasPendingCloudPush){cloudRealtimeRefreshPending=true;return;}
+                    try{
+                        const parsed=JSON.parse(evt.data);
+                        let incoming=parsed?.path==='/' && parsed.data?cloudUnpackFirebase(parsed.data):null;
+                        if(parsed?.path==='/' && firstRootEvent){
+                            firstRootEvent=false;
+                            if(lastSyncedUpdatedAt!==streamStartVersion && incoming?.updatedAt!==lastSyncedUpdatedAt){cloudRealtimeRefreshPending=true;cloudDrainRealtimeRefresh();return;}
                         }
-                    } catch (err) {}
+                        if(incoming?.updatedAt && incoming.updatedAt!==lastSyncedUpdatedAt){
+                            if(incoming._encrypted){
+                                if(!cloudConfig.encryptionKey)throw new Error('Cần nhập khóa mã hóa đã dùng trên máy gửi.');
+                                incoming=JSON.parse(await decryptPayloadAES(incoming.cipherData,cloudConfig.encryptionKey.trim()));
+                            }
+                            if(cloudEventSource!==es)return;
+                            // Decryption can yield while a local push starts; reconcile after that push.
+                            if(isCloudPushing || isCloudSyncing || hasPendingCloudPush){cloudRealtimeRefreshPending=true;return;}
+                            await applyFullDatabasePayload(incoming,'smart_sync',true);
+                            if(cloudEventSource!==es)return;
+                            lastSyncedUpdatedAt=incoming.updatedAt;hasCompletedInitialCloudPull=true;
+                            try{localStorage.setItem('vovinam_last_synced_iso',lastSyncedUpdatedAt);}catch{}
+                            uxAttendanceCloudConfirmed(incoming);
+                            cloudConfig.lastSync=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+                            saveCloudConfigToStorage();updateCloudStatusUI('connected','• Real-time '+cloudConfig.lastSync);
+                        }else if(parsed?.path && parsed.path!=='/'){
+                            cloudRealtimeRefreshPending=true;cloudDrainRealtimeRefresh();
+                        }
+                    }catch(error){showCloudDiagnostic('error',cloudFailureDetail(error,'data'));}
                 };
-
-                es.addEventListener('put', handleRealtimeEvent);
-                es.addEventListener('patch', handleRealtimeEvent);
-            } catch (e) {
-                cloudEventSource = null;
-            }
+                const enqueue=evt=>{
+                    if(cloudEventSource!==es)return;
+                    if(isCloudPushing || isCloudSyncing || hasPendingCloudPush){cloudRealtimeRefreshPending=true;return;}
+                    eventQueue=eventQueue.catch(()=>{}).then(()=>receive(evt));
+                };
+                es.addEventListener('put',enqueue);es.addEventListener('patch',enqueue);
+            }catch{cloudEventSource=null;cloudStreamHealthy=false;}
+        }
+        function cloudDrainRealtimeRefresh() {
+            if(!cloudRealtimeRefreshPending || cloudRealtimeDrainTimer || !cloudConfig.url || !cloudConfig.autoSync || !safetyAuthenticated() || safetySyncConflicts.length)return;
+            if(isCloudPushing || isCloudSyncing || hasPendingCloudPush)return;
+            cloudRealtimeDrainTimer=setTimeout(()=>{
+                cloudRealtimeDrainTimer=null;
+                if(!cloudRealtimeRefreshPending || !cloudConfig.autoSync || !safetyAuthenticated() || isCloudPushing || isCloudSyncing || hasPendingCloudPush)return;
+                cloudRealtimeRefreshPending=false;
+                durablePendingCloud?pushToCloud(false):pullFromCloud(false,true,false);
+            },0);
         }
 
         function startCloudAutoPoll() {
@@ -14098,9 +14120,11 @@
                 // 2. Nếu có thêm URL Firebase / REST riêng thì kích hoạt song song luồng SSE + Turbo Polling
                 if (cloudConfig.url) {
                     startCloudRealtimeStream();
-                    const intervalMs = Math.max(5000, parseInt(cloudConfig.syncIntervalMs, 10) || 5000);
+                    const intervalMs = Math.max(1000, parseInt(cloudConfig.syncIntervalMs, 10) || 1000);
                     cloudPollTimer = setInterval(() => {
                         if (!isCloudPushing && !isCloudSyncing && cloudConfig.url && cloudConfig.autoSync) {
+                            if(!durablePendingCloud && !cloudRealtimeRefreshPending && cloudStreamHealthy && Date.now()-cloudLastFallbackAt<30000)return;
+                            cloudLastFallbackAt=Date.now();cloudRealtimeRefreshPending=false;
                             durablePendingCloud?pushToCloud(false):pullFromCloud(false, true, false);
                         }
                     }, intervalMs);
