@@ -1,0 +1,19 @@
+import {convertBackup} from './convert';
+import {codeReservations} from './student-codes';
+const kinds=['student','class','attendance','tuition','gear','tournament','approval','config','account'];
+export function sanitize(value:any):any{if(Array.isArray(value))return value.map(sanitize);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([k])=>!['password','passwordHash','secret','databaseSecret','apiKey','accessToken','refreshToken'].includes(k)).map(([k,v])=>[k,sanitize(v)]));return value;}
+export function recoveryPlan(input:any){
+ if(!input||typeof input!=='object')throw new Error('File JSON không hợp lệ.');
+ const converted=convertBackup(sanitize(input)),rows=converted.rows;
+ for(const r of rows)if(r.kind==='student')r.data.id=String(r.data.id||'').trim();
+ const seen=new Set<string>();for(const r of rows){if(!kinds.includes(r.kind)||typeof r.id!=='string'||!r.id||r.id.length>=250||r.id.includes('/')||!r.data||typeof r.data!=='object'||Array.isArray(r.data))throw new Error('Bản sao có bản ghi không hợp lệ.');const key=r.kind+'--'+r.id;if(seen.has(key))throw new Error('Bản sao có bản ghi trùng: '+key);seen.add(key);if(new TextEncoder().encode(JSON.stringify(r)).length>900000)throw new Error('Một hồ sơ quá lớn để lưu an toàn.');if(r.kind==='class'&&(typeof r.data.name!=='string'||!r.data.name.trim()))throw new Error('Lớp học thiếu tên.');}
+ codeReservations(rows);
+ const classes=new Set(rows.filter(r=>r.kind==='class').map(r=>r.id)),students=new Set(rows.filter(r=>r.kind==='student').map(r=>r.id));
+ for(const r of rows){if(r.kind==='student'&&(!r.data.name?.trim()||!classes.has(r.data.classId)))throw new Error('Võ sinh thiếu tên hoặc lớp không tồn tại.');if(r.kind==='tuition'&&(!students.has(r.data.studentUid)||!classes.has(r.data.classId)||!Number.isFinite(r.data.amount)||r.data.amount<0||!['paid','unpaid','discount'].includes(r.data.status)))throw new Error('Học phí có dữ liệu không hợp lệ.');if(r.kind==='attendance'&&(!classes.has(r.data.classId)||!Array.isArray(r.data.rows)||r.data.rows.length>1000||!['draft','final'].includes(r.data.status)||new Set(r.data.rows.map((v:any)=>v.studentUid)).size!==r.data.rows.length||r.data.rows.some((v:any)=>!students.has(v.studentUid)||!['present','absent','excused','unmarked'].includes(v.status))))throw new Error('Điểm danh thiếu võ sinh hoặc có dòng không hợp lệ.');}
+ const members=Array.isArray(input.members)?sanitize(input.members):null,profiles=Array.isArray(input.profiles)?sanitize(input.profiles):null;
+ if(members&&new Set(members.map((m:any)=>m.id)).size!==members.length)throw new Error('Bản sao có email tài khoản trùng.');
+ if(profiles&&new Set(profiles.map((p:any)=>p.id)).size!==profiles.length)throw new Error('Bản sao có ảnh đại diện trùng.');
+ if(members)for(const m of members){if(typeof m.id!=='string'||m.id.includes('/')||m.id!==m.id.toLowerCase()||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.id)||!m.data||m.data.email!==m.id||typeof m.data.name!=='string'||typeof m.data.id!=='string'||!['active','inactive'].includes(m.data.status)||typeof m.data.isSuperAdmin!=='boolean'||typeof m.data.allClasses!=='boolean'||!Array.isArray(m.data.classIds)||!m.data.permissions||typeof m.data.permissions!=='object')throw new Error('Quyền tài khoản trong bản sao không hợp lệ.');}
+ if(profiles)for(const p of profiles){if(typeof p.id!=='string'||!p.id||p.id.includes('/')||typeof p.data?.photoURL!=='string'||p.data.photoURL.length>180000||(p.data.photoURL!==''&&!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.data.photoURL)))throw new Error('Ảnh đại diện trong bản sao không hợp lệ.');}
+ return {rows,members,profiles,counts:converted.counts};
+}

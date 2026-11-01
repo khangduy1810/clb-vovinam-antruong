@@ -3,8 +3,9 @@ service cloud.firestore {
  match /databases/{database}/documents {
   function signed() { return request.auth != null && request.auth.token.email is string; }
   function me() { return get(/databases/$(database)/documents/clubs/antruong-v2/members/$(request.auth.token.email.lower())).data; }
-  function verified(a) { return a.get('requireEmailVerification',false) != true || request.auth.token.email_verified == true; }
-  function live(a) { return signed() && verified(a) && a.status == 'active' && (a.isSuperAdmin == true || get(/databases/$(database)/documents/clubs/antruong-v2/meta/import).data.status == 'ready'); }
+  function verified(a) { return request.auth.token.email_verified == true; }
+  function maintenance() { return exists(/databases/$(database)/documents/clubs/antruong-v2/meta/maintenance) && get(/databases/$(database)/documents/clubs/antruong-v2/meta/maintenance).data.state != 'ready'; }
+  function live(a) { return signed() && verified(a) && a.status == 'active' && (a.isSuperAdmin == true || (!maintenance() && get(/databases/$(database)/documents/clubs/antruong-v2/meta/import).data.status == 'ready')); }
   function active() { let a = me(); return live(a); }
   function owner() { let a = me(); return signed() && verified(a) && a.status == 'active' && a.isSuperAdmin == true; }
   function has(a,p) { return a.isSuperAdmin == true || a.permissions.get(p,false) == true; }
@@ -23,7 +24,7 @@ service cloud.firestore {
   }
   function writeRecord(r) {
    let a = me();
-   return live(a) && (a.isSuperAdmin == true ||
+   return !maintenance() && live(a) && (a.isSuperAdmin == true ||
     (r.kind == 'config' && has(a,'settings_manage')) ||
     (r.kind == 'class' && inClass(a,r.id) && has(a,'classes_manage')) ||
     (r.kind == 'student' && inClass(a,r.data.classId) && has(a,'students_direct')) ||
@@ -33,13 +34,15 @@ service cloud.firestore {
     (r.kind == 'tournament' && inClass(a,r.data.classId) && has(a,'tournaments_manage')) ||
     (r.kind == 'approval' && inClass(a,r.data.classId) && has(a,'approvals_manage')));
   }
+  function reserved(r) { return r.kind != 'student' || getAfter(/databases/$(database)/documents/clubs/antruong-v2/studentCodes/$('code-' + r.data.id.lower())).data.studentUid == r.id; }
+  function restoring() { return owner() && maintenance(); }
   function valid(r) {
    return r.keys().hasOnly(['kind','id','data','version','updatedAt','auditId','imported']) &&
     r.kind in ['student','class','attendance','tuition','gear','tournament','approval','config','account'] &&
     r.id is string && r.id.size() > 0 && r.id.size() < 250 && r.data is map &&
     !r.data.keys().hasAny(['password','passwordHash','secret','databaseSecret']) &&
     r.version is int && r.version > 0 && r.updatedAt == request.time &&
-    (r.kind != 'student' || (r.data.name is string && r.data.name.size() > 0 && r.data.id is string && r.data.classId is string)) &&
+    (r.kind != 'student' || (r.data.name is string && r.data.name.size() > 0 && r.data.id is string && r.data.id.size() > 0 && r.data.id.size() <= 80 && r.data.id.matches('[^/]+') && r.data.classId is string)) &&
     (r.kind != 'class' || (r.data.name is string && r.data.name.size() > 0)) &&
     (r.kind != 'tuition' || (r.data.amount is number && r.data.amount >= 0 && r.data.status in ['paid','unpaid','discount'])) &&
     (r.kind != 'attendance' || (r.data.rows is list && r.data.rows.size() <= 1000 && r.data.status in ['draft','final']));
@@ -60,27 +63,39 @@ service cloud.firestore {
   match /clubs/antruong-v2/records/{key} {
    allow get: if active() && (!exists(/databases/$(database)/documents/clubs/antruong-v2/records/$(key)) || readRecord(resource.data));
    allow list: if owner() || readRecord(resource.data);
-   allow create: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(request.resource.data) && request.resource.data.version == 1 && ((owner() && request.resource.data.get('imported',false) == true) || hasAudit(request.resource.data));
-   allow update: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(resource.data) && writeRecord(request.resource.data) && request.resource.data.id == resource.data.id && request.resource.data.kind == resource.data.kind && request.resource.data.version == resource.data.version + 1 && hasAudit(request.resource.data);
-   allow delete: if false;
+   allow create: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(request.resource.data) && (reserved(request.resource.data) || (owner() && request.resource.data.get('imported',false) == true && !exists(/databases/$(database)/documents/clubs/antruong-v2/meta/studentCodes))) && request.resource.data.version == 1 && ((owner() && request.resource.data.get('imported',false) == true) || hasAudit(request.resource.data));
+   allow update: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(resource.data) && writeRecord(request.resource.data) && reserved(request.resource.data) && request.resource.data.id == resource.data.id && request.resource.data.kind == resource.data.kind && request.resource.data.version == resource.data.version + 1 && hasAudit(request.resource.data);
+   allow create,update: if restoring() && valid(request.resource.data) && key == request.resource.data.kind + '--' + request.resource.data.id;
+   allow delete: if restoring();
   }
   match /clubs/antruong-v2/audit/{id} {
    allow read: if owner();
    allow create: if active() && request.resource.data.keys().hasOnly(['actor','actorUid','action','kind','record_id','at']) && request.resource.data.actorUid == request.auth.uid && request.resource.data.actor == me().name && request.resource.data.at == request.time;
    allow update,delete: if false;
   }
+  match /clubs/antruong-v2/studentCodes/{code} {
+   allow get: if active();
+   allow list: if owner();
+   allow create,update: if active() && request.resource.data.keys().hasOnly(['studentUid']) && request.resource.data.studentUid is string &&
+    getAfter(/databases/$(database)/documents/clubs/antruong-v2/records/$('student--' + request.resource.data.studentUid)).data.data.id.lower() == code.replace('^code-','') &&
+    (restoring() || (!maintenance() && writeRecord(getAfter(/databases/$(database)/documents/clubs/antruong-v2/records/$('student--' + request.resource.data.studentUid)).data) && (!exists(/databases/$(database)/documents/clubs/antruong-v2/studentCodes/$(code)) || resource.data.studentUid == request.resource.data.studentUid)));
+   allow delete: if restoring() || (active() && !maintenance() && writeRecord(getAfter(/databases/$(database)/documents/clubs/antruong-v2/records/$('student--' + resource.data.studentUid)).data) && 'code-' + getAfter(/databases/$(database)/documents/clubs/antruong-v2/records/$('student--' + resource.data.studentUid)).data.data.id.lower() != code);
+  }
+  match /clubs/antruong-v2/recovery/{id} { allow read,write: if owner(); }
+  match /clubs/antruong-v2/recovery/{id}/chunks/{chunk} { allow read,write: if owner(); }
   match /clubs/antruong-v2/weeklyBackups/{id} { allow read: if owner(); allow write: if false; }
   match /clubs/antruong-v2/profiles/{uid} {
-   allow get: if active() && request.auth.uid == uid;
-   allow list,delete: if false;
-   allow create,update: if active() && request.auth.uid == uid &&
+   allow get: if owner() || (active() && request.auth.uid == uid);
+   allow list: if owner();
+   allow delete: if restoring();
+   allow create,update: if (restoring() || (active() && request.auth.uid == uid)) &&
     request.resource.data.keys().hasAll(['photoURL','updatedAt']) &&
     request.resource.data.keys().hasOnly(['photoURL','updatedAt']) &&
     request.resource.data.photoURL is string && request.resource.data.photoURL.size() <= 180000 &&
     (request.resource.data.photoURL == '' || request.resource.data.photoURL.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+')) &&
     request.resource.data.updatedAt == request.time;
   }
-  match /clubs/antruong-v2/meta/{id} { allow read,write: if owner(); }
+  match /clubs/antruong-v2/meta/{id} { allow read: if owner() || (signed() && verified(me()) && me().status == 'active' && id in ['studentCodes','maintenance']); allow write: if owner(); }
   match /clubs/antruong-v2/snapshots/{id} { allow read,create,delete: if owner(); allow update: if false; }
  }
 }

@@ -5,3 +5,5 @@ dist/
 *debug.log
 .firebaserc.local
 *.backup.json
+
+tests/.*-built.mjs

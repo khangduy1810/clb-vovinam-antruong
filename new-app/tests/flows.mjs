@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {reconcileAttendance} from '../src/attendance.ts';
+import {recoveryPlan} from '../src/recovery-plan.ts';
+import {codeReservations} from '../src/student-codes.ts';
+const s=(id,classId='C1')=>({kind:'student',id,data:{id:'Code-'+id,name:id,classId}});
+const draft={status:'draft',classId:'C1',rows:[{studentUid:'S1',status:'present',note:'kept'},{studentUid:'M',status:'excused',makeup:true},{studentUid:'OLD',status:'absent'}]};
+const students=[s('S1'),s('S2'),s('M','C2'),s('OLD','C2')];
+const next=reconcileAttendance(draft,students);assert.deepEqual(next.rows.map(r=>[r.studentUid,r.status]),[['S1','present'],['M','excused'],['S2','unmarked']]);assert.equal(next.rows[0].note,'kept');assert.equal(reconcileAttendance(next,students),next);const final={...draft,status:'final'};assert.equal(reconcileAttendance(final,students),final);assert.equal(reconcileAttendance(next,[s('S1'),s('M','C2')]).rows.some(r=>r.studentUid==='S2'),false);
+assert.throws(()=>codeReservations([s('A'),{...s('B'),data:{...s('B').data,id:'code-a'}}]),/trùng/);
+const valid={format:'antruong-v2',records:[{kind:'class',id:'C1',data:{name:'Class'}},s('S1'),{kind:'attendance',id:'DATE_C1',data:{classId:'C1',status:'draft',rows:[{studentUid:'S1',status:'present'}]}}]};
+assert.equal(recoveryPlan(valid).counts.students,1);assert.throws(()=>recoveryPlan({...valid,records:[...valid.records,s('S1')]}),/trùng/);assert.throws(()=>recoveryPlan({...valid,records:valid.records.filter(r=>r.kind!=='student')}),/Điểm danh/);assert.equal(recoveryPlan({...valid,records:[{...s('S1'),data:{...s('S1').data,password:'never-store'}},valid.records[0]]}).rows[0].data.password,undefined);
+console.log('PASS: roster additions/transfers/deletions preserve marks, makeup and final sessions; normalized duplicate codes rejected; recovery validates links, duplicates and strips secrets');

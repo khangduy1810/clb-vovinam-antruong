@@ -5,7 +5,7 @@ import {doc,setDoc,getDoc,getDocs,collection,query,where,writeBatch,serverTimest
 const projectId='demo-antruong-v2';
 const test=await initializeTestEnvironment({projectId,firestore:{host:'127.0.0.1',port:8088,rules:readFileSync('firestore.rules','utf8')}});
 const root='clubs/antruong-v2';
-const actor=(id,email)=>test.authenticatedContext(id,{email}).firestore();
+const actor=(id,email)=>test.authenticatedContext(id,{email,email_verified:true}).firestore();
 const owner=actor('owner','owner@example.test'),staff=actor('staff','staff@example.test'),stranger=actor('stranger','stranger@example.test');
 const staffProfile={id:'STAFF',name:'HLV',email:'staff@example.test',status:'active',isSuperAdmin:false,allClasses:false,classIds:['C1'],permissions:{students_direct:true,attendance_manage:true,tuition_manage:false},roleTitle:'HLV'};
 const ownerProfile={...staffProfile,id:'ADMIN',name:'Admin',email:'owner@example.test',isSuperAdmin:true,allClasses:true};
@@ -31,7 +31,7 @@ try{
  assert.deepEqual((await getDocs(collection(owner,root+'/records'))).docs.map(d=>[d.id,d.data().version]).sort(),beforeResume);
  console.log('PASS: repairing the canonical profile name finalizes an interrupted import without duplicating records or changing their versions');
 
- async function save(db,kind,id,data,version){return runTransaction(db,async tx=>{const ref=doc(db,root+'/records/'+kind+'--'+id),current=await tx.get(ref);if((current.data()?.version||0)!==version)throw new Error('stale');const event=doc(collection(db,root+'/audit'));tx.set(ref,{kind,id,data,version:version+1,updatedAt:serverTimestamp(),auditId:event.id});tx.set(event,{actor:db===owner?'Admin':'HLV',actorUid:db===owner?'owner':'staff',action:'update',kind,record_id:id,at:serverTimestamp()})})}
+ async function save(db,kind,id,data,version){return runTransaction(db,async tx=>{const ref=doc(db,root+'/records/'+kind+'--'+id),current=await tx.get(ref);if((current.data()?.version||0)!==version)throw new Error('stale');const event=doc(collection(db,root+'/audit'));if(kind==='student'){const code=doc(db,root+'/studentCodes/code-'+data.id.toLowerCase());const existingCode=await tx.get(code);if(existingCode.exists()&&existingCode.data().studentUid!==id)throw new Error('duplicate');tx.set(code,{studentUid:id});}tx.set(ref,{kind,id,data,version:version+1,updatedAt:serverTimestamp(),auditId:event.id});tx.set(event,{actor:db===owner?'Admin':'HLV',actorUid:db===owner?'owner':'staff',action:'update',kind,record_id:id,at:serverTimestamp()})})}
  await assertSucceeds(save(staff,'student','S1',{id:'VS1',name:'Updated',classId:'C1'},1));await assert.rejects(()=>save(staff,'student','S1',{id:'VS1',name:'Stale',classId:'C1'},1));
  await assertFails(setDoc(doc(staff,root+'/records/student--S1'),{kind:'student',id:'S1',version:3,data:{id:'VS1',name:'No audit',classId:'C1'},updatedAt:serverTimestamp()}));
  await assertFails(save(staff,'student','S1',{id:'VS1',name:'Moved outside scope',classId:'C2'},2));await assertFails(save(staff,'tuition','2026-11_S1',{month:'2026-11',studentUid:'S1',classId:'C1',amount:10,status:'paid'},0));
@@ -49,7 +49,7 @@ try{
  const photo={photoURL:'data:image/jpeg;base64,/9j/AA==',updatedAt:serverTimestamp()};
  await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),photo));
  assert.equal((await getDoc(doc(client2,root+'/profiles/staff'))).data().photoURL,photo.photoURL);
- await assertFails(getDoc(doc(owner,root+'/profiles/staff')));
+ await assertSucceeds(getDoc(doc(owner,root+'/profiles/staff')));
  await assertFails(setDoc(doc(staff,root+'/profiles/owner'),photo));
  await assertFails(setDoc(doc(stranger,root+'/profiles/stranger'),photo));
  await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...photo,permissions:{settings_manage:true}}));
@@ -57,7 +57,7 @@ try{
  await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{photoURL:'data:image/jpeg;base64,'+'A'.repeat(180000),updatedAt:serverTimestamp()}));
  await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),{photoURL:'',updatedAt:serverTimestamp()}));
  console.log('PASS: own-photo writes/read across clients, other-user isolation, active membership, schema/size validation and permission injection rejection');
- await test.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),root+'/members/staff@example.test'),{...staffProfile,requireEmailVerification:true}));
+ await test.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),root+'/members/staff@example.test'),staffProfile));
  const unverified=test.authenticatedContext('staff',{email:'staff@example.test',email_verified:false}).firestore();
  const verified=test.authenticatedContext('staff',{email:'staff@example.test',email_verified:true}).firestore();
  await assertSucceeds(getDoc(doc(unverified,root+'/members/staff@example.test')));
