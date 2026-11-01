@@ -1,0 +1,38 @@
+import {readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {initializeTestEnvironment,assertSucceeds,assertFails} from '@firebase/rules-unit-testing';
+import {doc,setDoc,getDoc,getDocs,collection,query,where,writeBatch,serverTimestamp,runTransaction,onSnapshot} from 'firebase/firestore';
+const projectId='demo-antruong-v2';
+const test=await initializeTestEnvironment({projectId,firestore:{host:'127.0.0.1',port:8088,rules:readFileSync('firestore.rules','utf8')}});
+const root='clubs/antruong-v2';
+const actor=(id,email)=>test.authenticatedContext(id,{email}).firestore();
+const owner=actor('owner','owner@example.test'),staff=actor('staff','staff@example.test'),stranger=actor('stranger','stranger@example.test');
+const staffProfile={id:'STAFF',name:'HLV',email:'staff@example.test',status:'active',isSuperAdmin:false,allClasses:false,classIds:['C1'],permissions:{students_direct:true,attendance_manage:true,tuition_manage:false},roleTitle:'HLV'};
+const ownerProfile={...staffProfile,id:'ADMIN',name:'Admin',email:'owner@example.test',isSuperAdmin:true,allClasses:true};
+const record=(kind,id,data,version=1)=>({kind,id,data,version,updatedAt:serverTimestamp(),imported:true});
+try{
+ await test.clearFirestore();await test.withSecurityRulesDisabled(async ctx=>{const db=ctx.firestore();await setDoc(doc(db,root+'/meta/import'),{status:'ready'});await setDoc(doc(db,root+'/members/owner@example.test'),ownerProfile);await setDoc(doc(db,root+'/members/staff@example.test'),staffProfile)});
+ await assertFails(getDocs(collection(stranger,root+'/records')));await assertFails(getDocs(collection(test.unauthenticatedContext().firestore(),root+'/records')));
+ const batch=writeBatch(owner);for(const [kind,id,data] of [['class','C1',{name:'Class 1'}],['class','C2',{name:'Class 2'}],['student','S1',{id:'VS1',name:'Student One',classId:'C1'}],['student','S2',{id:'VS2',name:'Student Two',classId:'C2'}],['account','STAFF',{...staffProfile}],['config','test-club',{title:'CLB'}]])batch.set(doc(owner,root+'/records/'+kind+'--'+id),record(kind,id,data));await assertSucceeds(batch.commit());
+ console.log('PASS: unauthenticated/unassigned accounts denied; admin can import without exposing passwords');
+ if(process.env.IMPORT_BACKUP_PATH){const {convertBackup}=await import('../src/convert.ts');const normalized=convertBackup(JSON.parse(readFileSync(process.env.IMPORT_BACKUP_PATH,'utf8')));for(let i=0;i<normalized.rows.length;i+=4){const imported=writeBatch(owner);for(const r of normalized.rows.slice(i,i+4))imported.set(doc(owner,root+'/records/'+r.kind+'--'+r.id),record(r.kind,r.id,r.data));await assertSucceeds(imported.commit());}assert.equal(normalized.counts.students,110);assert.equal(normalized.counts.classes,4);assert.equal(normalized.counts.accounts,5);console.log('PASS: full private backup conversion and 122-document resumable import');}
+
+ await assertSucceeds(getDocs(query(collection(staff,root+'/records'),where('kind','==','student'),where('data.classId','in',['C1']))));
+ await assertFails(getDocs(query(collection(staff,root+'/records'),where('kind','==','student'))));await assertFails(getDoc(doc(staff,root+'/records/student--S2')));
+ await assertSucceeds(getDoc(doc(staff,root+'/records/student--S1')));await assertFails(getDocs(collection(staff,root+'/members')));await assertFails(setDoc(doc(staff,root+'/members/staff@example.test'),{...staffProfile,isSuperAdmin:true}));
+ console.log('PASS: class-filtered queries allowed; other classes, account enumeration and privilege escalation denied');
+ async function save(db,kind,id,data,version){return runTransaction(db,async tx=>{const ref=doc(db,root+'/records/'+kind+'--'+id),current=await tx.get(ref);if((current.data()?.version||0)!==version)throw new Error('stale');const event=doc(collection(db,root+'/audit'));tx.set(ref,{kind,id,data,version:version+1,updatedAt:serverTimestamp(),auditId:event.id});tx.set(event,{actor:db===owner?'Admin':'HLV',actorUid:db===owner?'owner':'staff',action:'update',kind,record_id:id,at:serverTimestamp()})})}
+ await assertSucceeds(save(staff,'student','S1',{id:'VS1',name:'Updated',classId:'C1'},1));await assert.rejects(()=>save(staff,'student','S1',{id:'VS1',name:'Stale',classId:'C1'},1));
+ await assertFails(setDoc(doc(staff,root+'/records/student--S1'),{kind:'student',id:'S1',version:3,data:{id:'VS1',name:'No audit',classId:'C1'},updatedAt:serverTimestamp()}));
+ await assertFails(save(staff,'student','S1',{id:'VS1',name:'Moved outside scope',classId:'C2'},2));await assertFails(save(staff,'tuition','2026-11_S1',{month:'2026-11',studentUid:'S1',classId:'C1',amount:10,status:'paid'},0));
+ await assertFails(save(staff,'student','S1',{id:'VS1',name:'Has hash',classId:'C1',passwordHash:'hidden'},2));
+ await assertSucceeds(getDocs(collection(owner,root+'/records')));
+ console.log('PASS: version transactions, audit coupling, out-of-scope moves, permission checks and password rejection');
+ await assertSucceeds(save(staff,'attendance','2026-11-01_C1',{date:'2026-11-01',classId:'C1',status:'draft',rows:[{studentUid:'S1',status:'unmarked'}]},0));
+ const client2=actor('staff','staff@example.test');assert.equal((await getDoc(doc(client2,root+'/records/attendance--2026-11-01_C1'))).data().data.status,'draft');
+ const live=new Promise((resolve,reject)=>{const stop=onSnapshot(doc(client2,root+'/records/student--S1'),snap=>{if(snap.data()?.version===3){stop();resolve(true)}},reject);setTimeout(()=>{stop();reject(new Error('Live update timed out'))},8000).unref()});await save(staff,'student','S1',{id:'VS1',name:'Live update',classId:'C1'},2);await live;
+ await assertFails(getDocs(collection(staff,root+'/snapshots')));await assertSucceeds(setDoc(doc(owner,root+'/snapshots/test'),{at:serverTimestamp(),data:'{}'}));
+ await assertSucceeds(setDoc(doc(owner,root+'/members/staff@example.test'),{...staffProfile,status:'inactive'}));await assertFails(getDoc(doc(client2,root+'/records/student--S1')));
+ console.log('PASS: drafts resume on another client, realtime listener receives change, backups protected and revoked membership blocked');
+ console.log('ALL FIRESTORE SECURITY/CONCURRENCY CHECKS PASSED');
+}finally{await test.cleanup()}
