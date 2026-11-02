@@ -100,8 +100,8 @@ Xem [WEEKLY_BACKUP_SETUP.md](WEEKLY_BACKUP_SETUP.md). Website đã có danh sác
 
 Cấp đai dùng danh sách chọn Vovinam, từ Tự vệ nhập môn đến Bạch đai. Giá trị nhập tay trước đây được giữ cho đến khi người dùng chọn lại.
 
-Khi chủ CLB mở phiên bản mới, ứng dụng chuẩn hóa mã hiển thị về `VVN.001`, `VVN.002`… bằng từng giao dịch có kiểm tra phiên bản và nhật ký. Giữ số của mã cũ `VVN001` nếu chưa bị dùng; mã khác nhận số còn trống. Giữ nguyên UID hồ sơ, thứ tự danh sách, tên, cấp đai, trạng thái thùng rác và liên kết điểm danh/học phí. Nếu gián đoạn hoặc xung đột, tải lại để tiếp tục; các mã đã chuẩn hóa được giữ nguyên. Có bản sao lưu ngày trước khi chuyển đổi.
+Khi chủ CLB mở phiên bản này, hệ thống đánh lại toàn bộ mã hiển thị liên tục từ `VVN.0001`, kể cả hồ sơ trong thùng rác và mã đã đúng định dạng. Thứ tự cấp số dựa trên số của mã trước đó, sau đó UID; danh sách trên giao diện không bị sắp xếp lại. Giữ nguyên UID hồ sơ, tên, cấp đai và liên kết điểm danh/học phí.
 
-Võ sinh mới nhận mã tự động khi lưu. Giao dịch đặt chỗ ngăn trùng mã khi nhiều thiết bị cùng thêm; nếu đụng mã thì chọn lại và thử tối đa 8 lần. Mã trong thùng rác hoặc đã dọn vẫn được đặt chỗ. Không cần cập nhật Firestore Rules cho thay đổi này.
+Đây là chuyển đổi một lần, có bản sao lưu trước khi bắt đầu. Khóa bảo trì ngăn ghi trong lúc chuyển; kế hoạch UID → mã được lưu trước và tiếp tục đúng kế hoạch khi tải lại nếu bị gián đoạn. Mỗi hồ sơ có giao dịch và nhật ký riêng. Khi xong mới dọn chỉ mục mã cũ và mở lại dữ liệu. Những lần đăng nhập sau không đánh số lại. Võ sinh mới được cấp số tiếp theo tự động, có đặt chỗ trong giao dịch chống trùng mã. Không cần cập nhật Firestore Rules.
 
 Kiểm tra: `npm run test:students`, `npm run test:flows`, `npm run build`.

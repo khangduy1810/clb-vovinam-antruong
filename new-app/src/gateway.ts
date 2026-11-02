@@ -152,14 +152,31 @@ export async function archiveOldHistoryRecords(records:any[]){
  return {archived,skipped,cutoff:historyCutoff(now)};
 }
 
-// Owner runs this after login; each change retains UID, revision checks and audit.
+// Resumable full renumber; the maintenance lock blocks other writes.
 export async function standardizeStudentCodes(){
- const a=await getActor();if(!a.isSuperAdmin)return 0;
- const records=await allRecords();if(!records.some(r=>r.kind==='student'&&!isVvnCode(r.data.id)))return 0;
- await snapshotDaily(false,a);await ensureStudentCodes(db,path);
- const reservations=await getDocsFromServer(collection(db,path+'/studentCodes'));
- const used=new Map<string,string>(reservations.docs.map(d=>[d.id.replace(/^code-/,''),d.data().studentUid]));
- const plan=vvnPlan(records,used);let count=0;
- for(const {record,code} of plan){await mutate({...record,data:{...record.data,id:code}});count++;}
- return count;
+ const a=await getActor();if(!a.isSuperAdmin)return 0;const name=requireAuditName(a);
+ const marker=doc(db,path+'/meta/studentRenumberV4'),lock=doc(db,path+'/meta/maintenance');
+ if((await getDocFromServer(marker)).data()?.status==='done')return 0;
+ await snapshotDaily(true,a);
+ const runId=await runTransaction(db,async tx=>{
+  const [m,l]=await Promise.all([tx.get(marker),tx.get(lock)]);
+  if(m.data()?.status==='done')return '';
+  if(l.exists()&&l.data().state!=='ready'&&l.data().operation!=='student-renumber-v4')throw new Error('Đang bảo trì hoặc khôi phục dữ liệu. Hãy hoàn tất trước.');
+  const runId=l.data()?.operation==='student-renumber-v4'?l.data().runId:crypto.randomUUID();
+  tx.set(lock,{state:'renumbering',operation:'student-renumber-v4',runId,at:serverTimestamp()});return runId;
+ });if(!runId)return 0;
+ const check=(s:any)=>{if(s.data()?.runId!==runId||s.data()?.operation!=='student-renumber-v4')throw new Error('Phiên đánh mã đã thay đổi. Tải lại để tiếp tục.');};
+ let plan=(await getDocFromServer(marker)).data()?.plan;
+ if(!plan){const proposed=vvnPlan(await allRecords()).map(({record,code})=>({id:record.id,code}));plan=await runTransaction(db,async tx=>{const [l,m]=await Promise.all([tx.get(lock),tx.get(marker)]);check(l);if(m.data()?.plan)return m.data().plan;tx.set(marker,{status:'running',plan:proposed,at:serverTimestamp()});return proposed;});}
+ for(const item of plan){
+  const ref=recordRef('student',item.id),audit=doc(collection(db,path+'/audit'));
+  await runTransaction(db,async tx=>{const [l,current]=await Promise.all([tx.get(lock),tx.get(ref)]);check(l);if(!current.exists())throw new Error('Thiếu hồ sơ trong danh sách đánh mã.');const r=current.data();
+   if(r.data.id!==item.code){tx.set(ref,{...r,data:{...r.data,id:item.code},version:r.version+1,updatedAt:serverTimestamp(),auditId:audit.id});tx.set(audit,{actor:name,actorUid:a.identityId,action:'renumber',kind:'student',record_id:item.id,at:serverTimestamp()});}
+   tx.set(doc(db,path+'/studentCodes/'+codeKey(item.code)),{studentUid:item.id});
+  });
+ }
+ const expected=codeReservations(await allRecords()),old=await getDocsFromServer(collection(db,path+'/studentCodes'));
+ for(const d of old.docs)if(!expected.has(d.id))await runTransaction(db,async tx=>{const l=await tx.get(lock);check(l);tx.delete(d.ref);});
+ await runTransaction(db,async tx=>{const l=await tx.get(lock);check(l);tx.set(marker,{status:'done',count:plan.length,at:serverTimestamp()});tx.set(doc(db,path+'/meta/studentCodes'),{ready:true,at:serverTimestamp()});tx.set(lock,{state:'ready',at:serverTimestamp()});});
+ return plan.length;
 }
