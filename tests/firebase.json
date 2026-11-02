@@ -1,4 +1,0 @@
-{
-  "database": {"rules": "locked.rules.json"},
-  "emulators": {"database": {"port": 9100}, "auth": {"port": 9199}, "ui": {"enabled": false}, "singleProjectMode": true}
-}
