@@ -32,6 +32,10 @@ try{
  console.log('PASS: repairing the canonical profile name finalizes an interrupted import without duplicating records or changing their versions');
 
  async function save(db,kind,id,data,version){return runTransaction(db,async tx=>{const ref=doc(db,root+'/records/'+kind+'--'+id),current=await tx.get(ref);if((current.data()?.version||0)!==version)throw new Error('stale');const event=doc(collection(db,root+'/audit'));if(kind==='student'){const code=doc(db,root+'/studentCodes/code-'+data.id.toLowerCase());const existingCode=await tx.get(code);if(existingCode.exists()&&existingCode.data().studentUid!==id)throw new Error('duplicate');tx.set(code,{studentUid:id});}tx.set(ref,{kind,id,data,version:version+1,updatedAt:serverTimestamp(),auditId:event.id});tx.set(event,{actor:db===owner?'Admin':'HLV',actorUid:db===owner?'owner':'staff',action:'update',kind,record_id:id,at:serverTimestamp()})})}
+ const linkedAccount={...staffProfile,photoProfileUid:'legacy-photo-uid',photoProfileEmail:'staff@example.test'};
+ await assertFails(save(staff,'account','STAFF',linkedAccount,1));
+ await assertSucceeds(save(owner,'account','STAFF',linkedAccount,1));
+ console.log('PASS: only owner can explicitly associate a legacy photo with an account');
  await assertSucceeds(save(staff,'student','S1',{id:'VS1',name:'Updated',classId:'C1'},1));await assert.rejects(()=>save(staff,'student','S1',{id:'VS1',name:'Stale',classId:'C1'},1));
  await assertFails(setDoc(doc(staff,root+'/records/student--S1'),{kind:'student',id:'S1',version:3,data:{id:'VS1',name:'No audit',classId:'C1'},updatedAt:serverTimestamp()}));
  await assertFails(save(staff,'student','S1',{id:'VS1',name:'Moved outside scope',classId:'C2'},2));await assertFails(save(staff,'tuition','2026-11_S1',{month:'2026-11',studentUid:'S1',classId:'C1',amount:10,status:'paid'},0));

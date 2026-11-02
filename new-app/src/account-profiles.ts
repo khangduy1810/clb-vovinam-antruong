@@ -2,7 +2,14 @@ import {collection,doc,onSnapshot,runTransaction,serverTimestamp} from 'firebase
 import {auth,db,clubId} from './firebase';
 import {MAX_PHOTO_LENGTH} from './photo';
 export function safePhoto(value:any){return typeof value==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(value)&&value.length<=MAX_PHOTO_LENGTH?value:''}
-export function profileForAccount(account:any,profiles:any[]){const email=String(account?.data.email||'').trim().toLowerCase();if(!email)return null;return profiles.find(p=>p.accountId===account.id&&p.email===email)||null}
+export function profileForAccount(account:any,profiles:any[]){
+ const email=String(account?.data.email||'').trim().toLowerCase();if(!email)return null;
+ const verified=profiles.find(p=>p.accountId===account.id&&p.email===email);if(verified)return verified;
+ // Only an owner can save this explicit association on an account record.
+ if(account.data.photoProfileEmail!==email||!account.data.photoProfileUid)return null;
+ return profiles.find(p=>p.uid===account.data.photoProfileUid&&!p.email&&!p.accountId)||null;
+}
+export function unlinkedPhotos(accounts:any[],profiles:any[],ownUid:string){return profiles.filter(p=>p.uid!==ownUid&&safePhoto(p.photoURL)&&!p.email&&!p.accountId&&!accounts.some(a=>profileForAccount(a,profiles)?.uid===p.uid))}
 export async function linkOwnProfile(actor:any){
  const user=auth.currentUser;if(!user?.email||user.uid!==actor.identityId)return;
  const email=user.email.toLowerCase(),ref=doc(db,'clubs/'+clubId+'/profiles/'+user.uid);
