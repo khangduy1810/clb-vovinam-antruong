@@ -121,3 +121,20 @@ Kiểm tra bổ sung: `npm run test:student-policy` kiểm tra tên tiếng Vi�
 Theo yêu cầu chủ CLB, bản này sửa một lần cấp đai của toàn bộ hồ sơ võ sinh hiện có về **Tự vệ nhập môn** khi chủ CLB mở web. Thực hiện sau khi tác vụ chuẩn hóa mã hoàn tất, có sao lưu trước khi sửa. Danh sách UID được cố định lúc bắt đầu; từng giao dịch chỉ sửa `data.belt`, tăng phiên bản và ghi nhật ký. Mã, tên, trạng thái học/nghỉ, thùng rác và liên kết điểm danh/học phí giữ nguyên.
 
 Tiến độ được ghi cùng giao dịch sửa hồ sơ nên tải lại sau gián đoạn sẽ tiếp tục từ hồ sơ chưa xong. Khi hoàn tất, tác vụ không chạy lại; các lần nâng đai sau này và võ sinh thêm sau lúc bắt đầu không bị hạ đai. Không cần Publish Firestore Rules mới. Kiểm tra bổ sung trong `npm run test:student-policy` bao gồm mất kết nối, tiếp tục, hồ sơ đã nghỉ/thùng rác và không ghi đè lần nâng đai sau này.
+
+
+### Sửa lỗi quyền trong tác vụ cập nhật võ sinh
+
+Tác vụ sửa đai chạy độc lập và trước tác vụ đổi mã. Tiến độ sửa đai được lưu trong `data.studentBeltsSelfDefense20261102` của hồ sơ cấu hình CLB hiện có, theo luồng ghi records + audit như sửa hồ sơ thông thường; không bắt buộc quyền trên một document meta mới. Giá trị đai trước khi sửa được giữ trong `previousBelts` của tiến độ. Bản có tiến độ cũ sẽ kế thừa con trỏ đã hoàn tất nếu đọc được; các lần nâng đai sau khi tác vụ xong được giữ nguyên.
+
+Mỗi bước thử ghi hồ sơ và nhật ký. Nếu Rules hiện tại yêu cầu đặt chỗ mã nhưng thiếu chỉ mục, tác vụ đọc/kiểm tra rồi thêm đặt chỗ cùng giao dịch; không đổi mã hoặc chiếm mã của người khác. Không sửa hay mở rộng Firestore Rules. Tác vụ chỉ được chạy khi dữ liệu sẵn sàng hoặc trong đúng phiên đổi mã của ứng dụng; không chen vào nhập/khôi phục khác. Trước khi bắt đầu phiên đổi mã mới, kiểm tra quyền đọc danh mục mã để không tạo khóa bảo trì rồi mới phát hiện quyền đó chưa được cấp.
+
+Giao diện hiện tiến độ/số hồ sơ sửa đai, còn lỗi đổi mã có nhãn riêng. Không hướng dẫn tải lại để khắc phục một lỗi thiếu quyền.
+
+Kiểm tra bằng Firestore Emulator (Java 17):
+
+```bash
+npx --yes firebase-tools@13.35.1 emulators:exec --project demo-antruong-v2 --only firestore 'node tests/student-maintenance-rules.mjs && LEGACY_STUDENT_RULES=1 node tests/student-maintenance-rules.mjs'
+```
+
+Bộ kiểm tra chạy với 156 hồ sơ mẫu, Rules của repo, và một fixture mô phỏng Rules cũ chưa cho phép danh mục mã/document meta mới. Fixture không phải bản Rules đang được triển khai của dự án thật.

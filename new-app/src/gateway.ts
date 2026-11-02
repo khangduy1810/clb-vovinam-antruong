@@ -158,6 +158,7 @@ export async function standardizeStudentCodes(){
  const a=await getActor();if(!a.isSuperAdmin)return 0;const name=requireAuditName(a);
  const marker=doc(db,path+'/meta/studentRenumberV4'),lock=doc(db,path+'/meta/maintenance');
  if((await getDocFromServer(marker)).data()?.status==='done')return 0;
+ await getDocsFromServer(collection(db,path+'/studentCodes'));
  await snapshotDaily(true,a);
  const runId=await runTransaction(db,async tx=>{
   const [m,l]=await Promise.all([tx.get(marker),tx.get(lock)]);
@@ -182,27 +183,45 @@ export async function standardizeStudentCodes(){
  return plan.length;
 }
 
-// Correct the current cohort once. A committed cursor prevents a later promotion
-// from being reset again when a page is refreshed or an interrupted run resumes.
+// Keep the correction checkpoint in the existing club settings record. This
+// uses the same records/audit permissions as ordinary edits, without requiring
+// a newly introduced meta document to be readable or writable in deployed Rules.
 export async function resetCurrentStudentBelts(){
- const actor=await getActor();if(!actor.isSuperAdmin)return 0;const name=requireAuditName(actor);
- const marker=doc(db,path+'/meta/studentBeltsSelfDefense20261102'),lock=doc(db,path+'/meta/maintenance'),initial=await getDocFromServer(marker);
- if(initial.data()?.status==='done')return 0;
- if(!initial.exists())await snapshotDaily(true,actor);
- const ids=(await allRecords()).filter(r=>r.kind==='student').map(r=>r.id).sort();
- await runTransaction(db,async tx=>{const [m,l,imported]=await Promise.all([tx.get(marker),tx.get(lock),tx.get(doc(db,path+'/meta/import'))]);
-  if(l.exists()&&l.data().state!=='ready'||imported.data()?.status!=='ready')throw new Error('Hãy hoàn tất nhập hoặc khôi phục dữ liệu trước khi cập nhật cấp đai.');
-  if(!m.exists())tx.set(marker,{status:'running',ids,next:0,changed:0,at:serverTimestamp()});
- });
- while(true){const audit=doc(collection(db,path+'/audit'));
-  const result=await runTransaction(db,async tx=>{const [m,l]=await Promise.all([tx.get(marker),tx.get(lock)]),plan=m.data();
-   if(plan?.status==='done')return {done:true,changed:plan.changed||0};
-   if(l.exists()&&l.data().state!=='ready')throw new Error('Đang bảo trì hoặc khôi phục dữ liệu. Tải lại trang sau khi hoàn tất để tiếp tục cập nhật đai.');
-   if(!plan||!Array.isArray(plan.ids))throw new Error('Chưa có danh sách cập nhật cấp đai.');
-   const index=plan.next||0;if(index>=plan.ids.length){tx.update(marker,{status:'done',at:serverTimestamp()});return {done:true,changed:plan.changed||0};}
-   const id=plan.ids[index],ref=recordRef('student',id),current=await tx.get(ref);let changed=0;
-   if(current.exists()){const r=current.data();if(r.kind==='student'&&r.data.belt!==SELF_DEFENSE_BELT){tx.set(ref,{...r,data:{...r.data,belt:SELF_DEFENSE_BELT},version:r.version+1,updatedAt:serverTimestamp(),auditId:audit.id});tx.set(audit,{actor:name,actorUid:actor.identityId,action:'correct-belt',kind:'student',record_id:id,at:serverTimestamp()});changed=1;}}
-   tx.update(marker,{next:index+1,changed:(plan.changed||0)+changed,at:serverTimestamp()});return {done:false,changed:0};
-  });if(result.done)return result.changed;
- }
+ const actor=await getActor();if(!actor.isSuperAdmin)return 0;const name=requireAuditName(actor),field='studentBeltsSelfDefense20261102';
+ const records=await allRecords(),settings=records.find(r=>r.kind==='config'&&r.id==='club')||records.find(r=>r.kind==='config'),settingsId=settings?.id||'club',settingsRef=recordRef('config',settingsId),lock=doc(db,path+'/meta/maintenance');
+ if(settings?.data?.[field]?.status==='done')return 0;
+ // Carry forward the previous release's committed cursor when it is accessible.
+ let previous:any=null;try{previous=(await getDocFromServer(doc(db,path+'/meta/'+field))).data();}catch(e:any){if(e.code!=='permission-denied')throw e;}
+ if(previous?.status==='done')return 0;
+ const ids=Array.isArray(previous?.ids)?previous.ids:records.filter(r=>r.kind==='student').map(r=>r.id).sort();
+ const allowed=(snap:any)=>{const l=snap.data();if(l&&l.state!=='ready'&&!(l.state==='renumbering'&&l.operation==='student-renumber-v4'))throw new Error('Đang nhập hoặc khôi phục dữ liệu. Hãy hoàn tất trước khi cập nhật đai.');};
+ const event=(kind:string,id:string,action:string)=>({actor:name,actorUid:actor.identityId,action,kind,record_id:id,at:serverTimestamp()});
+ const writeProgress=(tx:any,current:any,plan:any)=>{const audit=doc(collection(db,path+'/audit')),old=current.data();tx.set(settingsRef,{...(old||{}),kind:'config',id:settingsId,data:{...(old?.data||{}),[field]:plan},version:(old?.version||0)+1,updatedAt:serverTimestamp(),auditId:audit.id});tx.set(audit,event('config',settingsId,'belt-correction-progress'));};
+ let stage='lưu tiến độ sửa đai';
+ try{
+  await runTransaction(db,async tx=>{const [current,l,imported]=await Promise.all([tx.get(settingsRef),tx.get(lock),tx.get(doc(db,path+'/meta/import'))]);allowed(l);if(imported.data()?.status!=='ready')throw new Error('Hãy hoàn tất nhập dữ liệu trước khi cập nhật đai.');if(!current.data()?.data?.[field])writeProgress(tx,current,{status:'running',ids,next:previous?.next||0,changed:previous?.changed||0,previousBelts:{}});});
+  while(true){
+   const step=async(repairReservation:boolean)=>runTransaction(db,async tx=>{
+    const [settings,l]=await Promise.all([tx.get(settingsRef),tx.get(lock)]);allowed(l);const plan=settings.data()?.data?.[field];if(plan?.status==='done')return {done:true,changed:plan.changed||0};if(!Array.isArray(plan?.ids))throw new Error('Chưa có danh sách cập nhật cấp đai.');
+    const index=plan.next||0;if(index>=plan.ids.length){writeProgress(tx,settings,{...plan,status:'done'});return {done:true,changed:plan.changed||0};}
+    const id=plan.ids[index],ref=recordRef('student',id),current=await tx.get(ref),r=current.data();let changed=0,codeRef:any=null;const previousBelts={...(plan.previousBelts||{})};
+    if(r?.kind==='student'&&r.data.belt!==SELF_DEFENSE_BELT){
+     if(repairReservation){codeRef=doc(db,path+'/studentCodes/'+codeKey(r.data.id));const reserved:any=await tx.get(codeRef);if(reserved.exists()&&reserved.data().studentUid!==id)throw new Error('Mã võ sinh đang liên kết với hồ sơ khác. Không tự ghi đè.');}
+     const audit=doc(collection(db,path+'/audit'));previousBelts[id]={hadBelt:Object.prototype.hasOwnProperty.call(r.data,'belt'),belt:r.data.belt??null};
+     tx.set(ref,{...r,data:{...r.data,belt:SELF_DEFENSE_BELT},version:r.version+1,updatedAt:serverTimestamp(),auditId:audit.id});tx.set(audit,event('student',id,'correct-belt'));if(codeRef)tx.set(codeRef,{studentUid:id});changed=1;
+    }
+    writeProgress(tx,settings,{...plan,next:index+1,changed:(plan.changed||0)+changed,previousBelts});return {done:false,changed:0};
+   });
+   stage='lưu cấp đai và nhật ký';let result;try{result=await step(false);}catch(e:any){if(e.code!=='permission-denied')throw e;stage='xác nhận mã và lưu cấp đai';result=await step(true);}
+   if(result.done)return result.changed;
+  }
+ }catch(e:any){if(e.code==='permission-denied')throw Object.assign(new Error('Firebase từ chối quyền '+stage+'. Cần kiểm tra Firestore Rules; tải lại trang không tự cấp thêm quyền.'),{code:e.code});throw e;}
+}
+
+export async function updateStudentRecords(){
+ const result={codes:0,belts:0,errors:[] as string[]};
+ // A failed identifier migration must not prevent an independent belt correction.
+ try{result.belts=await resetCurrentStudentBelts();}catch(e:any){result.errors.push('Cấp đai: '+e.message);}
+ try{result.codes=await standardizeStudentCodes();}catch(e:any){result.errors.push('Mã võ sinh: '+(e.code==='permission-denied'?'Firebase chưa cấp quyền cho tác vụ đổi mã. Cần kiểm tra Firestore Rules.':e.message));}
+ return result;
 }

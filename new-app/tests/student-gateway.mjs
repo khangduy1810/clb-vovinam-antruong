@@ -18,7 +18,7 @@ export const setDoc=async(ref,data)=>{store.set(ref.path,structuredClone(data))}
 export const deleteDoc=async ref=>{store.delete(ref.path)};
 export const addDoc=async(ref,data)=>{const r=doc(ref);await setDoc(r,data);return r};
 export const onSnapshot=()=>()=>{};
-export async function runTransaction(_db,fn){const previous=queue;let release;queue=new Promise(r=>release=r);await previous;transactions++;const writes=[];let writing=false;const tx={get:async ref=>{if(writing)throw Error('Read after write');return snapshot(ref)},set:(ref,data)=>{writing=true;writes.push(()=>store.set(ref.path,structuredClone(data)))},delete:ref=>{writing=true;writes.push(()=>store.delete(ref.path))},update:(ref,data)=>{if(ref.path.endsWith('/meta/studentBeltsSelfDefense20261102')&&data.next===beltFailure){beltFailure=null;throw Error('simulated-disconnect')}writing=true;writes.push(()=>store.set(ref.path,{...store.get(ref.path),...data}))}};try{const result=await fn(tx);writes.forEach(f=>f());return result}finally{release()}}
+export async function runTransaction(_db,fn){const previous=queue;let release;queue=new Promise(r=>release=r);await previous;transactions++;const writes=[];let writing=false;const tx={get:async ref=>{if(writing)throw Error('Read after write');return snapshot(ref)},set:(ref,data)=>{if(ref.path.endsWith('/records/config--club')&&data.data?.studentBeltsSelfDefense20261102?.next===beltFailure){beltFailure=null;throw Error('simulated-disconnect')}writing=true;writes.push(()=>store.set(ref.path,structuredClone(data)))},delete:ref=>{writing=true;writes.push(()=>store.delete(ref.path))},update:(ref,data)=>{if(ref.path.endsWith('/meta/studentBeltsSelfDefense20261102')&&data.next===beltFailure){beltFailure=null;throw Error('simulated-disconnect')}writing=true;writes.push(()=>store.set(ref.path,{...store.get(ref.path),...data}))}};try{const result=await fn(tx);writes.forEach(f=>f());return result}finally{release()}}
 export function writeBatch(){const tasks=[];return {set:(r,d)=>tasks.push(()=>setDoc(r,d)),delete:r=>tasks.push(()=>deleteDoc(r)),commit:async()=>{for(const t of tasks)await t()}}}
 `;
 const test=`
@@ -58,7 +58,7 @@ seed('records/tuition--TEST',{kind:'tuition',id:'TEST',version:1,data:{studentUi
 const initialStudents=[...store].filter(([key])=>key.startsWith(root+'/records/student--')).map(([,r])=>structuredClone(r));
 const linkedBefore=JSON.stringify([...store].filter(([k])=>k.includes('/studentCodes/')||k.includes('/records/attendance--')||k.includes('/records/tuition--')));
 failBeltCursor(2);await assert.rejects(resetCurrentStudentBelts(),/simulated-disconnect/);
-assert.equal(store.get(root+'/meta/studentBeltsSelfDefense20261102').next,1);
+assert.equal(store.get(root+'/records/config--club').data.studentBeltsSelfDefense20261102.next,1);
 const completed=structuredClone(store.get(root+'/records/student--A'));
 seed('records/student--LATER',student('LATER','VVN.0010',{belt:'Lam đai nhất cấp'}));
 assert.equal(await resetCurrentStudentBelts(),3);
