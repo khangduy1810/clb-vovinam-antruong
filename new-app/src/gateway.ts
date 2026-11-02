@@ -1,3 +1,4 @@
+import {oldHistory,historyCutoff} from './history-policy';
 import {purgeable,expiredTrash,trashTarget,sameTrashRevision} from './trash-policy';
 import {applyConfirmedRecord} from './record-state';
 import {readCoachTeam,coachTeamChanged,writeCoachAssignment} from './class-coach';
@@ -97,7 +98,7 @@ export async function mutate(input:any){
 }
 async function allRecords(){const s=await getDocsFromServer(collection(db,path+'/records'));return s.docs.map(row)}
 const dailySnapshots=new Map<string,string>();
-export async function snapshotDaily(force=false,knownActor?:any){const a=knownActor||await getActor();if(!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được sao lưu toàn bộ.');const id=force?new Date().toISOString():new Date().toISOString().slice(0,10);const key=a.identityId+':'+id;if(!force&&dailySnapshots.has(key))return id;const ref=doc(db,path+'/snapshots/'+id);if((await getDoc(ref)).exists()){dailySnapshots.set(key,id);return id;}const data=JSON.stringify({format:'antruong-v2',exportedAt:new Date().toISOString(),records:await allRecords()});if(data.length>850000)throw new Error('Bản sao lớn. Hãy tải JSON thay vì lưu bản sao trực tuyến.');await runTransaction(db,async tx=>{if(!(await tx.get(ref)).exists())tx.set(ref,{at:serverTimestamp(),data})});const copies=await getDocsFromServer(query(collection(db,path+'/snapshots'),orderBy('at','desc')));await Promise.all(copies.docs.slice(30).map(d=>deleteDoc(d.ref)));dailySnapshots.set(key,id);return id}
+export async function snapshotDaily(force=false,knownActor?:any){const a=knownActor||await getActor();if(!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được sao lưu toàn bộ.');const id=force?new Date().toISOString():new Date().toISOString().slice(0,10);const key=a.identityId+':'+id;if(!force&&dailySnapshots.has(key))return id;const ref=doc(db,path+'/snapshots/'+id);if((await getDoc(ref)).exists()){dailySnapshots.set(key,id);return id;}const data=JSON.stringify({format:'antruong-v2',exportedAt:new Date().toISOString(),records:await allRecords()});if(data.length>850000)throw new Error('Bản sao lớn. Hãy tải JSON thay vì lưu bản sao trực tuyến.');await runTransaction(db,async tx=>{if(!(await tx.get(ref)).exists())tx.set(ref,{at:serverTimestamp(),data})});dailySnapshots.set(key,id);return id}
 export async function downloadBackup(id?:string){const a=await getActor();if(!a.isSuperAdmin)throw new Error('Bạn không có quyền sao lưu.');let text;if(id){const s=await getDoc(doc(db,path+'/snapshots/'+id));if(!s.exists())throw new Error('Không tìm thấy bản sao.');text=s.data().data}else{text=JSON.stringify(await captureApp(),null,2)}const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='AnTruong_Backup_'+new Date().toISOString().slice(0,10)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
 export async function importBackup(file:File){
  const a=await getActor();if(!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được nhập dữ liệu.');const auditName=requireAuditName(a);if(file.size>5000000)throw new Error('File vượt quá 5 MB.');const text=await file.text();const normalized=convertBackup(JSON.parse(text));codeReservations(normalized.rows);const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(x=>x.toString(16).padStart(2,'0')).join('');const marker=doc(db,path+'/meta/import');
@@ -132,4 +133,18 @@ export async function purgeExpiredTrashRecords(records:any[]){
  const clock=doc(db,path+'/meta/trashClock');await setDoc(clock,{at:serverTimestamp()});const time=(await getDocFromServer(clock)).data()?.at?.toMillis?.();if(!Number.isFinite(time))throw new Error('Chưa xác nhận được thời gian máy chủ.');
  const targets=records.filter(r=>expiredTrash(r,time)).map(trashTarget);
  return purgeTrashRecords(targets,true,time);
+}
+
+export async function archiveOldHistoryRecords(records:any[]){
+ const actor=await getActor();if(!actor.isSuperAdmin)throw new Error('Chỉ chủ CLB được dọn lịch sử quá hạn.');const name=requireAuditName(actor);
+ const clock=doc(db,path+'/meta/trashClock');await setDoc(clock,{at:serverTimestamp()});const time=(await getDocFromServer(clock)).data()?.at?.toMillis?.();if(!Number.isFinite(time))throw new Error('Chưa xác nhận được thời gian máy chủ.');const now=new Date(time);let archived=0,skipped=0;
+ for(const candidate of records.filter(r=>oldHistory(r,now))){const ref=recordRef(candidate.kind,candidate.id),audit=doc(collection(db,path+'/audit'));
+  const result=await runTransaction(db,async tx=>{const maintenance=await tx.get(doc(db,path+'/meta/maintenance')),importState=await tx.get(doc(db,path+'/meta/import')),current=await tx.get(ref);
+   if(maintenance.exists()&&maintenance.data().state!=='ready'||!importState.exists()||importState.data().status!=='ready')throw new Error('Chưa dọn lịch sử trong lúc nhập hoặc khôi phục dữ liệu.');
+   if(!current.exists())return false;const record=current.data();if(record.version!==candidate.version||!oldHistory(record,now))return false;
+   tx.set(ref,{...record,data:{...record.data,deleted:true,deletedAt:serverTimestamp(),deletedBy:name},version:record.version+1,updatedAt:serverTimestamp(),auditId:audit.id});
+   tx.set(audit,{actor:name,actorUid:actor.identityId,action:'archive',kind:record.kind,record_id:record.id,at:serverTimestamp()});return true;
+  });if(result)archived++;else skipped++;
+ }
+ return {archived,skipped,cutoff:historyCutoff(now)};
 }

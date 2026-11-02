@@ -6,10 +6,10 @@ Mã đã có trong GitHub; lịch chỉ hoạt động sau khi triển khai Clou
 
 - `weeklyClubBackup`: Chủ nhật 02:00, múi giờ `Asia/Ho_Chi_Minh`.
 - Một file riêng cho mỗi tuần, bắt đầu Chủ nhật. Retry không ghi đè bản đã hoàn tất, không sinh thêm bản trùng.
-- `cleanupClubBackups`: mỗi ngày 02:30 giờ Việt Nam, xóa file có ngày trước mốc **4 tháng theo lịch**. Ví dụ ngày 01/11 chỉ giữ các bản từ 01/07 trở đi. Không xóa dữ liệu CLB đang dùng hoặc thư mục khác.
+- `cleanupClubBackups`: mỗi ngày 02:30 giờ Việt Nam, giữ tháng hiện tại cùng 2 tháng trước; bản cũ chuyển vào Thùng rác 15 ngày rồi mới xóa vĩnh viễn. Ví dụ trong tháng 11 giữ từ 01/09, bản cũ hơn vẫn tải được JSON trong thời hạn thùng rác. Không xóa dữ liệu CLB đang dùng hoặc thư mục khác.
 - File gzip riêng tư nằm trong bucket `clb-vovinam-antruong-backups`, prefix `weekly/antruong-v2/`. Khi chủ CLB tải, máy chủ giải nén thành JSON.
 - Bản sao gồm records nghiệp vụ, membership/phân quyền, ảnh cá nhân, metadata và nhật ký tại một snapshot Firestore nhất quán. Không có mật khẩu Firebase Authentication hoặc khóa bí mật trong file. Bản sao này tách khỏi 30 bản sao nhanh cũ trong Firestore.
-- File tải về ứng dụng Tệp là bản độc lập. Website không tự xóa/ghi đè file trên iPhone; chính sách 4 tháng chỉ áp dụng trên máy chủ.
+- File tải về ứng dụng Tệp là bản độc lập. Website không tự xóa/ghi đè file trên iPhone; chính sách 3 tháng và thùng rác 15 ngày chỉ áp dụng trên máy chủ.
 
 ## Điều kiện do chủ dự án thực hiện
 
@@ -44,3 +44,5 @@ Nếu triển khai lỗi IAM/API/bucket, lịch chưa được xem là kích ho�
 - Kiểm tra cục bộ: `node --test functions/core.test.js`, import Functions để kiểm tra manifest; emulator Rules kiểm tra owner-only/server-write-only cho index bản sao. Chưa gọi lịch hoặc bucket production.
 
 Tài liệu Firebase: https://firebase.google.com/docs/functions/schedule-functions
+
+Cập nhật chính sách sao lưu mới và lệnh triển khai đầy đủ: xem [TRASH_SETUP.md](TRASH_SETUP.md). Không cấu hình lifecycle xóa file theo tuổi trong bucket vì sẽ bỏ qua thời gian thùng rác.

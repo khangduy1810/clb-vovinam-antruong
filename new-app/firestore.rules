@@ -93,6 +93,7 @@ service cloud.firestore {
   }
   match /clubs/antruong-v2/recovery/{id} { allow read,write: if owner(); }
   match /clubs/antruong-v2/recovery/{id}/chunks/{chunk} { allow read,write: if owner(); }
+  match /clubs/antruong-v2/backupTrash/{id} { allow read: if owner(); allow write: if false; }
   match /clubs/antruong-v2/weeklyBackups/{id} { allow read: if owner(); allow write: if false; }
   match /clubs/antruong-v2/profiles/{uid} {
    allow get: if owner() || (active() && request.auth.uid == uid);
