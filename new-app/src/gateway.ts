@@ -1,3 +1,4 @@
+import {isStudying} from './student-policy';
 import {vvnCode,isVvnCode,vvnPlan} from './vovinam';
 import {oldHistory,historyCutoff} from './history-policy';
 import {purgeable,expiredTrash,trashTarget,sameTrashRevision} from './trash-policy';
@@ -68,7 +69,7 @@ export function watchState(onState:(s:any)=>void,onError:(e:any)=>void){
 function validate(kind:string,id:string,data:any,state:any){
  if(kind==='student'&&(!data.name?.trim()||!data.id?.trim()||!data.classId))throw new Error('Cần nhập họ tên, mã võ sinh và lớp.');
  if(kind==='student'&&state?.records.some((r:any)=>r.kind==='student'&&r.id!==id&&!r.data.deleted&&r.data.id===data.id))throw new Error('Mã võ sinh đã được sử dụng.');
- if(kind==='attendance'){if(!data.rows?.length)throw new Error('Buổi tập chưa có võ sinh.');if(data.status==='final'&&data.rows.some((r:any)=>r.status==='unmarked'))throw new Error('Cần điểm danh đầy đủ trước khi chốt.');const ids=new Set(data.rows.map((r:any)=>r.studentUid));if(ids.size!==data.rows.length)throw new Error('Danh sách có dòng trùng.');for(const r of data.rows)if(!state?.records.some((s:any)=>s.kind==='student'&&s.id===r.studentUid))throw new Error('Có võ sinh ngoài phạm vi lớp được cấp.');if(data.status==='final'&&state?.records.some((r:any)=>r.kind==='student'&&!r.data.deleted&&r.data.classId===data.classId&&!ids.has(r.id)))throw new Error('Danh sách lớp đã thay đổi. Tải lại trước khi chốt.');}
+ if(kind==='attendance'){if(!data.rows?.length)throw new Error('Buổi tập chưa có võ sinh.');if(data.status==='final'&&data.rows.some((r:any)=>r.status==='unmarked'))throw new Error('Cần điểm danh đầy đủ trước khi chốt.');const ids=new Set(data.rows.map((r:any)=>r.studentUid));if(ids.size!==data.rows.length)throw new Error('Danh sách có dòng trùng.');for(const r of data.rows)if(!state?.records.some((s:any)=>s.kind==='student'&&s.id===r.studentUid))throw new Error('Có võ sinh ngoài phạm vi lớp được cấp.');if(data.status==='final'&&state?.records.some((r:any)=>r.kind==='student'&&isStudying(r)&&r.data.classId===data.classId&&!ids.has(r.id)))throw new Error('Danh sách lớp đã thay đổi. Tải lại trước khi chốt.');}
  if(kind==='account'&&data.isSuperAdmin)throw new Error('Hồ sơ chủ CLB được bảo vệ.');
 }
 export async function mutate(input:any,codeAttempt=0):Promise<any>{

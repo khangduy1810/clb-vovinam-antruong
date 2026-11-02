@@ -4,6 +4,6 @@ export function codeReservations(records:any[]){const codes=new Map<string,strin
 export async function ensureStudentCodes(db:any,root:string){
  const meta=doc(db,root+'/meta/studentCodes'),lock=doc(db,root+'/meta/maintenance');if((await getDoc(meta)).data()?.ready)return;
  await runTransaction(db,async tx=>{const [m,l]=await Promise.all([tx.get(meta),tx.get(lock)]);if(m.data()?.ready)return;if(l.exists()&&l.data().state!=='ready'&&l.data().state!=='indexing')throw new Error('Đang khôi phục dữ liệu. Hãy hoàn tất trước.');tx.set(lock,{state:'indexing',at:serverTimestamp()})});
- try{const records=(await getDocsFromServer(collection(db,root+'/records'))).docs.map(d=>d.data());const codes=codeReservations(records);for(const [key,id] of codes)await setDoc(doc(db,root+'/studentCodes/'+key),{studentUid:id});const old=await getDocsFromServer(collection(db,root+'/studentCodes'));for(const d of old.docs)if(!codes.has(d.id)){const b=writeBatch(db);b.delete(d.ref);await b.commit()}const b=writeBatch(db);b.set(meta,{ready:true,at:serverTimestamp()});b.set(lock,{state:'ready',at:serverTimestamp()});await b.commit();}
+ try{const records=(await getDocsFromServer(collection(db,root+'/records'))).docs.map(d=>d.data());const codes=codeReservations(records);for(const [key,id] of codes)await setDoc(doc(db,root+'/studentCodes/'+key),{studentUid:id});const b=writeBatch(db);b.set(meta,{ready:true,at:serverTimestamp()});b.set(lock,{state:'ready',at:serverTimestamp()});await b.commit();}
  catch(e){await setDoc(lock,{state:'ready',at:serverTimestamp()});throw e;}
 }

@@ -105,3 +105,13 @@ Khi chủ CLB mở phiên bản này, hệ thống đánh lại toàn bộ mã h
 Đây là chuyển đổi một lần, có bản sao lưu trước khi bắt đầu. Khóa bảo trì ngăn ghi trong lúc chuyển; kế hoạch UID → mã được lưu trước và tiếp tục đúng kế hoạch khi tải lại nếu bị gián đoạn. Mỗi hồ sơ có giao dịch và nhật ký riêng. Khi xong mới dọn chỉ mục mã cũ và mở lại dữ liệu. Những lần đăng nhập sau không đánh số lại. Võ sinh mới được cấp số tiếp theo tự động, có đặt chỗ trong giao dịch chống trùng mã. Không cần cập nhật Firestore Rules.
 
 Kiểm tra: `npm run test:students`, `npm run test:flows`, `npm run build`.
+
+## Sắp tên, võ sinh đã nghỉ và mã không tái sử dụng
+
+Danh sách võ sinh, học phí, điểm danh và báo cáo hiển thị theo tên gọi (từ cuối của họ tên) với thứ tự tiếng Việt; tên trùng được phân định bằng họ tên đầy đủ rồi mã và UID. Chỉ sắp bản hiển thị, không thay đổi mã hay liên kết dữ liệu.
+
+Trong hồ sơ võ sinh chọn **Trạng thái võ sinh → Đã nghỉ**. Tab Võ sinh có bộ lọc Đang học / Đã nghỉ / Tất cả. Người đã nghỉ không được thêm vào buổi điểm danh mới; các điểm danh đã chốt, dấu điểm danh và ghi chú đã nhập vẫn được giữ. Sổ học phí vẫn hiện người đã nghỉ nếu tháng đó đã có bản ghi học phí.
+
+Võ sinh mới nhận mã `VVN.0001` trở đi khi máy chủ xác nhận lưu; không nhập mã thủ công. Đặt chỗ mã được giữ cả khi nghỉ, chuyển vào thùng rác và dọn vĩnh viễn. Khởi tạo lại danh mục và khôi phục JSON trên database hiện tại cũng không xóa các đặt chỗ không còn hồ sơ. Quy trình đánh lại toàn bộ mã một lần ở trên là ngoại lệ theo yêu cầu trước đó, không chạy lại sau khi đã hoàn tất.
+
+Kiểm tra bổ sung: `npm run test:student-policy` kiểm tra tên tiếng Việt, lịch sử điểm danh, và chạy gateway thật với adapter Firestore bộ nhớ để thử hai lượt thêm đồng thời, nghỉ/xóa, khởi tạo lại danh mục và khôi phục JSON. Đây là kiểm tra hành vi ứng dụng; không thay thế bộ kiểm tra Firestore Rules.
