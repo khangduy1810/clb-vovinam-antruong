@@ -1,3 +1,4 @@
+import {applyConfirmedRecord} from './record-state';
 import {readCoachTeam,coachTeamChanged,writeCoachAssignment} from './class-coach';
 import {collection,doc,getDoc,getDocsFromServer,query,where,orderBy,limit,onSnapshot,runTransaction,writeBatch,serverTimestamp,deleteDoc,addDoc} from 'firebase/firestore';
 import {auth,db,clubId} from './firebase';
@@ -13,6 +14,7 @@ const row=(d:any)=>({...d.data(),updatedAt:stamp(d.data().updatedAt)});
 export const can=(a:any,p:string)=>a.isSuperAdmin||a.permissions?.[p]===true;
 export async function getActor():Promise<any>{const u=auth.currentUser;if(!u?.email)throw new Error('Vui lòng đăng nhập.');const s=await getDoc(profileRef(u.email));if(!s.exists()||s.data().status!=='active')throw new Error('Tài khoản chưa được cấp quyền hoặc đã bị khóa. Nhờ chủ CLB gắn đúng email đăng nhập.');return normalizeActor(s.data(),{email:u.email,uid:u.uid})}
 function queries(a:any){
+ if(a.isSuperAdmin)return [query(collection(db,path+'/records'))];
  const all=a.isSuperAdmin||a.allClasses,scopes=all?null:(a.classIds||[]),qs:any[]=[];
  const scoped=(kind:string,field='data.classId')=>{if(all)qs.push(query(collection(db,path+'/records'),where('kind','==',kind)));else for(let i=0;i<scopes.length;i+=30)qs.push(query(collection(db,path+'/records'),where('kind','==',kind),where(field,'in',scopes.slice(i,i+30))))};
  scoped('class','id');qs.push(query(collection(db,path+'/records'),where('kind','==','config')));
@@ -23,17 +25,43 @@ function queries(a:any){
  return qs;
 }
 let cached:any=null,revision=0;
-async function assemble(a:any,docs:any[]){let audit:any[]=[],backups:any[]=[],migration:any=null;if(a.isSuperAdmin){const [logs,copies,meta]=await Promise.all([getDocsFromServer(query(collection(db,path+'/audit'),orderBy('at','desc'),limit(30))),getDocsFromServer(query(collection(db,path+'/snapshots'),orderBy('at','desc'),limit(30))),getDoc(doc(db,path+'/meta/import'))]);audit=logs.docs.map(d=>({...d.data(),id:d.id,at:stamp(d.data().at)}));backups=copies.docs.map(d=>({id:d.id,at:stamp(d.data().at),bytes:d.data().data?.length||0}));migration=meta.exists()?meta.data():null}cached={actor:a,records:docs,revision:++revision,serverAt:new Date().toISOString(),audit,backups,migration};return cached}
+function assemble(a:any,docs:any[],extra:any={}){
+ const previous=cached?.actor?.identityId===a.identityId&&cached?.actor?.isSuperAdmin===a.isSuperAdmin?cached:null;
+ cached={actor:a,records:docs,revision:++revision,serverAt:new Date().toISOString(),audit:a.isSuperAdmin?previous?.audit||[]:[],backups:a.isSuperAdmin?previous?.backups||[]:[],migration:a.isSuperAdmin?previous?.migration||null:null,ownerDetailsReady:a.isSuperAdmin?previous?.ownerDetailsReady||false:false,...extra};return cached;
+}
 export async function readState(){const a=await getActor();const snapshots=await Promise.all(queries(a).map(q=>getDocsFromServer(q)));return assemble(a,snapshots.flatMap(s=>s.docs.map(row)))}
-export function watchState(onState:(s:any)=>void,onError:(e:any)=>void){let unsubscribers:(()=>void)[]=[],cancelled=false,generation=0;const u=auth.currentUser;if(!u?.email)return ()=>{};
- let latestMember:any=null;
- const restart=async(member:any)=>{const generationId=++generation;unsubscribers.forEach(f=>f());unsubscribers=[];if(!member.exists()||member.data().status!=='active'){onError(new Error('Tài khoản chưa được cấp quyền hoặc đã bị khóa.'));return}const a=normalizeActor(member.data(),{email:u.email!,uid:u.uid});const qs=queries(a);const chunks=new Map<number,any[]>();let running=false,again=false;
- const emit=async()=>{if(running){again=true;return}running=true;try{do{again=false;if(cancelled||generationId!==generation)return;const state=await assemble(a,Array.from(chunks.values()).flat());if(!cancelled&&generationId===generation)onState(state)}while(again)}catch(e){onError(e)}finally{running=false}};
- unsubscribers=qs.map((q,i)=>onSnapshot(q,{includeMetadataChanges:true},(snap:any)=>{if(snap.metadata.fromCache)return;chunks.set(i,snap.docs.map(row));if(chunks.size===qs.length)emit()},onError));
+// Heavy owner-only lists are subscribed only while Settings is open.
+export function watchOwnerDetails(onDetails:(d:any)=>void,onError:(e:any)=>void){
+ let stopped=false;const details:any={audit:[],backups:[],ownerDetailsReady:false};const ready=new Set<string>();const uid=auth.currentUser?.uid;
+ const emit=()=>{if(stopped)return;if(cached?.actor?.identityId===uid&&cached.actor.isSuperAdmin)cached={...cached,...details};onDetails({...details})};
+ const logs=onSnapshot(query(collection(db,path+'/audit'),orderBy('at','desc'),limit(30)),{includeMetadataChanges:true},snap=>{if(snap.metadata.fromCache||snap.metadata.hasPendingWrites)return;details.audit=snap.docs.map(d=>({...d.data(),id:d.id,at:stamp(d.data().at)}));ready.add('audit');details.ownerDetailsReady=ready.size===2;emit()},onError);
+ const copies=onSnapshot(query(collection(db,path+'/snapshots'),orderBy('at','desc'),limit(30)),{includeMetadataChanges:true},snap=>{if(snap.metadata.fromCache||snap.metadata.hasPendingWrites)return;details.backups=snap.docs.map(d=>({id:d.id,at:stamp(d.data().at),bytes:d.data().data?.length||0}));ready.add('backups');details.ownerDetailsReady=ready.size===2;emit()},onError);
+ return()=>{stopped=true;logs();copies()};
+}
+export function watchState(onState:(s:any)=>void,onError:(e:any)=>void){
+ const u=auth.currentUser;if(!u?.email)return ()=>{};
+ let stops:(()=>void)[]=[],metaStop:(()=>void)|null=null,cancelled=false,generation=0,timer:any=null,actor:any=null,latestMember:any=null,scopeKey='',maintenance='ready',migration:any=null;
+ let chunks=new Map<number,any[]>(),expected=0;
+ const stopRecords=()=>{generation++;if(timer!==null){clearTimeout(timer);timer=null}stops.forEach(f=>f());stops=[];metaStop?.();metaStop=null;chunks.clear()};
+ const fail=(e:any)=>{if(cancelled)return;stopRecords();cached=null;scopeKey='';onError(e)};
+ const emit=()=>{if(cancelled||!actor||chunks.size!==expected)return;onState(assemble(actor,Array.from(chunks.values()).flat(),{migration:actor.isSuperAdmin?migration:null}))};
+ const schedule=()=>{if(timer!==null)return;const current=generation;timer=setTimeout(()=>{timer=null;if(current===generation)emit()},0)};
+ const restart=(a:any)=>{
+  stopRecords();actor=a;const current=generation,qs=queries(a);expected=qs.length;
+  stops=qs.map((q,i)=>onSnapshot(q,{includeMetadataChanges:true},(snap:any)=>{if(cancelled||current!==generation||snap.metadata.fromCache||snap.metadata.hasPendingWrites)return;chunks.set(i,snap.docs.map(row));if(chunks.size===expected)schedule()},e=>{if(current===generation)fail(e)}));
+  if(a.isSuperAdmin)metaStop=onSnapshot(doc(db,path+'/meta/import'),{includeMetadataChanges:true},snap=>{if(cancelled||current!==generation||snap.metadata.fromCache||snap.metadata.hasPendingWrites)return;migration=snap.exists()?snap.data():null;schedule()},e=>{if(current===generation)onError(e)});
  };
- const stopMember=onSnapshot(profileRef(u.email),member=>{latestMember=member;void restart(member)},onError);
- const stopMaintenance=onSnapshot(doc(db,path+'/meta/maintenance'),()=>{if(latestMember)void restart(latestMember)},onError);
- return ()=>{cancelled=true;stopMember();stopMaintenance();unsubscribers.forEach(f=>f())};}
+ const applyMember=(member:any)=>{
+  latestMember=member;if(!member.exists()||member.data().status!=='active'){actor=null;fail(new Error('Tài khoản chưa được cấp quyền hoặc đã bị khóa.'));return}
+  const a=normalizeActor(member.data(),{email:u.email!,uid:u.uid});
+  if(!a.isSuperAdmin&&maintenance!=='ready'){actor=null;fail(Object.assign(new Error('Đang bảo trì hoặc khôi phục dữ liệu. Vui lòng chờ hoàn tất.'),{code:'permission-denied'}));return}
+  const key=JSON.stringify([a.id,!!a.isSuperAdmin,!!a.allClasses,[...(a.classIds||[])].sort(),a.permissions||{}]);
+  if(key!==scopeKey||!stops.length){scopeKey=key;restart(a)}else{actor=a;schedule()}
+ };
+ const stopMember=onSnapshot(profileRef(u.email),{includeMetadataChanges:true},member=>{if(cancelled||member.metadata.fromCache||member.metadata.hasPendingWrites)return;applyMember(member)},fail);
+ const stopMaintenance=onSnapshot(doc(db,path+'/meta/maintenance'),{includeMetadataChanges:true},snap=>{if(cancelled||snap.metadata.fromCache||snap.metadata.hasPendingWrites)return;const next=snap.data()?.state||'ready';if(next===maintenance)return;maintenance=next;if(latestMember&&!latestMember.data()?.isSuperAdmin)applyMember(latestMember)},fail);
+ return()=>{cancelled=true;stopMember();stopMaintenance();stopRecords()};
+}
 function validate(kind:string,id:string,data:any,state:any){
  if(kind==='student'&&(!data.name?.trim()||!data.id?.trim()||!data.classId))throw new Error('Cần nhập họ tên, mã võ sinh và lớp.');
  if(kind==='student'&&state?.records.some((r:any)=>r.kind==='student'&&r.id!==id&&!r.data.deleted&&r.data.id===data.id))throw new Error('Mã võ sinh đã được sử dụng.');
@@ -43,7 +71,7 @@ function validate(kind:string,id:string,data:any,state:any){
 export async function mutate(input:any){
  const a=await getActor(),auditName=requireAuditName(a),{kind,id,version}=input;let data={...input.data};delete data.password;delete data.passwordHash;delete data.secret;delete data.databaseSecret;if(!auth.currentUser?.emailVerified)throw new Error('Cần xác minh email rồi đăng nhập lại trước khi lưu.');if(kind==='student'){data.id=String(data.id||'').trim();if(a.isSuperAdmin)await ensureStudentCodes(db,path);else if(!(await getDoc(doc(db,path+'/meta/studentCodes'))).data()?.ready)throw new Error('Chủ CLB cần mở Cài đặt để khởi tạo danh mục mã võ sinh.');}
  if((data.deleted===true||input.data?.deleted===false)&&!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được chuyển vào thùng rác hoặc khôi phục.');if(kind==='account'&&data.deleted)data.status='inactive';
- if(kind!=='attendance')validate(kind,id,data,cached);if(a.isSuperAdmin)await snapshotDaily();
+ if(kind!=='attendance')validate(kind,id,data,cached);if(a.isSuperAdmin)await snapshotDaily(false,a);
  if(kind==='account'){data.email=String(data.email||'').trim().toLowerCase();if(data.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))throw new Error('Email chưa đúng định dạng.');if(data.email===a.email)throw new Error('Email chủ CLB đã được sử dụng.');}
  const auditRef=doc(collection(db,path+'/audit'));const ref=recordRef(kind,id);
  const result=await runTransaction(db,async tx=>{const maintenance=await tx.get(doc(db,path+'/meta/maintenance'));if(maintenance.exists()&&maintenance.data().state!=='ready')throw new Error('Đang bảo trì hoặc khôi phục dữ liệu. Hãy thử lại sau.');const current=await tx.get(ref);const existing=current.exists()?current.data():null;if((existing?.version||0)!==version)throw new Error('Bản ghi vừa được máy khác thay đổi. Tải phiên bản mới rồi sửa lại.');
@@ -62,10 +90,11 @@ export async function mutate(input:any){
   if(kind==='account'){if(oldMember?.exists())tx.delete(profileRef(oldEmail));if(data.email)tx.set(profileRef(data.email),{id,name:data.name,email:data.email,status:data.status,isSuperAdmin:false,allClasses:!!data.allClasses,classIds:data.classIds||[],permissions:data.permissions||{},roleTitle:data.roleTitle||'Thành viên',requireEmailVerification:true});}
   for(const assignment of coachAssignments)writeCoachAssignment(tx,db,path,assignment,{name:auditName,uid:a.identityId});
   return {...next,updatedAt:new Date().toISOString()};
- });return {ok:true,record:result};
+ });if(cached?.actor?.identityId===a.identityId)cached={...cached,records:applyConfirmedRecord(cached.records,result)};return {ok:true,record:result};
 }
 async function allRecords(){const s=await getDocsFromServer(collection(db,path+'/records'));return s.docs.map(row)}
-export async function snapshotDaily(force=false){const a=await getActor();if(!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được sao lưu toàn bộ.');const id=force?new Date().toISOString():new Date().toISOString().slice(0,10);const ref=doc(db,path+'/snapshots/'+id);if((await getDoc(ref)).exists())return id;const data=JSON.stringify({format:'antruong-v2',exportedAt:new Date().toISOString(),records:await allRecords()});if(data.length>850000)throw new Error('Bản sao lớn. Hãy tải JSON thay vì lưu bản sao trực tuyến.');await runTransaction(db,async tx=>{if(!(await tx.get(ref)).exists())tx.set(ref,{at:serverTimestamp(),data})});const copies=await getDocsFromServer(query(collection(db,path+'/snapshots'),orderBy('at','desc')));await Promise.all(copies.docs.slice(30).map(d=>deleteDoc(d.ref)));return id}
+const dailySnapshots=new Map<string,string>();
+export async function snapshotDaily(force=false,knownActor?:any){const a=knownActor||await getActor();if(!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được sao lưu toàn bộ.');const id=force?new Date().toISOString():new Date().toISOString().slice(0,10);const key=a.identityId+':'+id;if(!force&&dailySnapshots.has(key))return id;const ref=doc(db,path+'/snapshots/'+id);if((await getDoc(ref)).exists()){dailySnapshots.set(key,id);return id;}const data=JSON.stringify({format:'antruong-v2',exportedAt:new Date().toISOString(),records:await allRecords()});if(data.length>850000)throw new Error('Bản sao lớn. Hãy tải JSON thay vì lưu bản sao trực tuyến.');await runTransaction(db,async tx=>{if(!(await tx.get(ref)).exists())tx.set(ref,{at:serverTimestamp(),data})});const copies=await getDocsFromServer(query(collection(db,path+'/snapshots'),orderBy('at','desc')));await Promise.all(copies.docs.slice(30).map(d=>deleteDoc(d.ref)));dailySnapshots.set(key,id);return id}
 export async function downloadBackup(id?:string){const a=await getActor();if(!a.isSuperAdmin)throw new Error('Bạn không có quyền sao lưu.');let text;if(id){const s=await getDoc(doc(db,path+'/snapshots/'+id));if(!s.exists())throw new Error('Không tìm thấy bản sao.');text=s.data().data}else{text=JSON.stringify(await captureApp(),null,2)}const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='AnTruong_Backup_'+new Date().toISOString().slice(0,10)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
 export async function importBackup(file:File){
  const a=await getActor();if(!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được nhập dữ liệu.');const auditName=requireAuditName(a);if(file.size>5000000)throw new Error('File vượt quá 5 MB.');const text=await file.text();const normalized=convertBackup(JSON.parse(text));codeReservations(normalized.rows);const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(x=>x.toString(16).padStart(2,'0')).join('');const marker=doc(db,path+'/meta/import');

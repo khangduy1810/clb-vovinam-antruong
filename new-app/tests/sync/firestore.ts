@@ -1,0 +1,1 @@
+import * as sdk from 'firebase/firestore';export * from 'firebase/firestore';export const counters={subscriptions:0,serverReads:0};export function onSnapshot(...args:any[]){counters.subscriptions++;return (sdk.onSnapshot as any)(...args)}export function getDocsFromServer(...args:any[]){counters.serverReads++;return (sdk.getDocsFromServer as any)(...args)}
