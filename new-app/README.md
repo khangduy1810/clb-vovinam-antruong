@@ -115,3 +115,9 @@ Trong hồ sơ võ sinh chọn **Trạng thái võ sinh → Đã nghỉ**. Tab V
 Võ sinh mới nhận mã `VVN.0001` trở đi khi máy chủ xác nhận lưu; không nhập mã thủ công. Đặt chỗ mã được giữ cả khi nghỉ, chuyển vào thùng rác và dọn vĩnh viễn. Khởi tạo lại danh mục và khôi phục JSON trên database hiện tại cũng không xóa các đặt chỗ không còn hồ sơ. Quy trình đánh lại toàn bộ mã một lần ở trên là ngoại lệ theo yêu cầu trước đó, không chạy lại sau khi đã hoàn tất.
 
 Kiểm tra bổ sung: `npm run test:student-policy` kiểm tra tên tiếng Việt, lịch sử điểm danh, và chạy gateway thật với adapter Firestore bộ nhớ để thử hai lượt thêm đồng thời, nghỉ/xóa, khởi tạo lại danh mục và khôi phục JSON. Đây là kiểm tra hành vi ứng dụng; không thay thế bộ kiểm tra Firestore Rules.
+
+## Sửa cấp đai hiện tại về Tự vệ nhập môn (02/11/2026)
+
+Theo yêu cầu chủ CLB, bản này sửa một lần cấp đai của toàn bộ hồ sơ võ sinh hiện có về **Tự vệ nhập môn** khi chủ CLB mở web. Thực hiện sau khi tác vụ chuẩn hóa mã hoàn tất, có sao lưu trước khi sửa. Danh sách UID được cố định lúc bắt đầu; từng giao dịch chỉ sửa `data.belt`, tăng phiên bản và ghi nhật ký. Mã, tên, trạng thái học/nghỉ, thùng rác và liên kết điểm danh/học phí giữ nguyên.
+
+Tiến độ được ghi cùng giao dịch sửa hồ sơ nên tải lại sau gián đoạn sẽ tiếp tục từ hồ sơ chưa xong. Khi hoàn tất, tác vụ không chạy lại; các lần nâng đai sau này và võ sinh thêm sau lúc bắt đầu không bị hạ đai. Không cần Publish Firestore Rules mới. Kiểm tra bổ sung trong `npm run test:student-policy` bao gồm mất kết nối, tiếp tục, hồ sơ đã nghỉ/thùng rác và không ghi đè lần nâng đai sau này.

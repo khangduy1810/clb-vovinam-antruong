@@ -1,5 +1,5 @@
 import {isStudying} from './student-policy';
-import {vvnCode,isVvnCode,vvnPlan} from './vovinam';
+import {vvnCode,isVvnCode,vvnPlan,SELF_DEFENSE_BELT} from './vovinam';
 import {oldHistory,historyCutoff} from './history-policy';
 import {purgeable,expiredTrash,trashTarget,sameTrashRevision} from './trash-policy';
 import {applyConfirmedRecord} from './record-state';
@@ -180,4 +180,29 @@ export async function standardizeStudentCodes(){
  for(const d of old.docs)if(!expected.has(d.id))await runTransaction(db,async tx=>{const l=await tx.get(lock);check(l);tx.delete(d.ref);});
  await runTransaction(db,async tx=>{const l=await tx.get(lock);check(l);tx.set(marker,{status:'done',count:plan.length,at:serverTimestamp()});tx.set(doc(db,path+'/meta/studentCodes'),{ready:true,at:serverTimestamp()});tx.set(lock,{state:'ready',at:serverTimestamp()});});
  return plan.length;
+}
+
+// Correct the current cohort once. A committed cursor prevents a later promotion
+// from being reset again when a page is refreshed or an interrupted run resumes.
+export async function resetCurrentStudentBelts(){
+ const actor=await getActor();if(!actor.isSuperAdmin)return 0;const name=requireAuditName(actor);
+ const marker=doc(db,path+'/meta/studentBeltsSelfDefense20261102'),lock=doc(db,path+'/meta/maintenance'),initial=await getDocFromServer(marker);
+ if(initial.data()?.status==='done')return 0;
+ if(!initial.exists())await snapshotDaily(true,actor);
+ const ids=(await allRecords()).filter(r=>r.kind==='student').map(r=>r.id).sort();
+ await runTransaction(db,async tx=>{const [m,l,imported]=await Promise.all([tx.get(marker),tx.get(lock),tx.get(doc(db,path+'/meta/import'))]);
+  if(l.exists()&&l.data().state!=='ready'||imported.data()?.status!=='ready')throw new Error('Hãy hoàn tất nhập hoặc khôi phục dữ liệu trước khi cập nhật cấp đai.');
+  if(!m.exists())tx.set(marker,{status:'running',ids,next:0,changed:0,at:serverTimestamp()});
+ });
+ while(true){const audit=doc(collection(db,path+'/audit'));
+  const result=await runTransaction(db,async tx=>{const [m,l]=await Promise.all([tx.get(marker),tx.get(lock)]),plan=m.data();
+   if(plan?.status==='done')return {done:true,changed:plan.changed||0};
+   if(l.exists()&&l.data().state!=='ready')throw new Error('Đang bảo trì hoặc khôi phục dữ liệu. Tải lại trang sau khi hoàn tất để tiếp tục cập nhật đai.');
+   if(!plan||!Array.isArray(plan.ids))throw new Error('Chưa có danh sách cập nhật cấp đai.');
+   const index=plan.next||0;if(index>=plan.ids.length){tx.update(marker,{status:'done',at:serverTimestamp()});return {done:true,changed:plan.changed||0};}
+   const id=plan.ids[index],ref=recordRef('student',id),current=await tx.get(ref);let changed=0;
+   if(current.exists()){const r=current.data();if(r.kind==='student'&&r.data.belt!==SELF_DEFENSE_BELT){tx.set(ref,{...r,data:{...r.data,belt:SELF_DEFENSE_BELT},version:r.version+1,updatedAt:serverTimestamp(),auditId:audit.id});tx.set(audit,{actor:name,actorUid:actor.identityId,action:'correct-belt',kind:'student',record_id:id,at:serverTimestamp()});changed=1;}}
+   tx.update(marker,{next:index+1,changed:(plan.changed||0)+changed,at:serverTimestamp()});return {done:false,changed:0};
+  });if(result.done)return result.changed;
+ }
 }

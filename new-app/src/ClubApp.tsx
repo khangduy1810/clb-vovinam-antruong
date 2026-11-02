@@ -9,7 +9,7 @@ import TrashPanel from './TrashPanel';
 import {applyConfirmedRecord} from './record-state';
 import {coachIds,primaryCoach} from './class-coach';
 import {ClubLogo,LogoSettings,rememberLogo,safeLogo,useClubLogo} from './club-logo';
-import {standardizeStudentCodes,readState,mutate,watchState,watchOwnerDetails,downloadBackup,importBackup} from './gateway';
+import {resetCurrentStudentBelts,standardizeStudentCodes,readState,mutate,watchState,watchOwnerDetails,downloadBackup,importBackup} from './gateway';
 import {signOut} from 'firebase/auth';
 import {auth} from './firebase';
 import {reconcileAttendance} from './attendance';
@@ -39,7 +39,7 @@ export default function ClubApp(){
  const [studentStatus,setStudentStatus]=useState('active');
  const [backupTrash,setBackupTrash]=useState<any[]>([]),[backupTrashError,setBackupTrashError]=useState('');
  const actor=state?.actor;
- useEffect(()=>{if(!actor?.isSuperAdmin)return;let active=true;setPending(true);standardizeStudentCodes().then(n=>{if(active&&n)setNotice('Đã chuẩn hóa mã cho '+n+' võ sinh theo dạng VVN.0001.')}).catch(e=>{if(active)setError('Chưa chuẩn hóa xong mã võ sinh: '+e.message+' Tải lại trang để tiếp tục.')}).finally(()=>{if(active)setPending(false)});return()=>{active=false}},[actor?.identityId,actor?.isSuperAdmin]);
+ useEffect(()=>{if(!actor?.isSuperAdmin)return;let active=true;setPending(true);(async()=>{const codes=await standardizeStudentCodes(),belts=await resetCurrentStudentBelts();if(active&&(codes||belts))setNotice([codes?'Đã chuẩn hóa mã cho '+codes+' võ sinh.':'',belts?'Đã đưa '+belts+' võ sinh về Tự vệ nhập môn.':''].filter(Boolean).join(' '));})().catch(e=>{if(active)setError('Chưa cập nhật xong võ sinh: '+e.message+' Tải lại trang để tiếp tục.')}).finally(()=>{if(active)setPending(false)});return()=>{active=false}},[actor?.identityId,actor?.isSuperAdmin]);
  useEffect(()=>{setBackupTrash([]);setBackupTrashError('');if(!actor?.isSuperAdmin)return;return watchBackupTrash(rows=>{setBackupTrash(rows);setBackupTrashError('')},()=>setBackupTrashError('Chưa đọc được thùng rác bản sao lưu. Cần Publish Firestore Rules mới.'))},[actor?.identityId,actor?.isSuperAdmin]);
  useEffect(()=>{setPersonalPhoto('');setPhotoNeedsRules(false);if(!actor?.identityId)return;return watchOwnPhoto(actor.identityId,p=>{setPersonalPhoto(p);setPhotoNeedsRules(false)},()=>setPhotoNeedsRules(true))},[actor?.identityId]);const records:RecordRow[]=state?.records||[];
  useEffect(()=>{if(!actor?.identityId)return;void linkOwnProfile(actor).then(()=>setPhotoNeedsRules(false)).catch(e=>{if(e.code==='permission-denied')setPhotoNeedsRules(true)})},[actor?.identityId,actor?.id,photoReload]);
