@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {vvnCode,isVvnCode,vvnPlan,VOVINAM_BELTS} from '../src/vovinam.ts';
+const student=(id,code,extra={})=>({kind:'student',id,version:3,data:{id:code,name:'Trùng tên',classId:'C1',...extra}});
+assert.equal(vvnCode(1),'VVN.001');assert.equal(vvnCode(1000),'VVN.1000');
+for(const s of ['VVN.001','VVN.099','VVN.100','VVN.999','VVN.1000'])assert.ok(isVvnCode(s));
+for(const s of ['VVN001','VVN.000','VVN.01','VVN.0100'])assert.ok(!isVvnCode(s));
+const records=[student('B','VVN002'),student('A','VVN001'),student('C','old',{deleted:true}),student('D','VVN.004')];
+const before=JSON.stringify(records);const used=new Map(records.map(r=>[r.data.id.toLowerCase(),r.id]));used.set('vvn.003','purged-student');
+const plan=vvnPlan(records,used);assert.equal(JSON.stringify(records),before);assert.deepEqual(plan.map(p=>[p.record.id,p.code]),[['A','VVN.001'],['B','VVN.002'],['C','VVN.005']]);
+const migrated=records.map(r=>({...r,data:{...r.data,id:plan.find(p=>p.record.id===r.id)?.code||r.data.id}}));
+assert.deepEqual(migrated.map(r=>r.id),records.map(r=>r.id));assert.equal(migrated[2].data.deleted,true);
+assert.equal(vvnPlan(migrated,new Map(migrated.map(r=>[r.data.id.toLowerCase(),r.id]))).length,0);
+const partial=records.map(r=>r.id==='A'?{...r,data:{...r.data,id:'VVN.001'}}:r);
+const resumed=vvnPlan(partial,new Map([...used,['vvn.001','A']]));assert.deepEqual(resumed.map(p=>[p.record.id,p.code]),[['B','VVN.002'],['C','VVN.005']]);
+assert.equal(new Set(VOVINAM_BELTS).size,VOVINAM_BELTS.length);assert.ok(VOVINAM_BELTS.includes('Lam đai tam cấp'));
+console.log('PASS: VVN formatting, legacy migration, duplicate names, trash/purged reservations, stable UIDs/order and resumable migration.');

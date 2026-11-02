@@ -95,3 +95,13 @@ Kiểm tra bổ sung: emulator Auth xác thực mật khẩu hiện tại và đ
 ## Lịch sao lưu tuần giữ 4 tháng
 
 Xem [WEEKLY_BACKUP_SETUP.md](WEEKLY_BACKUP_SETUP.md). Website đã có danh sách/trạng thái và nút tải JSON; backend trong `functions/` chạy Chủ nhật 02:00 và dọn bản quá 4 tháng mỗi ngày. **Chủ dự án cần bật Blaze và chạy script triển khai trước; lịch chưa được tự kích hoạt bởi GitHub Pages.** File nằm trong Cloud Storage riêng tư, không phải GitHub công khai hay tự tải/xóa trong ứng dụng Tệp của iPhone.
+
+## Cấp đai và mã võ sinh
+
+Cấp đai dùng danh sách chọn Vovinam, từ Tự vệ nhập môn đến Bạch đai. Giá trị nhập tay trước đây được giữ cho đến khi người dùng chọn lại.
+
+Khi chủ CLB mở phiên bản mới, ứng dụng chuẩn hóa mã hiển thị về `VVN.001`, `VVN.002`… bằng từng giao dịch có kiểm tra phiên bản và nhật ký. Giữ số của mã cũ `VVN001` nếu chưa bị dùng; mã khác nhận số còn trống. Giữ nguyên UID hồ sơ, thứ tự danh sách, tên, cấp đai, trạng thái thùng rác và liên kết điểm danh/học phí. Nếu gián đoạn hoặc xung đột, tải lại để tiếp tục; các mã đã chuẩn hóa được giữ nguyên. Có bản sao lưu ngày trước khi chuyển đổi.
+
+Võ sinh mới nhận mã tự động khi lưu. Giao dịch đặt chỗ ngăn trùng mã khi nhiều thiết bị cùng thêm; nếu đụng mã thì chọn lại và thử tối đa 8 lần. Mã trong thùng rác hoặc đã dọn vẫn được đặt chỗ. Không cần cập nhật Firestore Rules cho thay đổi này.
+
+Kiểm tra: `npm run test:students`, `npm run test:flows`, `npm run build`.

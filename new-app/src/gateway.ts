@@ -1,3 +1,4 @@
+import {vvnCode,isVvnCode,vvnPlan} from './vovinam';
 import {oldHistory,historyCutoff} from './history-policy';
 import {purgeable,expiredTrash,trashTarget,sameTrashRevision} from './trash-policy';
 import {applyConfirmedRecord} from './record-state';
@@ -70,13 +71,15 @@ function validate(kind:string,id:string,data:any,state:any){
  if(kind==='attendance'){if(!data.rows?.length)throw new Error('Buổi tập chưa có võ sinh.');if(data.status==='final'&&data.rows.some((r:any)=>r.status==='unmarked'))throw new Error('Cần điểm danh đầy đủ trước khi chốt.');const ids=new Set(data.rows.map((r:any)=>r.studentUid));if(ids.size!==data.rows.length)throw new Error('Danh sách có dòng trùng.');for(const r of data.rows)if(!state?.records.some((s:any)=>s.kind==='student'&&s.id===r.studentUid))throw new Error('Có võ sinh ngoài phạm vi lớp được cấp.');if(data.status==='final'&&state?.records.some((r:any)=>r.kind==='student'&&!r.data.deleted&&r.data.classId===data.classId&&!ids.has(r.id)))throw new Error('Danh sách lớp đã thay đổi. Tải lại trước khi chốt.');}
  if(kind==='account'&&data.isSuperAdmin)throw new Error('Hồ sơ chủ CLB được bảo vệ.');
 }
-export async function mutate(input:any){
+export async function mutate(input:any,codeAttempt=0):Promise<any>{
  const a=await getActor(),auditName=requireAuditName(a),{kind,id,version}=input;let data={...input.data};delete data.password;delete data.passwordHash;delete data.secret;delete data.databaseSecret;if(!auth.currentUser?.emailVerified)throw new Error('Cần xác minh email rồi đăng nhập lại trước khi lưu.');if(kind==='student'){data.id=String(data.id||'').trim();if(a.isSuperAdmin)await ensureStudentCodes(db,path);else if(!(await getDoc(doc(db,path+'/meta/studentCodes'))).data()?.ready)throw new Error('Chủ CLB cần mở Cài đặt để khởi tạo danh mục mã võ sinh.');}
  if((data.deleted===true||input.data?.deleted===false)&&!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được chuyển vào thùng rác hoặc khôi phục.');if(kind==='account'&&data.deleted)data.status='inactive';
+ const automaticCode=kind==='student'&&version===0;
+ if(automaticCode){let n=1+Math.max(0,...(cached?.records||[]).filter((r:any)=>r.kind==='student'&&isVvnCode(r.data.id)).map((r:any)=>Number(r.data.id.slice(4))));while((await getDocFromServer(doc(db,path+'/studentCodes/'+codeKey(vvnCode(n))))).exists())n++;data.id=vvnCode(n);}
  if(kind!=='attendance')validate(kind,id,data,cached);if(a.isSuperAdmin)await snapshotDaily(false,a);
  if(kind==='account'){data.email=String(data.email||'').trim().toLowerCase();if(data.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))throw new Error('Email chưa đúng định dạng.');if(data.email===a.email)throw new Error('Email chủ CLB đã được sử dụng.');}
  const auditRef=doc(collection(db,path+'/audit'));const ref=recordRef(kind,id);
- const result=await runTransaction(db,async tx=>{const maintenance=await tx.get(doc(db,path+'/meta/maintenance'));if(maintenance.exists()&&maintenance.data().state!=='ready')throw new Error('Đang bảo trì hoặc khôi phục dữ liệu. Hãy thử lại sau.');const current=await tx.get(ref);const existing=current.exists()?current.data():null;if((existing?.version||0)!==version)throw new Error('Bản ghi vừa được máy khác thay đổi. Tải phiên bản mới rồi sửa lại.');
+ let result:any;try{result=await runTransaction(db,async tx=>{const maintenance=await tx.get(doc(db,path+'/meta/maintenance'));if(maintenance.exists()&&maintenance.data().state!=='ready')throw new Error('Đang bảo trì hoặc khôi phục dữ liệu. Hãy thử lại sau.');const current=await tx.get(ref);const existing=current.exists()?current.data():null;if((existing?.version||0)!==version)throw new Error('Bản ghi vừa được máy khác thay đổi. Tải phiên bản mới rồi sửa lại.');
   if(kind==='attendance'){const stable=(v:any):any=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().filter(k=>!['deleted','deletedAt','deletedBy'].includes(k)).map(k=>[k,stable(v[k])])):v;const trashOnly=a.isSuperAdmin&&existing&&!!existing.data.deleted!==!!data.deleted&&JSON.stringify(stable(existing.data))===JSON.stringify(stable(data));if(!trashOnly)validate(kind,id,data,cached);}
   if(existing?.data?.isSuperAdmin&&kind==='account')throw new Error('Không thể khóa hoặc xóa tài khoản chủ CLB.');if(existing?.data?.deleted&&!a.isSuperAdmin)throw new Error('Hồ sơ đang ở thùng rác.');
   if(data.deleted===true&&!existing?.data?.deleted)data.deletedAt=serverTimestamp();
@@ -89,12 +92,12 @@ export async function mutate(input:any){
   let oldMember:any=null,newMember:any=null;const oldEmail=existing?.data?.email||'';
   if(kind==='account'&&data.email){newMember=await tx.get(profileRef(data.email));if(newMember.exists()&&newMember.data().id!==id)throw new Error('Email đã gắn với hồ sơ khác.');}
   if(kind==='account'&&oldEmail&&oldEmail!==data.email){oldMember=await tx.get(profileRef(oldEmail));if(oldMember.exists()&&oldMember.data().isSuperAdmin)throw new Error('Tài khoản chủ CLB được bảo vệ.');}
-  let codeRef:any=null,oldCodeRef:any=null;if(kind==='student'){codeRef=doc(db,path+'/studentCodes/'+codeKey(data.id));const reserved:any=await tx.get(codeRef);if(reserved.exists()&&reserved.data().studentUid!==id)throw new Error('Mã võ sinh đã được sử dụng trên hệ thống.');if(existing?.data?.id&&codeKey(existing.data.id)!==codeKey(data.id))oldCodeRef=doc(db,path+'/studentCodes/'+codeKey(existing.data.id));}
+  let codeRef:any=null,oldCodeRef:any=null;if(kind==='student'){codeRef=doc(db,path+'/studentCodes/'+codeKey(data.id));const reserved:any=await tx.get(codeRef);if(reserved.exists()&&reserved.data().studentUid!==id)throw Object.assign(new Error('Mã võ sinh đã được sử dụng trên hệ thống.'),{code:automaticCode?'vvn-code-race':'duplicate-code'});if(existing?.data?.id&&codeKey(existing.data.id)!==codeKey(data.id))oldCodeRef=doc(db,path+'/studentCodes/'+codeKey(existing.data.id));}
   const next={kind,id,data,version:version+1,updatedAt:serverTimestamp(),auditId:auditRef.id};tx.set(ref,next);if(codeRef)tx.set(codeRef,{studentUid:id});if(oldCodeRef)tx.delete(oldCodeRef);tx.set(auditRef,{actor:auditName,actorUid:a.identityId,action:existing?'update':'create',kind,record_id:id,at:serverTimestamp()});
   if(kind==='account'){if(oldMember?.exists())tx.delete(profileRef(oldEmail));if(data.email)tx.set(profileRef(data.email),{id,name:data.name,email:data.email,status:data.status,isSuperAdmin:false,allClasses:!!data.allClasses,classIds:data.classIds||[],permissions:data.permissions||{},roleTitle:data.roleTitle||'Thành viên',requireEmailVerification:true});}
   for(const assignment of coachAssignments)writeCoachAssignment(tx,db,path,assignment,{name:auditName,uid:a.identityId});
   return {...next,data:{...data,...(data.deletedAt&&typeof data.deletedAt==='object'&&!data.deletedAt.toDate?{deletedAt:new Date().toISOString()}: {})},updatedAt:new Date().toISOString()};
- });if(cached?.actor?.identityId===a.identityId)cached={...cached,records:applyConfirmedRecord(cached.records,result)};return {ok:true,record:result};
+ });}catch(e:any){if(e.code==='vvn-code-race'&&codeAttempt<8)return mutate(input,codeAttempt+1);throw e;}if(cached?.actor?.identityId===a.identityId)cached={...cached,records:applyConfirmedRecord(cached.records,result)};return {ok:true,record:result};
 }
 async function allRecords(){const s=await getDocsFromServer(collection(db,path+'/records'));return s.docs.map(row)}
 const dailySnapshots=new Map<string,string>();
@@ -147,4 +150,16 @@ export async function archiveOldHistoryRecords(records:any[]){
   });if(result)archived++;else skipped++;
  }
  return {archived,skipped,cutoff:historyCutoff(now)};
+}
+
+// Owner runs this after login; each change retains UID, revision checks and audit.
+export async function standardizeStudentCodes(){
+ const a=await getActor();if(!a.isSuperAdmin)return 0;
+ const records=await allRecords();if(!records.some(r=>r.kind==='student'&&!isVvnCode(r.data.id)))return 0;
+ await snapshotDaily(false,a);await ensureStudentCodes(db,path);
+ const reservations=await getDocsFromServer(collection(db,path+'/studentCodes'));
+ const used=new Map<string,string>(reservations.docs.map(d=>[d.id.replace(/^code-/,''),d.data().studentUid]));
+ const plan=vvnPlan(records,used);let count=0;
+ for(const {record,code} of plan){await mutate({...record,data:{...record.data,id:code}});count++;}
+ return count;
 }

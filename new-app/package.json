@@ -11,7 +11,8 @@
     "test:recovery:build": "esbuild tests/recovery.mjs --bundle --format=esm --platform=node --packages=external --outfile=tests/.recovery-built.mjs",
     "test:idle": "node tests/idle.mjs",
     "test:reports": "esbuild tests/reports.mjs --bundle --format=esm --platform=node --packages=external --outfile=tests/.reports-built.mjs && node tests/.reports-built.mjs",
-    "test:sync:build": "node tests/sync/build.mjs"
+    "test:sync:build": "node tests/sync/build.mjs",
+    "test:students": "esbuild tests/vovinam.mjs --bundle --format=esm --platform=node --outfile=tests/.vovinam-built.mjs && node tests/.vovinam-built.mjs"
   },
   "dependencies": {
     "firebase": "^12.0.0",
