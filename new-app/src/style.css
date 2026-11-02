@@ -20,3 +20,4 @@
 .class-account-link{display:flex;align-items:center;gap:6px;color:var(--blue);font-size:10px;margin-top:10px}
 
 .class-assistants{font-size:11px;color:var(--muted);margin-top:8px}.coach-team-editor{border:1px solid var(--line);padding:16px;border-radius:10px;margin-bottom:20px}.coach-team-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:10px}.coach-primary{display:flex;align-items:center;gap:10px;flex:1;min-width:0}.coach-primary input{width:18px;min-height:18px;flex-shrink:0}.coach-primary strong{font-size:12px;overflow-wrap:anywhere}.coach-primary small{display:block;font-size:10px;color:var(--muted);margin-top:3px}.coach-team-row>button{flex-shrink:0}
+.primary.danger{background:#b33636;border-color:#b33636}.primary.danger:hover{background:#932b2b}.secondary.danger{color:#b33636;border-color:#e2bcbc}

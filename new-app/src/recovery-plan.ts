@@ -1,7 +1,7 @@
 import {convertBackup} from './convert';
 import {codeReservations} from './student-codes';
 const kinds=['student','class','attendance','tuition','gear','tournament','approval','config','account'];
-export function sanitize(value:any):any{if(Array.isArray(value))return value.map(sanitize);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([k])=>!['password','passwordHash','secret','databaseSecret','apiKey','accessToken','refreshToken'].includes(k)).map(([k,v])=>[k,sanitize(v)]));return value;}
+export function sanitize(value:any):any{if(value&&typeof value.toDate==='function')return value.toDate().toISOString();if(Array.isArray(value))return value.map(sanitize);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([k])=>!['password','passwordHash','secret','databaseSecret','apiKey','accessToken','refreshToken'].includes(k)).map(([k,v])=>[k,sanitize(v)]));return value;}
 export function recoveryPlan(input:any){
  if(!input||typeof input!=='object')throw new Error('File JSON không hợp lệ.');
  const converted=convertBackup(sanitize(input)),rows=converted.rows;

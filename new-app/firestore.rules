@@ -52,6 +52,15 @@ service cloud.firestore {
    let event = getAfter(/databases/$(database)/documents/clubs/antruong-v2/audit/$(r.auditId)).data;
    return r.auditId is string && event.actorUid == request.auth.uid && event.kind == r.kind && event.record_id == r.id && event.at == request.time;
   }
+  function purgingTrash(r,key) {
+   let operation = getAfter(/databases/$(database)/documents/clubs/antruong-v2/meta/trashPurge).data;
+   let event = getAfter(/databases/$(database)/documents/clubs/antruong-v2/audit/$(operation.auditId)).data;
+   return owner() && !maintenance() && get(/databases/$(database)/documents/clubs/antruong-v2/meta/import).data.status == 'ready' &&
+    r.data.get('deleted',false) == true && r.data.get('isSuperAdmin',false) == false &&
+    r.kind in ['student','class','attendance','tuition','account','gear','tournament','approval'] &&
+    operation.recordKey == key && operation.actorUid == request.auth.uid && operation.at == request.time &&
+    event.actorUid == request.auth.uid && event.action == 'purge' && event.kind == r.kind && event.record_id == r.id && event.at == request.time;
+  }
   match /clubs/antruong-v2/members/{email} {
    allow get: if signed() && (email == request.auth.token.email.lower() || owner());
    allow list: if owner();
@@ -67,7 +76,7 @@ service cloud.firestore {
    allow create: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(request.resource.data) && trashAllowed(request.resource.data) && (reserved(request.resource.data) || (owner() && request.resource.data.get('imported',false) == true && !exists(/databases/$(database)/documents/clubs/antruong-v2/meta/studentCodes))) && request.resource.data.version == 1 && ((owner() && request.resource.data.get('imported',false) == true) || hasAudit(request.resource.data));
    allow update: if key == request.resource.data.kind + '--' + request.resource.data.id && valid(request.resource.data) && writeRecord(resource.data) && writeRecord(request.resource.data) && trashAllowed(request.resource.data) && !(resource.data.kind == 'account' && resource.data.data.get('isSuperAdmin',false) == true) && reserved(request.resource.data) && request.resource.data.id == resource.data.id && request.resource.data.kind == resource.data.kind && request.resource.data.version == resource.data.version + 1 && hasAudit(request.resource.data);
    allow create,update: if restoring() && valid(request.resource.data) && key == request.resource.data.kind + '--' + request.resource.data.id;
-   allow delete: if restoring();
+   allow delete: if restoring() || purgingTrash(resource.data,key);
   }
   match /clubs/antruong-v2/audit/{id} {
    allow read: if owner();

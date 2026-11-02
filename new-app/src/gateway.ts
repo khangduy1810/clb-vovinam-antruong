@@ -1,6 +1,7 @@
+import {purgeable,expiredTrash,trashTarget,sameTrashRevision} from './trash-policy';
 import {applyConfirmedRecord} from './record-state';
 import {readCoachTeam,coachTeamChanged,writeCoachAssignment} from './class-coach';
-import {collection,doc,getDoc,getDocsFromServer,query,where,orderBy,limit,onSnapshot,runTransaction,writeBatch,serverTimestamp,deleteDoc,addDoc} from 'firebase/firestore';
+import {collection,doc,getDoc,getDocFromServer,setDoc,getDocsFromServer,query,where,orderBy,limit,onSnapshot,runTransaction,writeBatch,serverTimestamp,deleteDoc,addDoc} from 'firebase/firestore';
 import {auth,db,clubId} from './firebase';
 import {convertBackup} from './convert';
 import {captureApp} from './recovery';
@@ -10,7 +11,7 @@ const path='clubs/'+clubId;
 const recordRef=(kind:string,id:string)=>doc(db,path+'/records/'+kind+'--'+id);
 const profileRef=(email:string)=>doc(db,path+'/members/'+email.trim().toLowerCase());
 const stamp=(t:any)=>t?.toDate?t.toDate().toISOString():typeof t==='string'?t:new Date().toISOString();
-const row=(d:any)=>({...d.data(),updatedAt:stamp(d.data().updatedAt)});
+const row=(d:any)=>{const r=d.data();return {...r,data:{...r.data,...(typeof r.data?.deletedAt?.toDate==='function'?{deletedAt:r.data.deletedAt.toDate().toISOString()}: {})},updatedAt:stamp(r.updatedAt)}};
 export const can=(a:any,p:string)=>a.isSuperAdmin||a.permissions?.[p]===true;
 export async function getActor():Promise<any>{const u=auth.currentUser;if(!u?.email)throw new Error('Vui lòng đăng nhập.');const s=await getDoc(profileRef(u.email));if(!s.exists()||s.data().status!=='active')throw new Error('Tài khoản chưa được cấp quyền hoặc đã bị khóa. Nhờ chủ CLB gắn đúng email đăng nhập.');return normalizeActor(s.data(),{email:u.email,uid:u.uid})}
 function queries(a:any){
@@ -77,6 +78,8 @@ export async function mutate(input:any){
  const result=await runTransaction(db,async tx=>{const maintenance=await tx.get(doc(db,path+'/meta/maintenance'));if(maintenance.exists()&&maintenance.data().state!=='ready')throw new Error('Đang bảo trì hoặc khôi phục dữ liệu. Hãy thử lại sau.');const current=await tx.get(ref);const existing=current.exists()?current.data():null;if((existing?.version||0)!==version)throw new Error('Bản ghi vừa được máy khác thay đổi. Tải phiên bản mới rồi sửa lại.');
   if(kind==='attendance'){const stable=(v:any):any=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().filter(k=>!['deleted','deletedAt','deletedBy'].includes(k)).map(k=>[k,stable(v[k])])):v;const trashOnly=a.isSuperAdmin&&existing&&!!existing.data.deleted!==!!data.deleted&&JSON.stringify(stable(existing.data))===JSON.stringify(stable(data));if(!trashOnly)validate(kind,id,data,cached);}
   if(existing?.data?.isSuperAdmin&&kind==='account')throw new Error('Không thể khóa hoặc xóa tài khoản chủ CLB.');if(existing?.data?.deleted&&!a.isSuperAdmin)throw new Error('Hồ sơ đang ở thùng rác.');
+  if(data.deleted===true&&!existing?.data?.deleted)data.deletedAt=serverTimestamp();
+  if(data.deleted===false)data.deletedAt='';
   let coachAssignments:any[]=[];
   if(kind==='class'&&coachTeamChanged(existing?.data,data)){
    if(!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được thêm, xóa hoặc đổi HLV phụ trách.');
@@ -89,7 +92,7 @@ export async function mutate(input:any){
   const next={kind,id,data,version:version+1,updatedAt:serverTimestamp(),auditId:auditRef.id};tx.set(ref,next);if(codeRef)tx.set(codeRef,{studentUid:id});if(oldCodeRef)tx.delete(oldCodeRef);tx.set(auditRef,{actor:auditName,actorUid:a.identityId,action:existing?'update':'create',kind,record_id:id,at:serverTimestamp()});
   if(kind==='account'){if(oldMember?.exists())tx.delete(profileRef(oldEmail));if(data.email)tx.set(profileRef(data.email),{id,name:data.name,email:data.email,status:data.status,isSuperAdmin:false,allClasses:!!data.allClasses,classIds:data.classIds||[],permissions:data.permissions||{},roleTitle:data.roleTitle||'Thành viên',requireEmailVerification:true});}
   for(const assignment of coachAssignments)writeCoachAssignment(tx,db,path,assignment,{name:auditName,uid:a.identityId});
-  return {...next,updatedAt:new Date().toISOString()};
+  return {...next,data:{...data,...(data.deletedAt&&typeof data.deletedAt==='object'&&!data.deletedAt.toDate?{deletedAt:new Date().toISOString()}: {})},updatedAt:new Date().toISOString()};
  });if(cached?.actor?.identityId===a.identityId)cached={...cached,records:applyConfirmedRecord(cached.records,result)};return {ok:true,record:result};
 }
 async function allRecords(){const s=await getDocsFromServer(collection(db,path+'/records'));return s.docs.map(row)}
@@ -104,4 +107,29 @@ export async function importBackup(file:File){
  // staff access stays blocked until the final ready marker commits.
  for(let i=0;i<normalized.rows.length;i+=4){const chunk=normalized.rows.slice(i,i+4);await runTransaction(db,async tx=>{const current=await Promise.all(chunk.map(r=>tx.get(recordRef(r.kind,r.id))));chunk.forEach((r,n)=>{if(!current[n].exists())tx.set(recordRef(r.kind,r.id),{...r,version:1,updatedAt:serverTimestamp(),imported:true})})})}
  const done=writeBatch(db);done.set(marker,{status:'ready',hash,source:file.name,counts:normalized.counts,warnings:normalized.warnings,at:serverTimestamp()});const event=doc(collection(db,path+'/audit'));done.set(event,{actor:auditName,actorUid:a.identityId,action:'import',kind:'backup',record_id:'initial',at:serverTimestamp()});await done.commit();return normalized.counts;
+}
+
+export function watchTrashCleanup(onStatus:(s:any)=>void,onError:(e:any)=>void){return onSnapshot(doc(db,path+'/meta/trashCleanup'),snap=>onStatus(snap.data()||{}),onError)}
+export async function purgeTrashRecords(targets:{kind:string;id:string;version:number}[],expiredOnly=false,serverNow=Date.now()){
+ const actor=await getActor();if(!actor.isSuperAdmin)throw new Error('Chỉ chủ CLB được dọn thùng rác.');const auditName=requireAuditName(actor);let removed=0,skipped=0;const deletedTargets:any[]=[];
+ for(const target of targets){
+  if(!['student','class','attendance','tuition','account','gear','tournament','approval'].includes(target.kind)){skipped++;continue}
+  const ref=recordRef(target.kind,target.id),audit=doc(collection(db,path+'/audit'));
+  try{const didDelete=await runTransaction(db,async tx=>{
+   const maintenance=await tx.get(doc(db,path+'/meta/maintenance')),importState=await tx.get(doc(db,path+'/meta/import')),snap=await tx.get(ref);
+   if(maintenance.exists()&&maintenance.data().state!=='ready'||!importState.exists()||importState.data().status!=='ready')throw new Error('Đang nhập hoặc khôi phục dữ liệu. Hãy dọn thùng rác sau khi hoàn tất.');
+   if(!snap.exists())return false;const record=snap.data();if(!sameTrashRevision(record,target)||!purgeable(record)||expiredOnly&&!expiredTrash(record,serverNow))return false;
+   tx.set(doc(db,path+'/meta/trashPurge'),{recordKey:target.kind+'--'+target.id,auditId:audit.id,actorUid:actor.identityId,at:serverTimestamp()});
+   tx.set(audit,{actor:auditName,actorUid:actor.identityId,action:'purge',kind:target.kind,record_id:target.id,at:serverTimestamp()});tx.delete(ref);return true;
+  });if(didDelete){removed++;deletedTargets.push(target);if(cached?.actor?.identityId===actor.identityId)cached={...cached,records:cached.records.filter((r:any)=>!(sameTrashRevision(r,target)&&r.data.deleted))}}else skipped++;
+  }catch(e:any){throw new Error('Đã xóa '+removed+' mục. '+(e.code==='permission-denied'?'Cần cập nhật Firestore Rules mới để xóa vĩnh viễn.':e.message||'Chưa dọn được các mục còn lại.'))}
+ }
+ return {removed,skipped,deletedTargets};
+}
+
+export async function purgeExpiredTrashRecords(records:any[]){
+ const actor=await getActor();if(!actor.isSuperAdmin)throw new Error('Chỉ chủ CLB được dọn thùng rác.');
+ const clock=doc(db,path+'/meta/trashClock');await setDoc(clock,{at:serverTimestamp()});const time=(await getDocFromServer(clock)).data()?.at?.toMillis?.();if(!Number.isFinite(time))throw new Error('Chưa xác nhận được thời gian máy chủ.');
+ const targets=records.filter(r=>expiredTrash(r,time)).map(trashTarget);
+ return purgeTrashRecords(targets,true,time);
 }

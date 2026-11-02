@@ -1,3 +1,4 @@
+import {cleanExpiredTrash,expiredTrash} from './trash-core.js';
 import {initializeApp} from 'firebase-admin/app';
 import {getFirestore,FieldValue} from 'firebase-admin/firestore';
 import {getStorage} from 'firebase-admin/storage';
@@ -33,4 +34,13 @@ export const downloadWeeklyBackup=onRequest({region,serviceAccount,memory:'512Mi
  const id=String(req.query.id||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(id)||id<cutoffDate(new Date())){res.status(404).json({error:'Bản sao không tồn tại hoặc đã hết hạn.'});return}
  const file=bucket().file(PREFIX+id+'.json.gz');const [exists]=await file.exists();if(!exists){res.status(404).json({error:'Không tìm thấy bản sao.'});return}res.set('Content-Type','application/json; charset=utf-8');res.set('Content-Disposition',`attachment; filename="AnTruong_Weekly_${id}.json"`);await pipeline(file.createReadStream(),createGunzip(),res);
  }catch(e){logger.error('Backup download failed',{code:String(e.code||'unknown')});if(!res.headersSent)res.status(500).json({error:'Chưa tải được bản sao. Kiểm tra tác vụ máy chủ.'});else res.end()}
+});
+
+export const cleanupClubTrash=onSchedule({region,timeZone:ZONE,memory:'256MiB',timeoutSeconds:540,maxInstances:1,concurrency:1,retryCount:3,minBackoffSeconds:60,schedule:'every 60 minutes'},async()=>{
+ try{const result=await cleanExpiredTrash({now:new Date(),listRecords:async()=>{const snap=await db().collection(root+'/records').where('data.deleted','==',true).get();return snap.docs.map(d=>({...d.data(),key:d.id}))},purgeOne:async(candidate,now)=>db().runTransaction(async tx=>{
+  const ref=db().doc(root+'/records/'+candidate.key),maintenance=await tx.get(db().doc(root+'/meta/maintenance')),importState=await tx.get(db().doc(root+'/meta/import')),current=await tx.get(ref);
+  if(maintenance.exists&&maintenance.data().state!=='ready'||!importState.exists||importState.data().status!=='ready'||!current.exists)return false;
+  const record=current.data();if(!expiredTrash(record,now)||record.version!==candidate.version)return false;
+  const audit=db().collection(root+'/audit').doc();tx.set(audit,{actor:'Tự động dọn thùng rác',actorUid:'system:trash-cleanup',action:'purge',kind:record.kind,record_id:record.id,at:FieldValue.serverTimestamp()});tx.delete(ref);return true;
+ })});await db().doc(root+'/meta/trashCleanup').set({...result,lastRunAt:FieldValue.serverTimestamp(),lastError:''},{merge:true});logger.info('Expired trash cleanup completed',result)}catch(e){await db().doc(root+'/meta/trashCleanup').set({lastFailureAt:FieldValue.serverTimestamp(),lastError:'cleanup_failed_check_function_logs'},{merge:true});logger.error('Trash cleanup failed',{code:String(e.code||e.message||'unknown')});throw e}
 });
