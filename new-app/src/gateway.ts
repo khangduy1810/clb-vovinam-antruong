@@ -1,4 +1,4 @@
-import {readCoachAssignment,writeCoachAssignment} from './class-coach';
+import {readCoachTeam,coachTeamChanged,writeCoachAssignment} from './class-coach';
 import {collection,doc,getDoc,getDocsFromServer,query,where,orderBy,limit,onSnapshot,runTransaction,writeBatch,serverTimestamp,deleteDoc,addDoc} from 'firebase/firestore';
 import {auth,db,clubId} from './firebase';
 import {convertBackup} from './convert';
@@ -49,10 +49,10 @@ export async function mutate(input:any){
  const result=await runTransaction(db,async tx=>{const maintenance=await tx.get(doc(db,path+'/meta/maintenance'));if(maintenance.exists()&&maintenance.data().state!=='ready')throw new Error('Đang bảo trì hoặc khôi phục dữ liệu. Hãy thử lại sau.');const current=await tx.get(ref);const existing=current.exists()?current.data():null;if((existing?.version||0)!==version)throw new Error('Bản ghi vừa được máy khác thay đổi. Tải phiên bản mới rồi sửa lại.');
   if(kind==='attendance'){const stable=(v:any):any=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().filter(k=>!['deleted','deletedAt','deletedBy'].includes(k)).map(k=>[k,stable(v[k])])):v;const trashOnly=a.isSuperAdmin&&existing&&!!existing.data.deleted!==!!data.deleted&&JSON.stringify(stable(existing.data))===JSON.stringify(stable(data));if(!trashOnly)validate(kind,id,data,cached);}
   if(existing?.data?.isSuperAdmin&&kind==='account')throw new Error('Không thể khóa hoặc xóa tài khoản chủ CLB.');if(existing?.data?.deleted&&!a.isSuperAdmin)throw new Error('Hồ sơ đang ở thùng rác.');
-  let coachAssignment:any=null;
-  if(kind==='class'){
-   if(!a.isSuperAdmin&&String(data.coachAccountId||'')!==String(existing?.data?.coachAccountId||''))throw new Error('Chỉ chủ CLB được gắn hoặc đổi tài khoản HLV.');
-   if(a.isSuperAdmin&&data.coachAccountId&&!data.deleted&&(!existing||data.coachAccountId!==existing.data.coachAccountId)){coachAssignment=await readCoachAssignment(tx,db,path,id,data.coachAccountId);data.coach=coachAssignment.data.name;}
+  let coachAssignments:any[]=[];
+  if(kind==='class'&&coachTeamChanged(existing?.data,data)){
+   if(!a.isSuperAdmin)throw new Error('Chỉ chủ CLB được thêm, xóa hoặc đổi HLV phụ trách.');
+   if(!data.deleted){const team=await readCoachTeam(tx,db,path,id,existing?.data,data);coachAssignments=team.assignments;data={...data,...team.fields};}
   }
   let oldMember:any=null,newMember:any=null;const oldEmail=existing?.data?.email||'';
   if(kind==='account'&&data.email){newMember=await tx.get(profileRef(data.email));if(newMember.exists()&&newMember.data().id!==id)throw new Error('Email đã gắn với hồ sơ khác.');}
@@ -60,7 +60,7 @@ export async function mutate(input:any){
   let codeRef:any=null,oldCodeRef:any=null;if(kind==='student'){codeRef=doc(db,path+'/studentCodes/'+codeKey(data.id));const reserved:any=await tx.get(codeRef);if(reserved.exists()&&reserved.data().studentUid!==id)throw new Error('Mã võ sinh đã được sử dụng trên hệ thống.');if(existing?.data?.id&&codeKey(existing.data.id)!==codeKey(data.id))oldCodeRef=doc(db,path+'/studentCodes/'+codeKey(existing.data.id));}
   const next={kind,id,data,version:version+1,updatedAt:serverTimestamp(),auditId:auditRef.id};tx.set(ref,next);if(codeRef)tx.set(codeRef,{studentUid:id});if(oldCodeRef)tx.delete(oldCodeRef);tx.set(auditRef,{actor:auditName,actorUid:a.identityId,action:existing?'update':'create',kind,record_id:id,at:serverTimestamp()});
   if(kind==='account'){if(oldMember?.exists())tx.delete(profileRef(oldEmail));if(data.email)tx.set(profileRef(data.email),{id,name:data.name,email:data.email,status:data.status,isSuperAdmin:false,allClasses:!!data.allClasses,classIds:data.classIds||[],permissions:data.permissions||{},roleTitle:data.roleTitle||'Thành viên',requireEmailVerification:true});}
-  writeCoachAssignment(tx,db,path,coachAssignment,{name:auditName,uid:a.identityId});
+  for(const assignment of coachAssignments)writeCoachAssignment(tx,db,path,assignment,{name:auditName,uid:a.identityId});
   return {...next,updatedAt:new Date().toISOString()};
  });return {ok:true,record:result};
 }
