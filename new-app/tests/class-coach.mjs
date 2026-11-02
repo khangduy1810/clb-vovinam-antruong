@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {initializeTestEnvironment,assertFails} from '@firebase/rules-unit-testing';
+import {collection,doc,getDoc,setDoc,runTransaction,serverTimestamp} from 'firebase/firestore';
+import {readCoachAssignment,writeCoachAssignment} from '../src/class-coach.ts';
+const root='clubs/antruong-v2',env=await initializeTestEnvironment({projectId:'demo-antruong-v2',firestore:{host:'127.0.0.1',port:8088,rules:readFileSync('firestore.rules','utf8')}});
+const owner=env.authenticatedContext('owner',{email:'owner@example.test',email_verified:true}).firestore();
+const staff=env.authenticatedContext('staff',{email:'staff@example.test',email_verified:true}).firestore();
+const member={id:'STAFF',name:'Coach',email:'staff@example.test',status:'active',isSuperAdmin:false,allClasses:false,classIds:['OLD'],permissions:{classes_manage:true,attendance_manage:true,tuition_manage:false},roleTitle:'HLV'};
+try{
+ await env.clearFirestore();await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await setDoc(doc(db,root+'/meta/import'),{status:'ready'});await setDoc(doc(db,root+'/members/owner@example.test'),{...member,id:'OWNER',name:'Owner',email:'owner@example.test',isSuperAdmin:true});await setDoc(doc(db,root+'/members/'+member.email),member);await setDoc(doc(db,root+'/records/account--STAFF'),{kind:'account',id:'STAFF',data:member,version:1});});
+ async function assign(db,id,coachId='STAFF'){return runTransaction(db,async tx=>{const assignment=await readCoachAssignment(tx,db,root,id,coachId);const audit=doc(collection(db,root+'/audit'));tx.set(doc(db,root+'/records/class--'+id),{kind:'class',id,data:{name:'Class '+id,coachAccountId:coachId,coach:assignment.data.name},version:1,updatedAt:serverTimestamp(),auditId:audit.id});tx.set(audit,{actor:db===owner?'Owner':'Coach',actorUid:db===owner?'owner':'staff',kind:'class',record_id:id,action:'create',at:serverTimestamp()});writeCoachAssignment(tx,db,root,assignment,{name:db===owner?'Owner':'Coach',uid:db===owner?'owner':'staff'});});}
+ await env.withSecurityRulesDisabled(c=>setDoc(doc(c.firestore(),root+'/records/account--OWNER'),{kind:'account',id:'OWNER',data:{...member,name:'Owner',email:'',isSuperAdmin:true},version:1}));await assign(owner,'OWNERCLASS','OWNER');assert.equal((await getDoc(doc(owner,root+'/records/account--OWNER'))).data().version,1);
+ await assign(owner,'NEW');const account=(await getDoc(doc(owner,root+'/records/account--STAFF'))).data();const updated=(await getDoc(doc(owner,root+'/members/'+member.email))).data();assert.deepEqual(account.data.classIds,['OLD','NEW']);assert.deepEqual(updated.classIds,['OLD','NEW']);assert.deepEqual(updated.permissions,member.permissions);assert.equal(account.version,2);assert.equal((await getDoc(doc(staff,root+'/records/class--NEW'))).data().data.coach,'Coach');
+ await assign(owner,'NEW2');assert.equal((await getDoc(doc(owner,root+'/records/account--STAFF'))).data().version,3);
+ await assertFails(assign(staff,'FORBIDDEN'));assert.equal((await getDoc(doc(owner,root+'/records/class--FORBIDDEN'))).exists(),false);
+ await env.withSecurityRulesDisabled(c=>setDoc(doc(c.firestore(),root+'/members/'+member.email),{...member,id:'WRONG'}));await assert.rejects(()=>assign(owner,'BAD'),/chưa khớp/);assert.equal((await getDoc(doc(owner,root+'/records/class--BAD'))).exists(),false);assert.equal((await getDoc(doc(owner,root+'/records/account--STAFF'))).data().version,3);
+ await env.withSecurityRulesDisabled(c=>setDoc(doc(c.firestore(),root+'/records/account--STAFF'),{kind:'account',id:'STAFF',data:{...member,status:'inactive'},version:3}));await assert.rejects(()=>assign(owner,'LOCKED'),/đang hoạt động/);assert.equal((await getDoc(doc(owner,root+'/records/class--LOCKED'))).exists(),false);
+ console.log('PASS: class, account scope, membership and audit saved atomically; existing classes/permissions preserved; staff cannot grant own access; mismatched or locked accounts leave no partial class.');
+}finally{await env.cleanup()}
